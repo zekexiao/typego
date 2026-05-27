@@ -1,0 +1,7 @@
+<RCC>
+    <qresource prefix="/qml">
+        <file alias="main.qml">qml/main.qml</file>
+        <file alias="SettingsView.qml">qml/SettingsView.qml</file>
+        <file alias="TodoView.qml">qml/TodoView.qml</file>
+    </qresource>
+</RCC>
