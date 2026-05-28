@@ -9,6 +9,10 @@
 #include <QDebug>
 #include <QTranslator>
 #include <QLocale>
+#include <QIcon>
+#include <QPixmap>
+#include <QSvgRenderer>
+#include <QPainter>
 #include <QWKQuick/qwkquickglobal.h>
 #include "AppLauncher.h"
 #include "GlobalHotkey.h"
@@ -30,6 +34,20 @@ int main(int argc, char *argv[])
     qputenv("QT_QUICK_CONTROLS_STYLE", "Basic");
     SingleApplication app(argc, argv);
     app.setQuitOnLastWindowClosed(false);
+
+    // Load custom icon from SVG
+    QIcon appIcon;
+    QSvgRenderer iconRenderer(QStringLiteral(":/assets/icon.svg"));
+    const QList<int> iconSizes = {16, 24, 32, 48, 64, 128, 256};
+    for (int sz : iconSizes) {
+        QPixmap pix(sz, sz);
+        pix.fill(Qt::transparent);
+        QPainter painter(&pix);
+        iconRenderer.render(&painter);
+        painter.end();
+        appIcon.addPixmap(pix);
+    }
+    app.setWindowIcon(appIcon);
 
     // Load translations
     QTranslator translator;
@@ -78,6 +96,7 @@ int main(int argc, char *argv[])
         qWarning() << "Root object is not a window";
         return -1;
     }
+    window->setIcon(appIcon);
 
     // 单例模式：第二个实例启动时，第一个实例收到通知并转到前台
     QObject::connect(&app, &SingleApplication::instanceStarted, window, [window]() {
@@ -107,7 +126,7 @@ int main(int argc, char *argv[])
 
     // 系统托盘
     QSystemTrayIcon trayIcon;
-    trayIcon.setIcon(QApplication::style()->standardIcon(QStyle::SP_ComputerIcon));
+    trayIcon.setIcon(appIcon);
     trayIcon.setToolTip("neoStart");
 
     QMenu trayMenu;

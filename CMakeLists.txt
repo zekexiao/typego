@@ -8,8 +8,9 @@ set(CMAKE_AUTORCC ON)
 
 set(CMAKE_PREFIX_PATH "C:/Qt/6.10.3/msvc2022_64")
 
-find_package(Qt6 REQUIRED COMPONENTS Core Gui Quick Widgets LinguistTools)
+find_package(Qt6 REQUIRED COMPONENTS Core Gui Quick Widgets Svg LinguistTools)
 
+set(CMAKE_RC_FLAGS "-I ${CMAKE_SOURCE_DIR}")
 set(QWINDOWKIT_BUILD_STATIC OFF)
 
 # Everything SDK
@@ -51,6 +52,7 @@ qt_add_executable(neoStart
     src/todo/TaskTreeModel.cpp
     src/InputHighlighter.cpp
     resources.qrc
+    assets/app_icon.rc
 )
 
 target_link_libraries(neoStart PRIVATE
@@ -58,6 +60,7 @@ target_link_libraries(neoStart PRIVATE
     Qt6::Gui
     Qt6::Quick
     Qt6::Widgets
+    Qt6::Svg
     QWindowKit::Quick
     SingleApplication::SingleApplication
     spdlog::spdlog

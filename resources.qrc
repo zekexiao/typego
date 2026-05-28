@@ -4,4 +4,7 @@
         <file alias="SettingsView.qml">qml/SettingsView.qml</file>
         <file alias="TodoView.qml">qml/TodoView.qml</file>
     </qresource>
+    <qresource prefix="/assets">
+        <file alias="icon.svg">assets/icon.svg</file>
+    </qresource>
 </RCC>
