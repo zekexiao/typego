@@ -16,7 +16,7 @@ public:
     explicit TodoPlugin(QObject *parent = nullptr);
 
     QString command() const override { return QString::fromUtf8(u8"todo"); }
-    QString description() const override { return QString::fromUtf8(u8"任务管理"); }
+    QString description() const override { return tr("Task Management"); }
     QVariantList query(const QString &args) override;
     bool execute(const QVariantMap &action) override;
 

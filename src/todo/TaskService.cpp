@@ -19,7 +19,7 @@ QString TaskService::createTask(const QString &title, const QString &parentId)
     Task t;
     t.id = QUuid::createUuid().toString(QUuid::WithoutBraces);
     t.parentId = parentId;
-    t.title = title.isEmpty() ? QString::fromUtf8(u8"新任务") : title;
+    t.title = title.isEmpty() ? tr("New Task") : title;
     t.completed = false;
     t.priority = 0;
     t.createdTime = QDateTime::currentDateTime();

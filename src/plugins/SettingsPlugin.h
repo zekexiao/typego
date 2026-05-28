@@ -15,7 +15,7 @@ public:
     explicit SettingsPlugin(QObject *parent = nullptr);
 
     QString command() const override { return QString::fromUtf8(u8"set"); }
-    QString description() const override { return QString::fromUtf8(u8"打开设置"); }
+    QString description() const override { return tr("Open Settings"); }
     QVariantList query(const QString &args) override;
     bool execute(const QVariantMap &action) override;
 };

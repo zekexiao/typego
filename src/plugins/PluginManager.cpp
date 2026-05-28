@@ -39,8 +39,8 @@ QVariantList PluginManager::queryCommand(const QString &cmd, const QString &args
     }
     if (m_settings && !m_settings->isPluginEnabled(key)) {
         QVariantMap item;
-        item["title"] = QString::fromUtf8(u8"插件已禁用");
-        item["subtitle"] = key + QString::fromUtf8(u8" 插件已在设置中关闭");
+        item["title"] = tr("Plugin disabled");
+        item["subtitle"] = key + tr(" plugin has been disabled in settings");
         item["icon"] = "";
         QVariantMap action;
         action["type"] = QString::fromUtf8(u8"none");

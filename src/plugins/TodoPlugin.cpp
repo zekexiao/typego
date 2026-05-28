@@ -16,8 +16,8 @@ QVariantList TodoPlugin::query(const QString &args)
     QVariantList results;
 
     QVariantMap item;
-    item["title"] = QString::fromUtf8(u8"任务管理");
-    item["subtitle"] = QString::fromUtf8(u8"管理 TODO 列表与子任务");
+    item["title"] = tr("Task Management");
+    item["subtitle"] = tr("Manage TODO list and subtasks");
     item["icon"] = "";
 
     QVariantMap action;

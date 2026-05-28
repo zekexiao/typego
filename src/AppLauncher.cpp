@@ -26,14 +26,14 @@ AppLauncher::AppLauncher(QObject *parent)
 
 void AppLauncher::addBuiltinApps()
 {
-    m_apps.append({ QString::fromUtf8(u8"记事本"), "notepad", QString::fromUtf8(u8"Windows 记事本"), "" });
-    m_apps.append({ QString::fromUtf8(u8"计算器"), "calc", QString::fromUtf8(u8"Windows 计算器"), "" });
-    m_apps.append({ QString::fromUtf8(u8"画图"), "mspaint", QString::fromUtf8(u8"Windows 画图"), "" });
-    m_apps.append({ QString::fromUtf8(u8"命令提示符"), "cmd", QString::fromUtf8(u8"CMD 命令行"), "" });
-    m_apps.append({ QString::fromUtf8(u8"资源管理器"), "explorer", QString::fromUtf8(u8"文件资源管理器"), "" });
-    m_apps.append({ QString::fromUtf8(u8"任务管理器"), "taskmgr", QString::fromUtf8(u8"Windows 任务管理器"), "" });
-    m_apps.append({ QString::fromUtf8(u8"设置"), "ms-settings:", QString::fromUtf8(u8"Windows 设置"), "" });
-    m_apps.append({ QString::fromUtf8(u8"浏览器"), "https://www.bing.com", QString::fromUtf8(u8"打开必应搜索"), "" });
+    m_apps.append({ tr("Notepad"), "notepad", tr("Windows Notepad"), "" });
+    m_apps.append({ tr("Calculator"), "calc", tr("Windows Calculator"), "" });
+    m_apps.append({ tr("Paint"), "mspaint", tr("Windows Paint"), "" });
+    m_apps.append({ tr("Command Prompt"), "cmd", tr("CMD Command Line"), "" });
+    m_apps.append({ tr("File Explorer"), "explorer", tr("File Explorer"), "" });
+    m_apps.append({ tr("Task Manager"), "taskmgr", tr("Windows Task Manager"), "" });
+    m_apps.append({ tr("Settings"), "ms-settings:", tr("Windows Settings"), "" });
+    m_apps.append({ tr("Browser"), "https://www.bing.com", tr("Open Bing Search"), "" });
 }
 
 QString AppLauncher::extractIcon(const QString &filePath)
@@ -91,7 +91,7 @@ void AppLauncher::scanStartMenu()
             if (seen.contains(name)) continue;
             seen.insert(name);
             QString icon = extractIcon(fi.absoluteFilePath());
-            m_apps.append({ name, fi.absoluteFilePath(), QString::fromUtf8(u8"开始菜单"), icon });
+            m_apps.append({ name, fi.absoluteFilePath(), tr("Start Menu"), icon });
         }
 
         QFileInfoList subdirs = dir.entryInfoList(QDir::Dirs | QDir::NoDotAndDotDot);
@@ -103,7 +103,7 @@ void AppLauncher::scanStartMenu()
                 if (seen.contains(name)) continue;
                 seen.insert(name);
                 QString icon = extractIcon(fi.absoluteFilePath());
-                m_apps.append({ name, fi.absoluteFilePath(), QString::fromUtf8(u8"开始菜单") + " / " + sdi.fileName(), icon });
+                m_apps.append({ name, fi.absoluteFilePath(), tr("Start Menu") + " / " + sdi.fileName(), icon });
             }
         }
     }

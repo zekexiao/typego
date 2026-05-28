@@ -17,7 +17,7 @@ public:
     ~FilePlugin() override;
 
     QString command() const override { return QString::fromUtf8(u8"file"); }
-    QString description() const override { return QString::fromUtf8(u8"文件搜索（Everything）"); }
+    QString description() const override { return tr("File search (Everything)"); }
     QVariantList query(const QString &args) override;
     bool execute(const QVariantMap &action) override;
 

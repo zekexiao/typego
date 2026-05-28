@@ -15,7 +15,7 @@ public:
     explicit CalcPlugin(QObject *parent = nullptr);
 
     QString command() const override { return QString::fromUtf8(u8"calc"); }
-    QString description() const override { return QString::fromUtf8(u8"计算器"); }
+    QString description() const override { return tr("Calculator"); }
     QVariantList query(const QString &args) override;
     bool execute(const QVariantMap &action) override;
 

@@ -54,8 +54,8 @@ QVariantList FilePlugin::query(const QString &args)
 #ifdef Q_OS_WIN
     if (args.trimmed().isEmpty()) {
         QVariantMap item;
-        item["title"] = QString::fromUtf8(u8"输入文件名进行搜索");
-        item["subtitle"] = QString::fromUtf8(u8"由 Everything 提供极速搜索支持");
+        item["title"] = tr("Enter a filename to search");
+        item["subtitle"] = tr("Powered by Everything for fast search");
         item["icon"] = "";
         QVariantMap action;
         action["type"] = QString::fromUtf8(u8"none");
@@ -73,11 +73,11 @@ QVariantList FilePlugin::query(const QString &args)
         DWORD err = Everything_GetLastError();
         QVariantMap item;
         if (err == EVERYTHING_ERROR_IPC) {
-            item["title"] = QString::fromUtf8(u8"Everything 服务未运行");
-            item["subtitle"] = QString::fromUtf8(u8"请先启动 Everything 再使用文件搜索");
+            item["title"] = tr("Everything service is not running");
+            item["subtitle"] = tr("Please start Everything before using file search");
         } else {
-            item["title"] = QString::fromUtf8(u8"搜索失败");
-            item["subtitle"] = QString::fromUtf8(u8"错误码: ") + QString::number(err);
+            item["title"] = tr("Search failed");
+            item["subtitle"] = tr("Error code: ") + QString::number(err);
         }
         item["icon"] = "";
         QVariantMap action;
@@ -92,7 +92,7 @@ QVariantList FilePlugin::query(const QString &args)
     DWORD count = Everything_GetNumResults();
     if (count == 0) {
         QVariantMap item;
-        item["title"] = QString::fromUtf8(u8"未找到文件");
+        item["title"] = tr("No files found");
         item["subtitle"] = args;
         item["icon"] = "";
         QVariantMap action;
@@ -128,8 +128,8 @@ QVariantList FilePlugin::query(const QString &args)
 #else
     Q_UNUSED(args)
     QVariantMap item;
-    item["title"] = QString::fromUtf8(u8"文件搜索仅在 Windows 上可用");
-    item["subtitle"] = QString::fromUtf8(u8"Everything SDK 仅支持 Windows 平台");
+    item["title"] = tr("File search is only available on Windows");
+    item["subtitle"] = tr("Everything SDK only supports Windows");
     item["icon"] = "";
     QVariantMap action;
     action["type"] = QString::fromUtf8(u8"none");

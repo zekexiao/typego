@@ -66,7 +66,7 @@ ScrollView {
 
         Text { 
             font.pixelSize: 16
-            text: "\u8bbe\u7f6e"
+            text: qsTr("Settings")
             color: "#cdd6f4"
             font.bold: true
         }
@@ -79,7 +79,7 @@ ScrollView {
 
         Text { 
             font.pixelSize: 16
-            text: "\u5168\u5c40\u5524\u9192\u5feb\u6377\u952e"
+            text: qsTr("Global Hotkey")
             color: "#89b4fa"
             font.bold: true
         }
@@ -245,7 +245,7 @@ ScrollView {
 
         Text { 
             font.pixelSize: 16
-            text: "\u641c\u7d22\u5f15\u64ce"
+            text: qsTr("Search Engine")
             color: "#89b4fa"
             font.bold: true
         }
@@ -313,7 +313,7 @@ ScrollView {
 
         Text { 
             font.pixelSize: 16
-            text: "\u63d2\u4ef6\u7ba1\u7406"
+            text: qsTr("Plugin Management")
             color: "#89b4fa"
             font.bold: true
         }
@@ -385,7 +385,7 @@ ScrollView {
             spacing: 8
 
             Button {
-                text: "\u53d6\u6d88"
+                text: qsTr("Cancel")
                 onClicked: {
                     restoreState()
                     settingsLayout.refreshPlugins()
@@ -408,7 +408,7 @@ ScrollView {
             Item { Layout.fillWidth: true }
 
             Button {
-                text: "\u4fdd\u5b58"
+                text: qsTr("Save")
                 onClicked: {
                     var mods = 0
                     if (altCheck.checked) mods |= Qt.AltModifier

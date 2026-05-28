@@ -67,8 +67,8 @@ Window {
         // 无结果时提供浏览器搜索
         if (results.length === 0 && t.trim().length > 0) {
             var searchItem = {}
-            searchItem.title = "\u641c\u7d22 \"" + t.trim() + "\""
-            searchItem.subtitle = "\u4f7f\u7528 " + settings.searchEngine + " \u641c\u7d22"
+            searchItem.title = qsTr("Search \"") + t.trim() + "\""
+            searchItem.subtitle = qsTr("Search with ") + settings.searchEngine
             searchItem.icon = ""
             var searchAction = {}
             searchAction.type = "openUrl"
@@ -210,7 +210,7 @@ Window {
                 id: searchField
                 Layout.fillWidth: true
                 Layout.preferredHeight: 46
-                placeholderText: "搜索应用 或 输入 cmd 空格 参数..."
+                placeholderText: qsTr("Search apps or type cmd space args...")
                 text: ""
                 font.pixelSize: 18
                 color: "#cdd6f4"
@@ -279,7 +279,7 @@ Window {
                     text: {
                         if (!commandMode) return ""
                         var desc = pluginManager.commandDescription(currentCmd)
-                        return desc ? desc : "未知命令"
+                        return desc ? desc : qsTr("Unknown command")
                     }
                     color: {
                         if (!commandMode) return "#6c7086"

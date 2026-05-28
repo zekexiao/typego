@@ -18,7 +18,7 @@ Rectangle {
             TextField {
                 id: newTaskField
                 Layout.fillWidth: true
-                placeholderText: "输入新任务..."
+                placeholderText: qsTr("Enter a new task...")
                 font.pixelSize: 14
                 color: "#cdd6f4"
                 wrapMode: TextEdit.NoWrap
@@ -40,7 +40,7 @@ Rectangle {
 
             Button {
                 id: addButton
-                text: "添加"
+                text: qsTr("Add")
                 implicitWidth: 60
                 implicitHeight: 36
                 onClicked: {

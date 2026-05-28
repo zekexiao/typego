@@ -7,6 +7,8 @@
 #include <QQuickWindow>
 #include <QStyle>
 #include <QDebug>
+#include <QTranslator>
+#include <QLocale>
 #include <QWKQuick/qwkquickglobal.h>
 #include "AppLauncher.h"
 #include "GlobalHotkey.h"
@@ -28,6 +30,18 @@ int main(int argc, char *argv[])
     qputenv("QT_QUICK_CONTROLS_STYLE", "Basic");
     SingleApplication app(argc, argv);
     app.setQuitOnLastWindowClosed(false);
+
+    // Load translations
+    QTranslator translator;
+    const QStringList uiLanguages = QLocale::system().uiLanguages();
+    for (const QString &lang : uiLanguages) {
+        const QString baseName = "neoStart_" + QLocale(lang).name();
+        if (translator.load(":/i18n/" + baseName) ||
+            translator.load(baseName, QCoreApplication::applicationDirPath() + "/i18n")) {
+            app.installTranslator(&translator);
+            break;
+        }
+    }
 
     AppLauncher launcher;
     Settings settings;
@@ -97,9 +111,9 @@ int main(int argc, char *argv[])
     trayIcon.setToolTip("neoStart");
 
     QMenu trayMenu;
-    QAction *showAction = trayMenu.addAction(QString::fromUtf8(u8"显示"));
-    QAction *settingsAction = trayMenu.addAction(QString::fromUtf8(u8"设置"));
-    QAction *quitAction = trayMenu.addAction(QString::fromUtf8(u8"退出"));
+    QAction *showAction = trayMenu.addAction(QCoreApplication::translate("Main", "Show"));
+    QAction *settingsAction = trayMenu.addAction(QCoreApplication::translate("Main", "Settings"));
+    QAction *quitAction = trayMenu.addAction(QCoreApplication::translate("Main", "Quit"));
     trayIcon.setContextMenu(&trayMenu);
 
     QObject::connect(showAction, &QAction::triggered, window, [window]() {

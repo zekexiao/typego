@@ -14,7 +14,7 @@ public:
     explicit DirectoryPlugin(QObject *parent = nullptr);
 
     QString command() const override { return QString::fromUtf8(u8"cd"); }
-    QString description() const override { return QString::fromUtf8(u8"目录浏览与跳转"); }
+    QString description() const override { return tr("Directory browser and navigation"); }
     QVariantList query(const QString &args) override;
     bool execute(const QVariantMap &action) override;
 

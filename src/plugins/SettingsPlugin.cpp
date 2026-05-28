@@ -12,8 +12,8 @@ QVariantList SettingsPlugin::query(const QString &args)
     QVariantList results;
 
     QVariantMap item;
-    item["title"] = QString::fromUtf8(u8"设置");
-    item["subtitle"] = QString::fromUtf8(u8"修改全局热键、窗口样式等配置");
+    item["title"] = tr("Settings");
+    item["subtitle"] = tr("Modify global hotkey, window style and other settings");
     item["icon"] = "";
 
     QVariantMap action;

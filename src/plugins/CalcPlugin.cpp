@@ -15,8 +15,8 @@ QVariantList CalcPlugin::query(const QString &args)
     if (args.trimmed().isEmpty()) {
         // 无参数时显示提示
         QVariantMap item;
-        item["title"] = QString::fromUtf8(u8"输入表达式进行计算");
-        item["subtitle"] = QString::fromUtf8(u8"例如: 1+2, sqrt(16), 2^10");
+        item["title"] = tr("Enter an expression to calculate");
+        item["subtitle"] = tr("e.g. 1+2, sqrt(16), 2^10");
         item["icon"] = "";
         QVariantMap action;
         action["type"] = QString::fromUtf8(u8"none");
@@ -30,7 +30,7 @@ QVariantList CalcPlugin::query(const QString &args)
     QJSValue value = m_engine.evaluate(args);
     if (value.isError()) {
         QVariantMap item;
-        item["title"] = QString::fromUtf8(u8"表达式错误");
+        item["title"] = tr("Expression Error");
         item["subtitle"] = value.toString();
         item["icon"] = "";
         QVariantMap action;
@@ -44,7 +44,7 @@ QVariantList CalcPlugin::query(const QString &args)
     QString resultStr = value.toString();
     QVariantMap item;
     item["title"] = resultStr;
-    item["subtitle"] = args + QString::fromUtf8(u8" = ") + resultStr;
+    item["subtitle"] = args + " = " + resultStr;
     item["icon"] = "";
     QVariantMap action;
     action["type"] = QString::fromUtf8(u8"copy");

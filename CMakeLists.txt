@@ -8,7 +8,7 @@ set(CMAKE_AUTORCC ON)
 
 set(CMAKE_PREFIX_PATH "C:/Qt/6.10.3/msvc2022_64")
 
-find_package(Qt6 REQUIRED COMPONENTS Core Gui Quick Widgets)
+find_package(Qt6 REQUIRED COMPONENTS Core Gui Quick Widgets LinguistTools)
 
 set(QWINDOWKIT_BUILD_STATIC OFF)
 
@@ -66,4 +66,11 @@ target_link_libraries(neoStart PRIVATE
 
 set_target_properties(neoStart PROPERTIES
     WIN32_EXECUTABLE FALSE
+)
+
+# Translations
+qt_add_translations(neoStart
+    TS_FILES
+        i18n/neoStart_zh_CN.ts
+    LUPDATE_OPTIONS -no-obsolete
 )

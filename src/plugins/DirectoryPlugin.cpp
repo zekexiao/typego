@@ -51,7 +51,7 @@ QVariantList DirectoryPlugin::query(const QString &args)
     QDir dir(path);
     if (!dir.exists()) {
         QVariantMap item;
-        item["title"] = QString::fromUtf8(u8"目录不存在");
+        item["title"] = tr("Directory does not exist");
         item["subtitle"] = args;
         item["icon"] = "";
         QVariantMap action;
@@ -64,7 +64,7 @@ QVariantList DirectoryPlugin::query(const QString &args)
 
     // 先添加 "进入此目录" 项
     QVariantMap enterItem;
-    enterItem["title"] = QString::fromUtf8(u8"打开 ") + dir.dirName();
+    enterItem["title"] = tr("Open ") + dir.dirName();
     enterItem["subtitle"] = dir.absolutePath();
     enterItem["icon"] = "";
     QVariantMap enterAction;
@@ -84,7 +84,7 @@ QVariantList DirectoryPlugin::query(const QString &args)
     for (const QFileInfo &fi : entries) {
         QVariantMap item;
         item["title"] = fi.fileName();
-        item["subtitle"] = fi.isDir() ? QString::fromUtf8(u8"文件夹") : fi.suffix().toUpper();
+        item["subtitle"] = fi.isDir() ? tr("Folder") : fi.suffix().toUpper();
         
         // 图标缓存：先检查是否已缓存，避免重复调用 provider.icon()
         QString cachePath = cacheDir + "/dir_" + QString::number(qHash(fi.absoluteFilePath()), 16) + ".png";
