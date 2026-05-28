@@ -9,6 +9,7 @@
 #include <QDebug>
 #include <QTranslator>
 #include <QLocale>
+#include <QProcess>
 #include <QIcon>
 #include <QPixmap>
 #include <QSvgRenderer>
@@ -141,6 +142,7 @@ int main(int argc, char *argv[])
     QMenu trayMenu;
     QAction *showAction = trayMenu.addAction(QCoreApplication::translate("Main", "Show"));
     QAction *settingsAction = trayMenu.addAction(QCoreApplication::translate("Main", "Settings"));
+    QAction *restartAction = trayMenu.addAction(QCoreApplication::translate("Main", "Restart"));
     QAction *quitAction = trayMenu.addAction(QCoreApplication::translate("Main", "Quit"));
     trayIcon.setContextMenu(&trayMenu);
 
@@ -155,6 +157,11 @@ int main(int argc, char *argv[])
         window->raise();
         window->requestActivate();
         QMetaObject::invokeMethod(window, "openSettings");
+    });
+
+    QObject::connect(restartAction, &QAction::triggered, &app, [&app]() {
+        QProcess::startDetached(QCoreApplication::applicationFilePath(), QStringList());
+        app.quit();
     });
 
     QObject::connect(quitAction, &QAction::triggered, &app, &SingleApplication::quit);

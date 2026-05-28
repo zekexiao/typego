@@ -205,6 +205,11 @@
     </message>
     <message>
         <location filename="../src/main.cpp" line="116" />
+        <source>Restart</source>
+        <translation>重启</translation>
+    </message>
+    <message>
+        <location filename="../src/main.cpp" line="117" />
         <source>Quit</source>
         <translation>退出</translation>
     </message>

@@ -108,6 +108,13 @@ QString PluginManager::viewUrlForCommand(const QString &cmd) const
     return QString();
 }
 
+bool PluginManager::autoEnterForCommand(const QString &cmd) const
+{
+    if (m_settings && !m_settings->isPluginEnabled(cmd.toLower())) return false;
+    if (m_settings) return m_settings->pluginAutoEnter();
+    return false;
+}
+
 IPlugin *PluginManager::plugin(const QString &cmd) const
 {
     return m_plugins.value(cmd.toLower(), nullptr);

@@ -7,6 +7,8 @@ Settings::Settings(QObject *parent)
 {
     m_modifiers = m_settings.value("hotkeyModifiers", 0x0C000000).toInt(); // Qt::AltModifier | Qt::ControlModifier
     m_key = m_settings.value("hotkeyKey", 0x20).toInt(); // Qt::Key_Space
+    m_autoStart = m_settings.value("autoStart", false).toBool();
+    syncAutoStartRegistry(m_autoStart);
 }
 
 QString Settings::searchEngine() const
@@ -90,4 +92,45 @@ void Settings::setPluginEnabled(const QString &name, bool enabled)
 {
     qDebug() << "setPluginEnabled:" << name << enabled;
     m_settings.setValue("plugins/" + name, enabled);
+}
+
+bool Settings::pluginAutoEnter() const
+{
+    return m_settings.value("pluginAutoEnter", false).toBool();
+}
+
+void Settings::setPluginAutoEnter(bool enabled)
+{
+    if (pluginAutoEnter() == enabled) return;
+    m_settings.setValue("pluginAutoEnter", enabled);
+    emit pluginAutoEnterChanged();
+}
+
+bool Settings::autoStart() const
+{
+    return m_autoStart;
+}
+
+void Settings::setAutoStart(bool enabled)
+{
+    if (m_autoStart == enabled) return;
+    m_autoStart = enabled;
+    m_settings.setValue("autoStart", enabled);
+    syncAutoStartRegistry(enabled);
+    emit autoStartChanged();
+}
+
+void Settings::syncAutoStartRegistry(bool enabled)
+{
+#ifdef Q_OS_WIN
+    QSettings reg("HKEY_CURRENT_USER\\Software\\Microsoft\\Windows\\CurrentVersion\\Run", QSettings::NativeFormat);
+    if (enabled) {
+        QString path = QCoreApplication::applicationFilePath();
+        reg.setValue("neoStart", path.replace('/', '\\'));
+    } else {
+        reg.remove("neoStart");
+    }
+#else
+    Q_UNUSED(enabled)
+#endif
 }

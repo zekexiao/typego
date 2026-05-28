@@ -68,7 +68,8 @@ target_link_libraries(neoStart PRIVATE
 )
 
 set_target_properties(neoStart PROPERTIES
-    WIN32_EXECUTABLE FALSE
+    WIN32_EXECUTABLE TRUE
+    RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin"
 )
 
 # Translations

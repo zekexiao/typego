@@ -47,6 +47,13 @@ Window {
             var args = t.substring(firstSpace + 1)
             customViewVisible = false
             customViewSource = ""
+            // 空参数且插件支持 autoEnter，直接触发进入
+            if (args.trim().length === 0 && pluginManager.autoEnterForCommand(currentCmd)) {
+                results = []
+                selectedIndex = 0
+                launchCurrent()
+                return
+            }
             results = pluginManager.queryCommand(currentCmd, args)
         } else {
             var cmd = t.trim()
@@ -402,17 +409,17 @@ Window {
     }
 
     function launchCurrent() {
+        // 命令模式下优先检查是否有自定义视图
+        if (commandMode && currentCmd.length > 0) {
+            var viewUrl = pluginManager.viewUrlForCommand(currentCmd)
+            if (viewUrl.length > 0) {
+                customViewVisible = true
+                customViewSource = viewUrl
+                return
+            }
+        }
         if (selectedIndex >= 0 && selectedIndex < results.length) {
             var item = results[selectedIndex]
-            // 命令模式下优先检查是否有自定义视图
-            if (commandMode && currentCmd.length > 0) {
-                var viewUrl = pluginManager.viewUrlForCommand(currentCmd)
-                if (viewUrl.length > 0) {
-                    customViewVisible = true
-                    customViewSource = viewUrl
-                    return
-                }
-            }
             if (item.action && item.action.type && item.action.type !== "none") {
                 pluginManager.executeAction(item.action)
             } else if (item.path) {

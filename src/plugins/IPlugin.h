@@ -42,4 +42,5 @@ public:
     /// 可选：返回需要注入到 QML 引擎上下文的对象
     /// key 为属性名，value 为 QObject 指针
     virtual QHash<QString, QObject*> contextProperties() const { return {}; }
+
 };

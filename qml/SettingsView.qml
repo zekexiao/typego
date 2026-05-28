@@ -2,13 +2,9 @@ import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
 
-ScrollView {
+Rectangle {
     id: root
-    clip: true
-
-    background: Rectangle {
-        color: "#1e1e2e"
-    }
+    color: "#1e1e2e"
 
     signal saved()
     signal cancelled()
@@ -54,15 +50,24 @@ ScrollView {
         var engines = ["Bing", "Google", "Baidu", "DuckDuckGo"]
         var idx = engines.indexOf(_originalSearchEngine)
         engineCombo.currentIndex = idx >= 0 ? idx : 0
+        autoEnterCheck.checked = settings.pluginAutoEnter
+        autoStartCheck.checked = settings.autoStart
     }
 
     Component.onCompleted: restoreState()
 
-    ColumnLayout {
-        id: settingsLayout
-        width: root.availableWidth
-        anchors.margins: 20
-        spacing: 20
+    Flickable {
+        anchors.fill: parent
+        anchors.margins: 12
+        contentWidth: width
+        contentHeight: settingsLayout.implicitHeight
+        clip: true
+        boundsBehavior: Flickable.StopAtBounds
+
+        ColumnLayout {
+            id: settingsLayout
+            width: parent.width
+            spacing: 12
 
         Text { 
             font.pixelSize: 16
@@ -237,6 +242,38 @@ ScrollView {
             }
         }
 
+        CheckBox {
+            id: autoStartCheck
+            text: qsTr("Start on boot")
+            padding: 0
+            spacing: 6
+            checked: settings.autoStart
+            indicator: Rectangle {
+                implicitWidth: 18
+                implicitHeight: 18
+                x: autoStartCheck.leftPadding
+                y: autoStartCheck.topPadding + (autoStartCheck.availableHeight - height) / 2
+                radius: 4
+                color: autoStartCheck.down ? "#45475a" : "#313244"
+                border.color: autoStartCheck.checked ? "#89b4fa" : "#45475a"
+                border.width: 2
+                Text {
+                    anchors.centerIn: parent
+                    text: "\u2713"
+                    color: "#89b4fa"
+                    font.pixelSize: 10
+                    visible: autoStartCheck.checked
+                }
+            }
+            contentItem: Text {
+                font.pixelSize: 16
+                text: autoStartCheck.text
+                color: "#cdd6f4"
+                verticalAlignment: Text.AlignVCenter
+                leftPadding: autoStartCheck.indicator.width + autoStartCheck.spacing
+            }
+        }
+
         Rectangle {
             Layout.fillWidth: true
             height: 1
@@ -311,11 +348,50 @@ ScrollView {
             color: "#45475a"
         }
 
-        Text { 
-            font.pixelSize: 16
-            text: qsTr("Plugin Management")
-            color: "#89b4fa"
-            font.bold: true
+        RowLayout {
+            Layout.fillWidth: true
+            spacing: 8
+
+            Text {
+                font.pixelSize: 16
+                text: qsTr("Plugin Management")
+                color: "#89b4fa"
+                font.bold: true
+            }
+
+            Item { Layout.fillWidth: true }
+
+            CheckBox {
+                id: autoEnterCheck
+                text: qsTr("Auto enter on empty args")
+                padding: 0
+                spacing: 6
+                checked: settings.pluginAutoEnter()
+                indicator: Rectangle {
+                    implicitWidth: 18
+                    implicitHeight: 18
+                    x: autoEnterCheck.leftPadding
+                    y: autoEnterCheck.topPadding + (autoEnterCheck.availableHeight - height) / 2
+                    radius: 4
+                    color: autoEnterCheck.down ? "#45475a" : "#313244"
+                    border.color: autoEnterCheck.checked ? "#89b4fa" : "#45475a"
+                    border.width: 2
+                    Text {
+                        anchors.centerIn: parent
+                        text: "\u2713"
+                        color: "#89b4fa"
+                        font.pixelSize: 10
+                        visible: autoEnterCheck.checked
+                    }
+                }
+                contentItem: Text {
+                    font.pixelSize: 16
+                    text: autoEnterCheck.text
+                    color: "#cdd6f4"
+                    verticalAlignment: Text.AlignVCenter
+                    leftPadding: autoEnterCheck.indicator.width + autoEnterCheck.spacing
+                }
+            }
         }
 
         ColumnLayout {
@@ -437,9 +513,11 @@ ScrollView {
                     settings.hotkeyModifiers = mods
                     settings.hotkeyKey = indexToKey(keyCombo.currentIndex)
                     settings.searchEngine = engineCombo.currentValue
+                    settings.autoStart = autoStartCheck.checked
                     root._originalModifiers = mods
                     root._originalKey = settings.hotkeyKey
                     root._originalSearchEngine = settings.searchEngine
+                    settings.pluginAutoEnter = autoEnterCheck.checked
                     for (var i = 0; i < pluginModel.count; i++) {
                         var item = pluginModel.get(i)
                         settings.setPluginEnabled(item.cmd, item.enabled)
@@ -461,5 +539,6 @@ ScrollView {
                 }
             }
         }
+    }
     }
 }
