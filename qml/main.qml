@@ -422,8 +422,10 @@ Window {
             var item = results[selectedIndex]
             if (item.action && item.action.type && item.action.type !== "none") {
                 pluginManager.executeAction(item.action)
+                root.hide()
             } else if (item.path) {
                 appLauncher.launch(item.path)
+                root.hide()
             }
         }
     }
