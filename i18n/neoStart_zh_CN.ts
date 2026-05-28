@@ -215,6 +215,52 @@
     </message>
 </context>
 <context>
+    <name>Theme</name>
+    <message>
+        <location filename="../qml/SettingsView.qml" line="285" />
+        <source>Theme</source>
+        <translation>主题</translation>
+    </message>
+    <message>
+        <location filename="../qml/SettingsView.qml" line="289" />
+        <source>System</source>
+        <translation>跟随系统</translation>
+    </message>
+    <message>
+        <location filename="../qml/SettingsView.qml" line="289" />
+        <source>Light</source>
+        <translation>浅色</translation>
+    </message>
+    <message>
+        <location filename="../qml/SettingsView.qml" line="289" />
+        <source>Dark</source>
+        <translation>深色</translation>
+    </message>
+</context>
+<context>
+    <name>PinnedApps</name>
+    <message>
+        <location filename="../qml/main.qml" line="420" />
+        <source>Pin to Start</source>
+        <translation>固定到开始界面</translation>
+    </message>
+    <message>
+        <location filename="../qml/main.qml" line="420" />
+        <source>Unpin from Start</source>
+        <translation>从开始界面取消固定</translation>
+    </message>
+    <message>
+        <location filename="../qml/main.qml" line="423" />
+        <source>Cannot pin</source>
+        <translation>无法固定</translation>
+    </message>
+    <message>
+        <location filename="../qml/main.qml" line="390" />
+        <source>Pinned</source>
+        <translation>已固定</translation>
+    </message>
+</context>
+<context>
     <name>PluginManager</name>
     <message>
         <location filename="../src/plugins/PluginManager.cpp" line="42" />

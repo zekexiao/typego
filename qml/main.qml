@@ -72,7 +72,7 @@ Window {
                 customViewVisible = false
                 customViewSource = ""
                 if (t.trim().length === 0) {
-                    results = []
+                    results = t.length === 0 ? [] : appLauncher.search("")
                 } else {
                     results = appLauncher.search(t)
                 }
@@ -331,6 +331,74 @@ Window {
             }
         }
 
+        Flow {
+            id: pinnedFlow
+            Layout.fillWidth: true
+            spacing: 12
+            Layout.preferredHeight: (searchField.text.length === 0 && !commandMode && !customViewVisible) ? implicitHeight : 0
+            visible: Layout.preferredHeight > 0
+            clip: true
+
+            Text {
+                width: parent.width
+                text: qsTr("Pinned")
+                color: themeManager.textSecondary
+                font.pixelSize: 12
+                visible: appLauncher.pinnedApps.length > 0
+            }
+
+            Repeater {
+                model: appLauncher.pinnedApps
+                delegate: Rectangle {
+                    width: 48
+                    height: 48
+                    radius: 24
+                    color: themeManager.surface
+                    clip: true
+
+                    Image {
+                        anchors.fill: parent
+                        source: modelData.icon ? "file:///" + modelData.icon : ""
+                        visible: modelData.icon && modelData.icon.length > 0
+                        fillMode: Image.PreserveAspectCrop
+                    }
+
+                    Text {
+                        anchors.centerIn: parent
+                        text: modelData.name.charAt(0).toUpperCase()
+                        color: themeManager.text
+                        font.pixelSize: 18
+                        font.bold: true
+                        visible: !modelData.icon || modelData.icon.length === 0
+                    }
+
+                    MouseArea {
+                        anchors.fill: parent
+                        hoverEnabled: true
+                        acceptedButtons: Qt.LeftButton | Qt.RightButton
+                        onClicked: {
+                            if (mouse.button === Qt.RightButton) {
+                                pinContextMenu.popup()
+                            } else {
+                                appLauncher.launch(modelData.path)
+                            }
+                        }
+                        ToolTip.visible: containsMouse
+                        ToolTip.text: modelData.name
+                        ToolTip.delay: 300
+
+                        Menu {
+                            id: pinContextMenu
+                            MenuItem {
+                                text: qsTr("Unpin from Start")
+                                onTriggered: appLauncher.unpinApp(modelData.path)
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
         StackLayout {
             Layout.fillWidth: true
             Layout.preferredHeight: customViewVisible ? 320 : (results.length > 0 ? Math.min(listView.contentHeight, 400) : 0)
@@ -400,10 +468,38 @@ Window {
                     }
 
                     MouseArea {
+                        id: itemMouse
                         anchors.fill: parent
+                        acceptedButtons: Qt.LeftButton | Qt.RightButton
                         onClicked: {
-                            selectedIndex = index
-                            listView.launchCurrent()
+                            if (mouse.button === Qt.RightButton) {
+                                contextMenu.popup()
+                            } else {
+                                selectedIndex = index
+                                listView.launchCurrent()
+                            }
+                        }
+
+                        Menu {
+                            id: contextMenu
+                            MenuItem {
+                                text: {
+                                    var p = modelData.path !== undefined ? modelData.path : ""
+                                    if (p.length === 0) return qsTr("Cannot pin")
+                                    return appLauncher.isPinned(p) ? qsTr("Unpin from Start") : qsTr("Pin to Start")
+                                }
+                                enabled: modelData.path !== undefined && modelData.path.length > 0
+                                onTriggered: {
+                                    var p = modelData.path
+                                    if (appLauncher.isPinned(p)) {
+                                        appLauncher.unpinApp(p)
+                                    } else {
+                                        var n = modelData.name !== undefined ? modelData.name : modelData.title
+                                        var ic = modelData.icon !== undefined ? modelData.icon : ""
+                                        appLauncher.pinApp(p, n, ic)
+                                    }
+                                }
+                            }
                         }
                     }
                 }
