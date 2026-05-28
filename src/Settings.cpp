@@ -120,6 +120,19 @@ void Settings::setAutoStart(bool enabled)
     emit autoStartChanged();
 }
 
+QString Settings::theme() const
+{
+    return m_settings.value("theme", QStringLiteral("system")).toString();
+}
+
+void Settings::setTheme(const QString &theme)
+{
+    QString current = this->theme();
+    if (current == theme) return;
+    m_settings.setValue("theme", theme);
+    emit themeChanged();
+}
+
 void Settings::syncAutoStartRegistry(bool enabled)
 {
 #ifdef Q_OS_WIN

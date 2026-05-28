@@ -4,7 +4,7 @@ import QtQuick.Layouts
 
 Rectangle {
     id: root
-    color: "#1e1e2e"
+    color: themeManager.bg
 
     signal saved()
     signal cancelled()
@@ -12,6 +12,7 @@ Rectangle {
     property int _originalModifiers: settings.hotkeyModifiers
     property int _originalKey: settings.hotkeyKey
     property string _originalSearchEngine: settings.searchEngine
+    property string _originalTheme: settings.theme
 
     function keyToIndex(key) {
         var map = {
@@ -52,6 +53,9 @@ Rectangle {
         engineCombo.currentIndex = idx >= 0 ? idx : 0
         autoEnterCheck.checked = settings.pluginAutoEnter
         autoStartCheck.checked = settings.autoStart
+        var themes = ["system", "light", "dark"]
+        var tidx = themes.indexOf(_originalTheme)
+        themeCombo.currentIndex = tidx >= 0 ? tidx : 0
     }
 
     Component.onCompleted: restoreState()
@@ -72,20 +76,20 @@ Rectangle {
         Text { 
             font.pixelSize: 16
             text: qsTr("Settings")
-            color: "#cdd6f4"
+            color: themeManager.text
             font.bold: true
         }
 
         Rectangle {
             Layout.fillWidth: true
             height: 1
-            color: "#45475a"
+            color: themeManager.border
         }
 
         Text { 
             font.pixelSize: 16
             text: qsTr("Global Hotkey")
-            color: "#89b4fa"
+            color: themeManager.accent
             font.bold: true
         }
 
@@ -104,13 +108,13 @@ Rectangle {
                     x: altCheck.leftPadding
                     y: altCheck.topPadding + (altCheck.availableHeight - height) / 2
                     radius: 4
-                    color: altCheck.down ? "#45475a" : "#313244"
-                    border.color: altCheck.checked ? "#89b4fa" : "#45475a"
+                    color: altCheck.down ? themeManager.surfacePressed : themeManager.surface
+                    border.color: altCheck.checked ? themeManager.borderFocus : themeManager.border
                     border.width: 2
                     Text {
                         anchors.centerIn: parent
                         text: "\u2713"
-                        color: "#89b4fa"
+                        color: themeManager.accent
                         font.pixelSize: 10
                         visible: altCheck.checked
                     }
@@ -118,7 +122,7 @@ Rectangle {
                 contentItem: Text {
                     font.pixelSize: 16
                     text: altCheck.text
-                    color: "#cdd6f4"
+                    color: themeManager.text
                     verticalAlignment: Text.AlignVCenter
                     leftPadding: altCheck.indicator.width + altCheck.spacing
                 }
@@ -135,13 +139,13 @@ Rectangle {
                     x: ctrlCheck.leftPadding
                     y: ctrlCheck.topPadding + (ctrlCheck.availableHeight - height) / 2
                     radius: 4
-                    color: ctrlCheck.down ? "#45475a" : "#313244"
-                    border.color: ctrlCheck.checked ? "#89b4fa" : "#45475a"
+                    color: ctrlCheck.down ? themeManager.surfacePressed : themeManager.surface
+                    border.color: ctrlCheck.checked ? themeManager.borderFocus : themeManager.border
                     border.width: 2
                     Text {
                         anchors.centerIn: parent
                         text: "\u2713"
-                        color: "#89b4fa"
+                        color: themeManager.accent
                         font.pixelSize: 10
                         visible: ctrlCheck.checked
                     }
@@ -149,7 +153,7 @@ Rectangle {
                 contentItem: Text {
                     font.pixelSize: 16
                     text: ctrlCheck.text
-                    color: "#cdd6f4"
+                    color: themeManager.text
                     verticalAlignment: Text.AlignVCenter
                     leftPadding: ctrlCheck.indicator.width + ctrlCheck.spacing
                 }
@@ -166,13 +170,13 @@ Rectangle {
                     x: shiftCheck.leftPadding
                     y: shiftCheck.topPadding + (shiftCheck.availableHeight - height) / 2
                     radius: 4
-                    color: shiftCheck.down ? "#45475a" : "#313244"
-                    border.color: shiftCheck.checked ? "#89b4fa" : "#45475a"
+                    color: shiftCheck.down ? themeManager.surfacePressed : themeManager.surface
+                    border.color: shiftCheck.checked ? themeManager.borderFocus : themeManager.border
                     border.width: 2
                     Text {
                         anchors.centerIn: parent
                         text: "\u2713"
-                        color: "#89b4fa"
+                        color: themeManager.accent
                         font.pixelSize: 10
                         visible: shiftCheck.checked
                     }
@@ -180,7 +184,7 @@ Rectangle {
                 contentItem: Text {
                     font.pixelSize: 16
                     text: shiftCheck.text
-                    color: "#cdd6f4"
+                    color: themeManager.text
                     verticalAlignment: Text.AlignVCenter
                     leftPadding: shiftCheck.indicator.width + shiftCheck.spacing
                 }
@@ -195,13 +199,13 @@ Rectangle {
             contentItem: Text {
                 font.pixelSize: 16
                 text: keyCombo.displayText
-                color: "#cdd6f4"
+                color: themeManager.text
                 verticalAlignment: Text.AlignVCenter
                 leftPadding: 8
             }
 
             background: Rectangle {
-                color: "#313244"
+                color: themeManager.surface
                 radius: 6
             }
 
@@ -220,7 +224,7 @@ Rectangle {
                 }
 
                 background: Rectangle {
-                    color: "#313244"
+                    color: themeManager.surface
                     radius: 6
                 }
             }
@@ -232,12 +236,12 @@ Rectangle {
                 contentItem: Text {
                     font.pixelSize: 16
                     text: modelData
-                    color: "#cdd6f4"
+                    color: themeManager.text
                     verticalAlignment: Text.AlignVCenter
                 }
 
                 background: Rectangle {
-                    color: highlighted ? "#45475a" : "transparent"
+                    color: highlighted ? themeManager.selection : "transparent"
                 }
             }
         }
@@ -254,13 +258,13 @@ Rectangle {
                 x: autoStartCheck.leftPadding
                 y: autoStartCheck.topPadding + (autoStartCheck.availableHeight - height) / 2
                 radius: 4
-                color: autoStartCheck.down ? "#45475a" : "#313244"
-                border.color: autoStartCheck.checked ? "#89b4fa" : "#45475a"
+                color: autoStartCheck.down ? themeManager.surfacePressed : themeManager.surface
+                border.color: autoStartCheck.checked ? themeManager.borderFocus : themeManager.border
                 border.width: 2
                 Text {
                     anchors.centerIn: parent
                     text: "\u2713"
-                    color: "#89b4fa"
+                    color: themeManager.accent
                     font.pixelSize: 10
                     visible: autoStartCheck.checked
                 }
@@ -268,7 +272,7 @@ Rectangle {
             contentItem: Text {
                 font.pixelSize: 16
                 text: autoStartCheck.text
-                color: "#cdd6f4"
+                color: themeManager.text
                 verticalAlignment: Text.AlignVCenter
                 leftPadding: autoStartCheck.indicator.width + autoStartCheck.spacing
             }
@@ -277,13 +281,81 @@ Rectangle {
         Rectangle {
             Layout.fillWidth: true
             height: 1
-            color: "#45475a"
+            color: themeManager.border
         }
 
-        Text { 
+        Text {
+            font.pixelSize: 16
+            text: qsTr("Theme")
+            color: themeManager.accent
+            font.bold: true
+        }
+
+        ComboBox {
+            id: themeCombo
+            Layout.fillWidth: true
+            model: [qsTr("System"), qsTr("Light"), qsTr("Dark")]
+
+            contentItem: Text {
+                font.pixelSize: 16
+                text: themeCombo.displayText
+                color: themeManager.text
+                verticalAlignment: Text.AlignVCenter
+                leftPadding: 8
+            }
+
+            background: Rectangle {
+                color: themeManager.surface
+                radius: 6
+            }
+
+            popup: Popup {
+                y: themeCombo.height
+                width: themeCombo.width
+                implicitHeight: Math.min(contentItem.implicitHeight, 200)
+                padding: 1
+
+                contentItem: ListView {
+                    clip: true
+                    implicitHeight: contentHeight
+                    model: themeCombo.delegateModel
+                    currentIndex: themeCombo.highlightedIndex
+                    ScrollIndicator.vertical: ScrollIndicator {}
+                }
+
+                background: Rectangle {
+                    color: themeManager.surface
+                    radius: 6
+                }
+            }
+
+            delegate: ItemDelegate {
+                width: themeCombo.width
+                highlighted: themeCombo.highlightedIndex === index
+
+                contentItem: Text {
+                    font.pixelSize: 16
+                    text: modelData
+                    color: themeManager.text
+                    verticalAlignment: Text.AlignVCenter
+                }
+
+                background: Rectangle {
+                    color: highlighted ? themeManager.selection : "transparent"
+                }
+            }
+        }
+
+        Rectangle {
+            Layout.fillWidth: true
+            height: 1
+            color: themeManager.border
+        }
+
+        Text {
             font.pixelSize: 16
             text: qsTr("Search Engine")
-            color: "#89b4fa"
+            color: themeManager.accent
             font.bold: true
         }
 
@@ -295,13 +367,13 @@ Rectangle {
             contentItem: Text {
                 font.pixelSize: 16
                 text: engineCombo.displayText
-                color: "#cdd6f4"
+                color: themeManager.text
                 verticalAlignment: Text.AlignVCenter
                 leftPadding: 8
             }
 
             background: Rectangle {
-                color: "#313244"
+                color: themeManager.surface
                 radius: 6
             }
 
@@ -320,7 +392,7 @@ Rectangle {
                 }
 
                 background: Rectangle {
-                    color: "#313244"
+                    color: themeManager.surface
                     radius: 6
                 }
             }
@@ -332,12 +404,12 @@ Rectangle {
                 contentItem: Text {
                     font.pixelSize: 16
                     text: modelData
-                    color: "#cdd6f4"
+                    color: themeManager.text
                     verticalAlignment: Text.AlignVCenter
                 }
 
                 background: Rectangle {
-                    color: highlighted ? "#45475a" : "transparent"
+                    color: highlighted ? themeManager.selection : "transparent"
                 }
             }
         }
@@ -345,7 +417,7 @@ Rectangle {
         Rectangle {
             Layout.fillWidth: true
             height: 1
-            color: "#45475a"
+            color: themeManager.border
         }
 
         RowLayout {
@@ -355,7 +427,7 @@ Rectangle {
             Text {
                 font.pixelSize: 16
                 text: qsTr("Plugin Management")
-                color: "#89b4fa"
+                color: themeManager.accent
                 font.bold: true
             }
 
@@ -373,13 +445,13 @@ Rectangle {
                     x: autoEnterCheck.leftPadding
                     y: autoEnterCheck.topPadding + (autoEnterCheck.availableHeight - height) / 2
                     radius: 4
-                    color: autoEnterCheck.down ? "#45475a" : "#313244"
-                    border.color: autoEnterCheck.checked ? "#89b4fa" : "#45475a"
+                    color: autoEnterCheck.down ? themeManager.surfacePressed : themeManager.surface
+                    border.color: autoEnterCheck.checked ? themeManager.borderFocus : themeManager.border
                     border.width: 2
                     Text {
                         anchors.centerIn: parent
                         text: "\u2713"
-                        color: "#89b4fa"
+                        color: themeManager.accent
                         font.pixelSize: 10
                         visible: autoEnterCheck.checked
                     }
@@ -387,7 +459,7 @@ Rectangle {
                 contentItem: Text {
                     font.pixelSize: 16
                     text: autoEnterCheck.text
-                    color: "#cdd6f4"
+                    color: themeManager.text
                     verticalAlignment: Text.AlignVCenter
                     leftPadding: autoEnterCheck.indicator.width + autoEnterCheck.spacing
                 }
@@ -411,13 +483,13 @@ Rectangle {
                         implicitHeight: 18
                         Layout.alignment: Qt.AlignVCenter
                         radius: 4
-                        color: checkMouse.pressed ? "#45475a" : "#313244"
-                        border.color: model.enabled ? "#89b4fa" : "#45475a"
+                        color: checkMouse.pressed ? themeManager.surfacePressed : themeManager.surface
+                        border.color: model.enabled ? themeManager.borderFocus : themeManager.border
                         border.width: 2
                         Text {
                             anchors.centerIn: parent
                             text: "\u2713"
-                            color: "#89b4fa"
+                            color: themeManager.accent
                             font.pixelSize: 10
                             visible: model.enabled
                         }
@@ -431,7 +503,7 @@ Rectangle {
                     Text {
                         font.pixelSize: 16
                         text: model.cmd
-                        color: "#89b4fa"
+                        color: themeManager.accent
                         font.bold: true
                         Layout.minimumWidth: 48
                         Layout.maximumWidth: 48
@@ -441,13 +513,13 @@ Rectangle {
                     Text {
                         font.pixelSize: 16
                         text: "|"
-                        color: "#45475a"
+                        color: themeManager.border
                         verticalAlignment: Text.AlignVCenter
                     }
                     Text {
                         font.pixelSize: 16
                         text: model.desc
-                        color: "#cdd6f4"
+                        color: themeManager.text
                         Layout.fillWidth: true
                         verticalAlignment: Text.AlignVCenter
                     }
@@ -489,13 +561,13 @@ Rectangle {
                 }
 
                 background: Rectangle {
-                    color: parent.down ? "#45475a" : "#313244"
+                    color: parent.down ? themeManager.surfacePressed : themeManager.surface
                     radius: 6
                 }
                 contentItem: Text {
                     font.pixelSize: 16
                     text: parent.text
-                    color: "#cdd6f4"
+                    color: themeManager.text
                     horizontalAlignment: Text.AlignHCenter
                     verticalAlignment: Text.AlignVCenter
                 }
@@ -513,6 +585,7 @@ Rectangle {
                     settings.hotkeyModifiers = mods
                     settings.hotkeyKey = indexToKey(keyCombo.currentIndex)
                     settings.searchEngine = engineCombo.currentValue
+                    settings.theme = ["system", "light", "dark"][themeCombo.currentIndex]
                     settings.autoStart = autoStartCheck.checked
                     root._originalModifiers = mods
                     root._originalKey = settings.hotkeyKey
@@ -526,13 +599,13 @@ Rectangle {
                 }
 
                 background: Rectangle {
-                    color: parent.down ? "#74c7ec" : "#89b4fa"
+                    color: parent.down ? themeManager.accentPressed : themeManager.accent
                     radius: 6
                 }
                 contentItem: Text {
                     font.pixelSize: 16
                     text: parent.text
-                    color: "#1e1e2e"
+                    color: themeManager.bg
                     font.bold: true
                     horizontalAlignment: Text.AlignHCenter
                     verticalAlignment: Text.AlignVCenter

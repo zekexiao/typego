@@ -10,6 +10,7 @@ class Settings : public QObject {
     Q_PROPERTY(QString searchEngine READ searchEngine WRITE setSearchEngine NOTIFY searchEngineChanged)
     Q_PROPERTY(bool pluginAutoEnter READ pluginAutoEnter WRITE setPluginAutoEnter NOTIFY pluginAutoEnterChanged)
     Q_PROPERTY(bool autoStart READ autoStart WRITE setAutoStart NOTIFY autoStartChanged)
+    Q_PROPERTY(QString theme READ theme WRITE setTheme NOTIFY themeChanged)
 
 public:
     explicit Settings(QObject *parent = nullptr);
@@ -37,12 +38,16 @@ public:
     bool autoStart() const;
     void setAutoStart(bool enabled);
 
+    QString theme() const;
+    void setTheme(const QString &theme);
+
 signals:
     void hotkeyModifiersChanged();
     void hotkeyKeyChanged();
     void searchEngineChanged();
     void pluginAutoEnterChanged();
     void autoStartChanged();
+    void themeChanged();
 
 private:
     QSettings m_settings;

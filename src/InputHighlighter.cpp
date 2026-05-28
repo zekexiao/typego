@@ -1,4 +1,5 @@
 #include "InputHighlighter.h"
+#include "ThemeManager.h"
 #include <QQuickTextDocument>
 #include <QTextDocument>
 #include <QFont>
@@ -16,23 +17,29 @@ void InputHighlighter::setup(QObject *textDocument)
     }
 }
 
+void InputHighlighter::setThemeManager(ThemeManager *themeManager)
+{
+    m_themeManager = themeManager;
+}
+
 void InputHighlighter::highlightBlock(const QString &text)
 {
+    QColor accent = m_themeManager ? m_themeManager->accent() : QColor(QStringLiteral("#89b4fa"));
+    QColor txt = m_themeManager ? m_themeManager->text() : QColor(QStringLiteral("#cdd6f4"));
+
     int spaceIdx = text.indexOf(' ');
     if (spaceIdx > 0) {
         QTextCharFormat cmdFormat;
-        cmdFormat.setForeground(QColor("#89b4fa"));
+        cmdFormat.setForeground(accent);
         cmdFormat.setFontWeight(QFont::Bold);
         setFormat(0, spaceIdx, cmdFormat);
 
-        // 参数部分保持默认颜色（cdd6f4）
         QTextCharFormat argsFormat;
-        argsFormat.setForeground(QColor("#cdd6f4"));
+        argsFormat.setForeground(txt);
         setFormat(spaceIdx, text.length() - spaceIdx, argsFormat);
     } else {
-        // 无空格时全部默认颜色
         QTextCharFormat defaultFormat;
-        defaultFormat.setForeground(QColor("#cdd6f4"));
+        defaultFormat.setForeground(txt);
         setFormat(0, text.length(), defaultFormat);
     }
 }

@@ -4,7 +4,7 @@ import QtQuick.Layouts
 
 Rectangle {
     id: root
-    color: "#1e1e2e"
+    color: themeManager.bg
 
     ColumnLayout {
         anchors.fill: parent
@@ -20,7 +20,7 @@ Rectangle {
                 Layout.fillWidth: true
                 placeholderText: qsTr("Enter a new task...")
                 font.pixelSize: 14
-                color: "#cdd6f4"
+                color: themeManager.text
                 wrapMode: TextEdit.NoWrap
                 topPadding: 8
                 bottomPadding: 8
@@ -28,9 +28,9 @@ Rectangle {
                 rightPadding: 12
 
                 background: Rectangle {
-                    color: "#313244"
+                    color: themeManager.surface
                     radius: 6
-                    border.color: newTaskField.activeFocus ? "#89b4fa" : "#45475a"
+                    border.color: newTaskField.activeFocus ? themeManager.borderFocus : themeManager.border
                     border.width: 2
                 }
 
@@ -53,12 +53,12 @@ Rectangle {
                 }
 
                 background: Rectangle {
-                    color: parent.down ? "#74c7ec" : "#89b4fa"
+                    color: parent.down ? themeManager.accentPressed : themeManager.accent
                     radius: 6
                 }
                 contentItem: Text {
                     text: parent.text
-                    color: "#1e1e2e"
+                    color: themeManager.bg
                     font.bold: true
                     font.pixelSize: 13
                     horizontalAlignment: Text.AlignHCenter
@@ -127,13 +127,13 @@ Rectangle {
                     Text {
                         anchors.centerIn: parent
                         text: (treeDelegate.expanded !== undefined && treeDelegate.expanded) ? "\u25bc" : "\u25b6"
-                        color: "#6c7086"
+                        color: themeManager.textSecondary
                         font.pixelSize: 12
                     }
                 }
 
                 background: Rectangle {
-                    color: (treeDelegate.current !== undefined && treeDelegate.current) ? "#313244" : (treeDelegate.hovered ? "#252537" : "transparent")
+                    color: (treeDelegate.current !== undefined && treeDelegate.current) ? themeManager.surface : (treeDelegate.hovered ? themeManager.hover : "transparent")
                     radius: 4
                 }
 
@@ -156,13 +156,13 @@ Rectangle {
                             x: taskCheckBox.leftPadding
                             y: taskCheckBox.topPadding + (taskCheckBox.availableHeight - height) / 2
                             radius: 4
-                            color: taskCheckBox.down ? "#45475a" : "#313244"
-                            border.color: taskCheckBox.checked ? "#89b4fa" : "#45475a"
+                            color: taskCheckBox.down ? themeManager.surfacePressed : themeManager.surface
+                            border.color: taskCheckBox.checked ? themeManager.borderFocus : themeManager.border
                             border.width: 2
                             Text {
                                 anchors.centerIn: parent
                                 text: "\u2713"
-                                color: "#89b4fa"
+                                color: themeManager.accent
                                 font.pixelSize: 11
                                 font.bold: true
                                 visible: cbIndicator.parent.checked
@@ -173,7 +173,7 @@ Rectangle {
                     TextField {
                         id: titleField
                         text: model.display !== undefined ? model.display : ""
-                        color: (model.checkState !== undefined && model.checkState === Qt.Checked) ? "#6c7086" : "#cdd6f4"
+                        color: (model.checkState !== undefined && model.checkState === Qt.Checked) ? themeManager.textSecondary : themeManager.text
                         font.pixelSize: 14
                         background: null
                         padding: 0
@@ -196,12 +196,12 @@ Rectangle {
                             if (tid !== "") taskTreeModel.addSubTask(tid, "")
                         }
                         background: Rectangle {
-                            color: parent.down ? "#45475a" : "transparent"
+                            color: parent.down ? themeManager.surfacePressed : "transparent"
                             radius: 4
                         }
                         contentItem: Text {
                             text: parent.text
-                            color: "#89b4fa"
+                            color: themeManager.accent
                             font.pixelSize: 16
                             font.bold: true
                             horizontalAlignment: Text.AlignHCenter
@@ -218,12 +218,12 @@ Rectangle {
                             if (tid !== "") taskTreeModel.removeTask(tid)
                         }
                         background: Rectangle {
-                            color: parent.down ? "#45475a" : "transparent"
+                            color: parent.down ? themeManager.surfacePressed : "transparent"
                             radius: 4
                         }
                         contentItem: Text {
                             text: parent.text
-                            color: "#f38ba8"
+                            color: themeManager.error
                             font.pixelSize: 16
                             font.bold: true
                             horizontalAlignment: Text.AlignHCenter

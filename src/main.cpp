@@ -15,11 +15,13 @@
 #include <QSvgRenderer>
 #include <QPainter>
 #include <QWKQuick/qwkquickglobal.h>
+#include <QStyleHints>
 #include "AppLauncher.h"
 #include "GlobalHotkey.h"
 #include "Settings.h"
 #include "InputHighlighter.h"
 #include "Logger.h"
+#include "ThemeManager.h"
 #include "plugins/PluginManager.h"
 #include "plugins/AppPlugin.h"
 #include "plugins/CalcPlugin.h"
@@ -64,7 +66,13 @@ int main(int argc, char *argv[])
 
     AppLauncher launcher;
     Settings settings;
+    ThemeManager themeManager;
     GlobalHotkey hotkey;
+
+    themeManager.setTheme(settings.theme());
+    QObject::connect(&settings, &Settings::themeChanged, &themeManager, [&]() {
+        themeManager.setTheme(settings.theme());
+    });
 
     PluginManager pluginManager;
     pluginManager.registerPlugin(new AppPlugin(&launcher, &pluginManager));
@@ -80,6 +88,7 @@ int main(int argc, char *argv[])
     QWK::registerTypes(&engine);
     engine.rootContext()->setContextProperty("appLauncher", &launcher);
     engine.rootContext()->setContextProperty("settings", &settings);
+    engine.rootContext()->setContextProperty("themeManager", &themeManager);
     engine.rootContext()->setContextProperty("pluginManager", &pluginManager);
 
     // 自动注入所有插件的上下文属性
@@ -93,7 +102,13 @@ int main(int argc, char *argv[])
     }
 
     InputHighlighter inputHighlighter;
+    inputHighlighter.setThemeManager(&themeManager);
     engine.rootContext()->setContextProperty("inputHighlighter", &inputHighlighter);
+
+    // Listen for system color scheme changes
+    QObject::connect(QGuiApplication::styleHints(), &QStyleHints::colorSchemeChanged, &themeManager, [&]() {
+        themeManager.refresh();
+    });
 
     engine.load(QUrl(QStringLiteral("qrc:/qml/main.qml")));
     if (engine.rootObjects().isEmpty()) {

@@ -8,11 +8,14 @@ Window {
     id: root
     objectName: "mainWindow"
     width: 640
-    height: 400
+    minimumWidth: 640
+    minimumHeight: 140
+    maximumHeight: 600
+    height: titleBar.height + contentLayout.implicitHeight + 40
     visible: false
     title: "neoStart"
 
-    color: "#1e1e2e"
+    color: themeManager.bg
 
     property var results: []
     property int selectedIndex: 0
@@ -68,7 +71,11 @@ Window {
                 currentCmd = ""
                 customViewVisible = false
                 customViewSource = ""
-                results = appLauncher.search(t)
+                if (t.trim().length === 0) {
+                    results = []
+                } else {
+                    results = appLauncher.search(t)
+                }
             }
         }
         // 无结果时提供浏览器搜索
@@ -99,14 +106,28 @@ Window {
         color: "transparent"
         Component.onCompleted: windowAgent.setTitleBar(titleBar)
 
-        Text {
+        Image {
+            id: titleIcon
             anchors {
                 verticalCenter: parent.verticalCenter
                 left: parent.left
                 leftMargin: 12
             }
+            source: "qrc:/assets/icon.svg"
+            width: 18
+            height: 18
+            sourceSize.width: 18
+            sourceSize.height: 18
+        }
+
+        Text {
+            anchors {
+                verticalCenter: parent.verticalCenter
+                left: titleIcon.right
+                leftMargin: 8
+            }
             text: root.title
-            color: "#cdd6f4"
+            color: themeManager.text
             font.pixelSize: 13
         }
 
@@ -121,12 +142,12 @@ Window {
                 id: closeButton
                 width: 46
                 height: parent.height
-                color: closeButtonArea.containsMouse ? "#e81123" : "transparent"
+                color: closeButtonArea.containsMouse ? themeManager.closeButtonHover : "transparent"
 
                 Text {
                     anchors.centerIn: parent
                     text: "\u00D7"
-                    color: "#cdd6f4"
+                    color: themeManager.text
                     font.pixelSize: 16
                 }
 
@@ -169,7 +190,7 @@ Window {
     Component.onCompleted: {
         windowAgent.setup(root)
         windowAgent.setWindowAttribute("dark-mode", true)
-        results = appLauncher.search("")
+        results = []
         searchField.forceActiveFocus()
         root.visible = true
     }
@@ -206,8 +227,8 @@ Window {
     }
 
     ColumnLayout {
+        id: contentLayout
         anchors.top: titleBar.bottom
-        anchors.bottom: parent.bottom
         anchors.left: parent.left
         anchors.right: parent.right
         anchors.margins: 20
@@ -220,7 +241,7 @@ Window {
                 placeholderText: qsTr("Search apps or type cmd space args...")
                 text: ""
                 font.pixelSize: 18
-                color: "#cdd6f4"
+                color: themeManager.text
                 wrapMode: TextEdit.NoWrap
                 topPadding: 12
                 bottomPadding: 12
@@ -228,9 +249,9 @@ Window {
                 rightPadding: 12
 
                 background: Rectangle {
-                    color: "#313244"
+                    color: themeManager.surface
                     radius: 8
-                    border.color: searchField.activeFocus ? "#89b4fa" : "#45475a"
+                    border.color: searchField.activeFocus ? themeManager.borderFocus : themeManager.border
                     border.width: 2
                 }
 
@@ -256,7 +277,7 @@ Window {
         Rectangle {
             Layout.fillWidth: true
             height: commandMode ? 28 : 0
-            color: "#252538"
+            color: themeManager.hover
             radius: 4
             visible: commandMode
             clip: true
@@ -269,14 +290,14 @@ Window {
 
                 Text {
                     text: currentCmd
-                    color: "#89b4fa"
+                    color: themeManager.accent
                     font.pixelSize: 13
                     font.bold: true
                 }
 
                 Text {
                     text: "|"
-                    color: "#45475a"
+                    color: themeManager.border
                     font.pixelSize: 13
                     visible: cmdDesc.text.length > 0
                 }
@@ -289,9 +310,9 @@ Window {
                         return desc ? desc : qsTr("Unknown command")
                     }
                     color: {
-                        if (!commandMode) return "#6c7086"
+                        if (!commandMode) return themeManager.textSecondary
                         var desc = pluginManager.commandDescription(currentCmd)
-                        return desc ? "#6c7086" : "#f38ba8"
+                        return desc ? themeManager.textSecondary : themeManager.error
                     }
                     font.pixelSize: 13
                     Layout.fillWidth: true
@@ -303,7 +324,7 @@ Window {
                         var spaceIdx = searchField.text.indexOf(' ')
                         return spaceIdx > 0 ? searchField.text.substring(spaceIdx + 1) : ""
                     }
-                    color: "#cdd6f4"
+                    color: themeManager.text
                     font.pixelSize: 13
                     horizontalAlignment: Text.AlignRight
                 }
@@ -312,7 +333,7 @@ Window {
 
         StackLayout {
             Layout.fillWidth: true
-            Layout.fillHeight: true
+            Layout.preferredHeight: customViewVisible ? 320 : (results.length > 0 ? Math.min(listView.contentHeight, 400) : 0)
             currentIndex: customViewVisible ? 1 : 0
 
             // 0: 默认列表视图
@@ -330,7 +351,7 @@ Window {
                     width: listView.width
                     height: 48
                     radius: 6
-                    color: index === selectedIndex ? "#45475a" : "transparent"
+                    color: index === selectedIndex ? themeManager.selection : "transparent"
 
                     RowLayout {
                         anchors.fill: parent
@@ -351,14 +372,14 @@ Window {
                             width: 32
                             height: 32
                             radius: 16
-                            color: "#585b70"
+                            color: themeManager.iconPlaceholder
                             visible: !modelData.icon || modelData.icon.length === 0
                             Layout.alignment: Qt.AlignVCenter
 
                             Text {
                                 anchors.centerIn: parent
                                 text: (modelData.name !== undefined ? modelData.name : modelData.title).charAt(0).toUpperCase()
-                                color: "#cdd6f4"
+                                color: themeManager.text
                                 font.pixelSize: 14
                                 font.bold: true
                             }
@@ -366,14 +387,14 @@ Window {
 
                         Text {
                             text: modelData.title !== undefined ? modelData.title : modelData.name
-                            color: "#cdd6f4"
+                            color: themeManager.text
                             font.pixelSize: 15
                             Layout.fillWidth: true
                         }
 
                         Text {
                             text: modelData.subtitle !== undefined ? modelData.subtitle : modelData.desc
-                            color: "#6c7086"
+                            color: themeManager.textSecondary
                             font.pixelSize: 12
                         }
                     }
