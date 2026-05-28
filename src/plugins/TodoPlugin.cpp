@@ -19,13 +19,6 @@ QVariantList TodoPlugin::query(const QString &args)
     item["title"] = tr("Task Management");
     item["subtitle"] = tr("Manage TODO list and subtasks");
     item["icon"] = "";
-
-    QVariantMap action;
-    action["type"] = QString::fromUtf8(u8"showCustomView");
-    action["data"] = QString::fromUtf8(u8"qrc:/qml/TodoView.qml");
-    action["plugin"] = command();
-    item["action"] = action;
-
     results.append(item);
     return results;
 }
@@ -34,4 +27,11 @@ bool TodoPlugin::execute(const QVariantMap &action)
 {
     Q_UNUSED(action)
     return true;
+}
+
+QHash<QString, QObject*> TodoPlugin::contextProperties() const
+{
+    QHash<QString, QObject*> props;
+    props["taskTreeModel"] = m_model;
+    return props;
 }

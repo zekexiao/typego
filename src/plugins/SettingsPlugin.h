@@ -18,4 +18,6 @@ public:
     QString description() const override { return tr("Open Settings"); }
     QVariantList query(const QString &args) override;
     bool execute(const QVariantMap &action) override;
+
+    QString viewUrl() const override { return QStringLiteral("qrc:/qml/SettingsView.qml"); }
 };

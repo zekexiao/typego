@@ -316,19 +316,7 @@ Window {
                 spacing: 4
 
                 function launchCurrent() {
-                    if (selectedIndex >= 0 && selectedIndex < results.length) {
-                        var item = results[selectedIndex]
-                        if (item.action && item.action.type && item.action.type !== "none") {
-                            if (item.action.type === "showCustomView") {
-                                customViewVisible = true
-                                customViewSource = item.action.data || ""
-                                return
-                            }
-                            pluginManager.executeAction(item.action)
-                        } else if (item.path) {
-                            appLauncher.launch(item.path)
-                        }
-                    }
+                    root.launchCurrent()
                 }
 
                 delegate: Rectangle {
@@ -416,12 +404,16 @@ Window {
     function launchCurrent() {
         if (selectedIndex >= 0 && selectedIndex < results.length) {
             var item = results[selectedIndex]
-            if (item.action && item.action.type && item.action.type !== "none") {
-                if (item.action.type === "showCustomView") {
+            // 命令模式下优先检查是否有自定义视图
+            if (commandMode && currentCmd.length > 0) {
+                var viewUrl = pluginManager.viewUrlForCommand(currentCmd)
+                if (viewUrl.length > 0) {
                     customViewVisible = true
-                    customViewSource = item.action.data || ""
+                    customViewSource = viewUrl
                     return
                 }
+            }
+            if (item.action && item.action.type && item.action.type !== "none") {
                 pluginManager.executeAction(item.action)
             } else if (item.path) {
                 appLauncher.launch(item.path)

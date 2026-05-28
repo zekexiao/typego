@@ -20,6 +20,9 @@ public:
     QVariantList query(const QString &args) override;
     bool execute(const QVariantMap &action) override;
 
+    QString viewUrl() const override { return QStringLiteral("qrc:/qml/TodoView.qml"); }
+    QHash<QString, QObject*> contextProperties() const override;
+
     TaskTreeModel *treeModel() const { return m_model; }
 
 private:

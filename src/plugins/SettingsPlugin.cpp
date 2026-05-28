@@ -15,13 +15,6 @@ QVariantList SettingsPlugin::query(const QString &args)
     item["title"] = tr("Settings");
     item["subtitle"] = tr("Modify global hotkey, window style and other settings");
     item["icon"] = "";
-
-    QVariantMap action;
-    action["type"] = QString::fromUtf8(u8"showCustomView");
-    action["data"] = QString::fromUtf8(u8"qrc:/qml/SettingsView.qml");
-    action["plugin"] = command();
-    item["action"] = action;
-
     results.append(item);
     return results;
 }

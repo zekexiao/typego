@@ -325,40 +325,60 @@ ScrollView {
             Repeater {
                 model: ListModel { id: pluginModel }
 
-                delegate: CheckBox {
+                delegate: RowLayout {
                     Layout.fillWidth: true
-                    checked: model.enabled
-                    padding: 0
-                    spacing: 6
-                    onCheckedChanged: {
-                        if (model.enabled !== checked) {
-                            pluginModel.setProperty(index, "enabled", checked)
-                        }
-                    }
-                    indicator: Rectangle {
+                    spacing: 8
+
+                    Rectangle {
                         id: pluginIndicator
                         implicitWidth: 18
                         implicitHeight: 18
-                        x: parent.leftPadding
-                        y: parent.topPadding + (parent.availableHeight - height) / 2
+                        Layout.alignment: Qt.AlignVCenter
                         radius: 4
-                        color: parent.down ? "#45475a" : "#313244"
-                        border.color: parent.checked ? "#89b4fa" : "#45475a"
+                        color: checkMouse.pressed ? "#45475a" : "#313244"
+                        border.color: model.enabled ? "#89b4fa" : "#45475a"
                         border.width: 2
                         Text {
                             anchors.centerIn: parent
                             text: "\u2713"
                             color: "#89b4fa"
                             font.pixelSize: 10
-                            visible: pluginIndicator.parent.checked
+                            visible: model.enabled
+                        }
+                        MouseArea {
+                            id: checkMouse
+                            anchors.fill: parent
+                            onClicked: pluginModel.setProperty(index, "enabled", !model.enabled)
                         }
                     }
-                    contentItem: Text {
+
+                    Text {
                         font.pixelSize: 16
-                        text: model.cmd + "  |  " + model.desc
-                        color: "#cdd6f4"
+                        text: model.cmd
+                        color: "#89b4fa"
+                        font.bold: true
+                        Layout.minimumWidth: 48
+                        Layout.maximumWidth: 48
+                        horizontalAlignment: Text.AlignRight
                         verticalAlignment: Text.AlignVCenter
-                        leftPadding: parent.indicator.width + parent.spacing
+                    }
+                    Text {
+                        font.pixelSize: 16
+                        text: "|"
+                        color: "#45475a"
+                        verticalAlignment: Text.AlignVCenter
+                    }
+                    Text {
+                        font.pixelSize: 16
+                        text: model.desc
+                        color: "#cdd6f4"
+                        Layout.fillWidth: true
+                        verticalAlignment: Text.AlignVCenter
+                    }
+
+                    MouseArea {
+                        anchors.fill: parent
+                        onClicked: pluginModel.setProperty(index, "enabled", !model.enabled)
                     }
                 }
             }

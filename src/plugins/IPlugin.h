@@ -3,6 +3,7 @@
 #include <QObject>
 #include <QVariantList>
 #include <QVariantMap>
+#include <QHash>
 #include <QString>
 
 /**
@@ -34,4 +35,11 @@ public:
     /// 执行某个结果项的动作
     /// action 来自 query 返回结果中的 action 字段
     virtual bool execute(const QVariantMap &action) = 0;
+
+    /// 可选：如果插件提供自定义视图，返回 QML 资源路径（如 "qrc:/qml/TodoView.qml"）
+    virtual QString viewUrl() const { return QString(); }
+
+    /// 可选：返回需要注入到 QML 引擎上下文的对象
+    /// key 为属性名，value 为 QObject 指针
+    virtual QHash<QString, QObject*> contextProperties() const { return {}; }
 };

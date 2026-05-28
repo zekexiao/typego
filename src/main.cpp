@@ -76,11 +76,20 @@ int main(int argc, char *argv[])
     pluginManager.registerPlugin(todoPlugin);
 
     QQmlApplicationEngine engine;
-    engine.rootContext()->setContextProperty("taskTreeModel", todoPlugin->treeModel());
     QWK::registerTypes(&engine);
     engine.rootContext()->setContextProperty("appLauncher", &launcher);
     engine.rootContext()->setContextProperty("settings", &settings);
     engine.rootContext()->setContextProperty("pluginManager", &pluginManager);
+
+    // 自动注入所有插件的上下文属性
+    for (const QString &cmd : pluginManager.commands()) {
+        IPlugin *p = pluginManager.plugin(cmd);
+        if (!p) continue;
+        QHash<QString, QObject*> props = p->contextProperties();
+        for (auto it = props.begin(); it != props.end(); ++it) {
+            engine.rootContext()->setContextProperty(it.key(), it.value());
+        }
+    }
 
     InputHighlighter inputHighlighter;
     engine.rootContext()->setContextProperty("inputHighlighter", &inputHighlighter);

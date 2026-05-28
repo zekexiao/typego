@@ -100,3 +100,15 @@ QString PluginManager::commandDescription(const QString &cmd) const
     if (plugin) return plugin->description();
     return QString();
 }
+
+QString PluginManager::viewUrlForCommand(const QString &cmd) const
+{
+    IPlugin *plugin = m_plugins.value(cmd.toLower(), nullptr);
+    if (plugin) return plugin->viewUrl();
+    return QString();
+}
+
+IPlugin *PluginManager::plugin(const QString &cmd) const
+{
+    return m_plugins.value(cmd.toLower(), nullptr);
+}
