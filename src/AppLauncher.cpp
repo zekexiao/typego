@@ -1,4 +1,5 @@
 #include "AppLauncher.h"
+#include "utils/PinyinConverter.h"
 #include <QProcess>
 #include <QDesktopServices>
 #include <QUrl>
@@ -24,16 +25,28 @@ AppLauncher::AppLauncher(QObject *parent)
     scanStartMenu();
 }
 
+static AppItem makeAppItem(const QString &name, const QString &path, const QString &desc, const QString &iconPath = "")
+{
+    AppItem item;
+    item.name = name;
+    item.path = path;
+    item.desc = desc;
+    item.iconPath = iconPath;
+    item.pinyin = PinyinConverter::instance().toPinyin(name);
+    item.pinyinAcronym = PinyinConverter::instance().toAcronym(name);
+    return item;
+}
+
 void AppLauncher::addBuiltinApps()
 {
-    m_apps.append({ tr("Notepad"), "notepad", tr("Windows Notepad"), "" });
-    m_apps.append({ tr("Calculator"), "calc", tr("Windows Calculator"), "" });
-    m_apps.append({ tr("Paint"), "mspaint", tr("Windows Paint"), "" });
-    m_apps.append({ tr("Command Prompt"), "cmd", tr("CMD Command Line"), "" });
-    m_apps.append({ tr("File Explorer"), "explorer", tr("File Explorer"), "" });
-    m_apps.append({ tr("Task Manager"), "taskmgr", tr("Windows Task Manager"), "" });
-    m_apps.append({ tr("Settings"), "ms-settings:", tr("Windows Settings"), "" });
-    m_apps.append({ tr("Browser"), "https://www.bing.com", tr("Open Bing Search"), "" });
+    m_apps.append(makeAppItem(tr("Notepad"), "notepad", tr("Windows Notepad")));
+    m_apps.append(makeAppItem(tr("Calculator"), "calc", tr("Windows Calculator")));
+    m_apps.append(makeAppItem(tr("Paint"), "mspaint", tr("Windows Paint")));
+    m_apps.append(makeAppItem(tr("Command Prompt"), "cmd", tr("CMD Command Line")));
+    m_apps.append(makeAppItem(tr("File Explorer"), "explorer", tr("File Explorer")));
+    m_apps.append(makeAppItem(tr("Task Manager"), "taskmgr", tr("Windows Task Manager")));
+    m_apps.append(makeAppItem(tr("Settings"), "ms-settings:", tr("Windows Settings")));
+    m_apps.append(makeAppItem(tr("Browser"), "https://www.bing.com", tr("Open Bing Search")));
 }
 
 QString AppLauncher::extractIcon(const QString &filePath)
@@ -91,7 +104,7 @@ void AppLauncher::scanStartMenu()
             if (seen.contains(name)) continue;
             seen.insert(name);
             QString icon = extractIcon(fi.absoluteFilePath());
-            m_apps.append({ name, fi.absoluteFilePath(), tr("Start Menu"), icon });
+            m_apps.append(makeAppItem(name, fi.absoluteFilePath(), tr("Start Menu"), icon));
         }
 
         QFileInfoList subdirs = dir.entryInfoList(QDir::Dirs | QDir::NoDotAndDotDot);
@@ -103,7 +116,7 @@ void AppLauncher::scanStartMenu()
                 if (seen.contains(name)) continue;
                 seen.insert(name);
                 QString icon = extractIcon(fi.absoluteFilePath());
-                m_apps.append({ name, fi.absoluteFilePath(), tr("Start Menu") + " / " + sdi.fileName(), icon });
+                m_apps.append(makeAppItem(name, fi.absoluteFilePath(), tr("Start Menu") + " / " + sdi.fileName(), icon));
             }
         }
     }
@@ -120,6 +133,8 @@ QVariantList AppLauncher::search(const QString &query)
         if (!match) {
             if (app.name.toLower().contains(q)) match = true;
             else if (app.desc.toLower().contains(q)) match = true;
+            else if (app.pinyin.contains(q)) match = true;
+            else if (app.pinyinAcronym.contains(q)) match = true;
         }
         if (match) {
             QVariantMap m;

@@ -10,6 +10,8 @@ struct AppItem {
     QString path;
     QString desc;
     QString iconPath;
+    QString pinyin;
+    QString pinyinAcronym;
 };
 
 class AppLauncher : public QObject {

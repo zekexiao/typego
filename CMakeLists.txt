@@ -37,6 +37,7 @@ qt_add_executable(neoStart
     src/GlobalHotkey.cpp
     src/Settings.cpp
     src/Logger.cpp
+    src/utils/PinyinConverter.cpp
     src/plugins/IPlugin.cpp
     src/plugins/PluginManager.cpp
     src/plugins/AppPlugin.cpp
