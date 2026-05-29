@@ -16,6 +16,10 @@
 #include <QPainter>
 #include <QWKQuick/qwkquickglobal.h>
 #include <QStyleHints>
+#include <QQmlComponent>
+#include <QScreen>
+#include <QQuickView>
+#include <QQuickItem>
 #include "AppLauncher.h"
 #include "GlobalHotkey.h"
 #include "Settings.h"
@@ -122,6 +126,45 @@ int main(int argc, char *argv[])
         return -1;
     }
     window->setIcon(appIcon);
+
+    // 浮动图标窗口
+    QQuickView *floatView = new QQuickView();
+    floatView->engine()->rootContext()->setContextProperty("themeManager", &themeManager);
+    floatView->engine()->rootContext()->setContextProperty("settings", &settings);
+    floatView->setSource(QUrl(QStringLiteral("qrc:/qml/FloatIcon.qml")));
+    floatView->setFlags(Qt::FramelessWindowHint | Qt::WindowStaysOnTopHint | Qt::Tool);
+    floatView->setColor(Qt::transparent);
+    floatView->setWidth(48);
+    floatView->setHeight(48);
+
+    QObject *floatRoot = floatView->rootObject();
+    if (floatRoot) {
+        bool ok = floatRoot->setProperty("mainWindow", QVariant::fromValue(window));
+        if (!ok) qWarning() << "Failed to set mainWindow property on float window";
+    }
+
+    QPoint pos = settings.floatIconPos();
+    QScreen *screen = QGuiApplication::primaryScreen();
+    if (screen && (pos.x() < 0 || pos.y() < 0)) {
+        QRect geo = screen->availableGeometry();
+        floatView->setX(geo.right() - 60);
+        floatView->setY(geo.bottom() - 60);
+    } else {
+        floatView->setX(pos.x());
+        floatView->setY(pos.y());
+    }
+
+    auto updateFloatVisible = [&]() {
+        if (floatView) {
+            if (settings.showFloatIcon()) {
+                floatView->show();
+            } else {
+                floatView->hide();
+            }
+        }
+    };
+    QObject::connect(&settings, &Settings::showFloatIconChanged, floatView, updateFloatVisible);
+    updateFloatVisible();
 
     // 单例模式：第二个实例启动时，第一个实例收到通知并转到前台
     QObject::connect(&app, &SingleApplication::instanceStarted, window, [window]() {

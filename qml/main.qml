@@ -30,6 +30,22 @@ Window {
         onTriggered: performSearch()
     }
 
+    Timer {
+        id: blurHideTimer
+        interval: 50
+        onTriggered: {
+            if (!root.active && settings.autoHideOnFocusLoss) {
+                root.hide()
+            }
+        }
+    }
+
+    onActiveChanged: {
+        if (!active && settings.autoHideOnFocusLoss) {
+            blurHideTimer.start()
+        }
+    }
+
     function searchUrl(query) {
         var engine = settings.searchEngine
         if (engine === "Google")

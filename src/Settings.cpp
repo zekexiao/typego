@@ -133,6 +133,43 @@ void Settings::setTheme(const QString &theme)
     emit themeChanged();
 }
 
+bool Settings::showFloatIcon() const
+{
+    return m_settings.value("showFloatIcon", true).toBool();
+}
+
+void Settings::setShowFloatIcon(bool enabled)
+{
+    if (showFloatIcon() == enabled) return;
+    m_settings.setValue("showFloatIcon", enabled);
+    emit showFloatIconChanged();
+}
+
+QPoint Settings::floatIconPos() const
+{
+    int x = m_settings.value("floatIconX", -1).toInt();
+    int y = m_settings.value("floatIconY", -1).toInt();
+    return QPoint(x, y);
+}
+
+void Settings::setFloatIconPos(const QPoint &pos)
+{
+    m_settings.setValue("floatIconX", pos.x());
+    m_settings.setValue("floatIconY", pos.y());
+}
+
+bool Settings::autoHideOnFocusLoss() const
+{
+    return m_settings.value("autoHideOnFocusLoss", false).toBool();
+}
+
+void Settings::setAutoHideOnFocusLoss(bool enabled)
+{
+    if (autoHideOnFocusLoss() == enabled) return;
+    m_settings.setValue("autoHideOnFocusLoss", enabled);
+    emit autoHideOnFocusLossChanged();
+}
+
 void Settings::syncAutoStartRegistry(bool enabled)
 {
 #ifdef Q_OS_WIN

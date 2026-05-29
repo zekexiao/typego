@@ -11,6 +11,8 @@ class Settings : public QObject {
     Q_PROPERTY(bool pluginAutoEnter READ pluginAutoEnter WRITE setPluginAutoEnter NOTIFY pluginAutoEnterChanged)
     Q_PROPERTY(bool autoStart READ autoStart WRITE setAutoStart NOTIFY autoStartChanged)
     Q_PROPERTY(QString theme READ theme WRITE setTheme NOTIFY themeChanged)
+    Q_PROPERTY(bool showFloatIcon READ showFloatIcon WRITE setShowFloatIcon NOTIFY showFloatIconChanged)
+    Q_PROPERTY(bool autoHideOnFocusLoss READ autoHideOnFocusLoss WRITE setAutoHideOnFocusLoss NOTIFY autoHideOnFocusLossChanged)
 
 public:
     explicit Settings(QObject *parent = nullptr);
@@ -41,6 +43,14 @@ public:
     QString theme() const;
     void setTheme(const QString &theme);
 
+    bool showFloatIcon() const;
+    void setShowFloatIcon(bool enabled);
+    Q_INVOKABLE QPoint floatIconPos() const;
+    Q_INVOKABLE void setFloatIconPos(const QPoint &pos);
+
+    bool autoHideOnFocusLoss() const;
+    void setAutoHideOnFocusLoss(bool enabled);
+
 signals:
     void hotkeyModifiersChanged();
     void hotkeyKeyChanged();
@@ -48,6 +58,8 @@ signals:
     void pluginAutoEnterChanged();
     void autoStartChanged();
     void themeChanged();
+    void showFloatIconChanged();
+    void autoHideOnFocusLossChanged();
 
 private:
     QSettings m_settings;

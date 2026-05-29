@@ -236,6 +236,21 @@
         <source>Dark</source>
         <translation>深色</translation>
     </message>
+    <message>
+        <location filename="../qml/SettingsView.qml" line="270" />
+        <source>Show float icon</source>
+        <translation>显示浮动图标</translation>
+    </message>
+    <message>
+        <location filename="../qml/FloatIcon.qml" line="68" />
+        <source>Hide float icon</source>
+        <translation>隐藏浮动图标</translation>
+    </message>
+    <message>
+        <location filename="../qml/SettingsView.qml" line="282" />
+        <source>Auto hide on blur</source>
+        <translation>失去焦点自动隐藏</translation>
+    </message>
 </context>
 <context>
     <name>PinnedApps</name>

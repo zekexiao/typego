@@ -53,6 +53,8 @@ Rectangle {
         engineCombo.currentIndex = idx >= 0 ? idx : 0
         autoEnterCheck.checked = settings.pluginAutoEnter
         autoStartCheck.checked = settings.autoStart
+        floatIconCheck.checked = settings.showFloatIcon
+        autoHideCheck.checked = settings.autoHideOnBlur
         var themes = ["system", "light", "dark"]
         var tidx = themes.indexOf(_originalTheme)
         themeCombo.currentIndex = tidx >= 0 ? tidx : 0
@@ -275,6 +277,70 @@ Rectangle {
                 color: themeManager.text
                 verticalAlignment: Text.AlignVCenter
                 leftPadding: autoStartCheck.indicator.width + autoStartCheck.spacing
+            }
+        }
+
+        CheckBox {
+            id: floatIconCheck
+            text: qsTr("Show float icon")
+            padding: 0
+            spacing: 6
+            checked: settings.showFloatIcon
+            indicator: Rectangle {
+                implicitWidth: 18
+                implicitHeight: 18
+                x: floatIconCheck.leftPadding
+                y: floatIconCheck.topPadding + (floatIconCheck.availableHeight - height) / 2
+                radius: 4
+                color: floatIconCheck.down ? themeManager.surfacePressed : themeManager.surface
+                border.color: floatIconCheck.checked ? themeManager.borderFocus : themeManager.border
+                border.width: 2
+                Text {
+                    anchors.centerIn: parent
+                    text: "\u2713"
+                    color: themeManager.accent
+                    font.pixelSize: 10
+                    visible: floatIconCheck.checked
+                }
+            }
+            contentItem: Text {
+                font.pixelSize: 16
+                text: floatIconCheck.text
+                color: themeManager.text
+                verticalAlignment: Text.AlignVCenter
+                leftPadding: floatIconCheck.indicator.width + floatIconCheck.spacing
+            }
+        }
+
+        CheckBox {
+            id: autoHideCheck
+            text: qsTr("Auto hide on blur")
+            padding: 0
+            spacing: 6
+            checked: settings.autoHideOnFocusLoss
+            indicator: Rectangle {
+                implicitWidth: 18
+                implicitHeight: 18
+                x: autoHideCheck.leftPadding
+                y: autoHideCheck.topPadding + (autoHideCheck.availableHeight - height) / 2
+                radius: 4
+                color: autoHideCheck.down ? themeManager.surfacePressed : themeManager.surface
+                border.color: autoHideCheck.checked ? themeManager.borderFocus : themeManager.border
+                border.width: 2
+                Text {
+                    anchors.centerIn: parent
+                    text: "\u2713"
+                    color: themeManager.accent
+                    font.pixelSize: 10
+                    visible: autoHideCheck.checked
+                }
+            }
+            contentItem: Text {
+                font.pixelSize: 16
+                text: autoHideCheck.text
+                color: themeManager.text
+                verticalAlignment: Text.AlignVCenter
+                leftPadding: autoHideCheck.indicator.width + autoHideCheck.spacing
             }
         }
 
@@ -587,6 +653,8 @@ Rectangle {
                     settings.searchEngine = engineCombo.currentValue
                     settings.theme = ["system", "light", "dark"][themeCombo.currentIndex]
                     settings.autoStart = autoStartCheck.checked
+                    settings.showFloatIcon = floatIconCheck.checked
+                    settings.autoHideOnFocusLoss = autoHideCheck.checked
                     root._originalModifiers = mods
                     root._originalKey = settings.hotkeyKey
                     root._originalSearchEngine = settings.searchEngine
