@@ -170,6 +170,18 @@ void Settings::setAutoHideOnFocusLoss(bool enabled)
     emit autoHideOnFocusLossChanged();
 }
 
+bool Settings::appLaunchRequiresDoubleClick() const
+{
+    return m_settings.value("appLaunchRequiresDoubleClick", true).toBool();
+}
+
+void Settings::setAppLaunchRequiresDoubleClick(bool enabled)
+{
+    if (appLaunchRequiresDoubleClick() == enabled) return;
+    m_settings.setValue("appLaunchRequiresDoubleClick", enabled);
+    emit appLaunchRequiresDoubleClickChanged();
+}
+
 void Settings::syncAutoStartRegistry(bool enabled)
 {
 #ifdef Q_OS_WIN

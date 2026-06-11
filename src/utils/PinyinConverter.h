@@ -3,6 +3,7 @@
 #include <QString>
 #include <QStringList>
 
+// 提供中文文本的拼音和首字母转换。
 class PinyinConverter {
 public:
     static PinyinConverter &instance();

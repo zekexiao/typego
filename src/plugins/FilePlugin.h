@@ -2,12 +2,7 @@
 
 #include "IPlugin.h"
 
-/**
- * @brief 鏂囦欢鎼滅储鎻掍欢锛堝熀浜?Voidtools Everything SDK锛? *
- * 鍛戒护: file
- * 绀轰緥: file readme.txt
- *
- * 瑕佹眰锛欵verything 鏈嶅姟姝ｅ湪杩愯锛屼笖 Everything64.dll 宸查儴缃? */
+// everything 文件搜索
 class FilePlugin : public IPlugin {
     Q_OBJECT
 public:

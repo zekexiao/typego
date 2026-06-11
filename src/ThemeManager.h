@@ -3,6 +3,7 @@
 #include <QObject>
 #include <QColor>
 
+// 管理当前主题及界面调色板。
 class ThemeManager : public QObject {
     Q_OBJECT
     Q_PROPERTY(QString theme READ theme WRITE setTheme NOTIFY themeChanged)
@@ -27,6 +28,7 @@ public:
     explicit ThemeManager(QObject *parent = nullptr);
 
     QString theme() const;
+    QString styleSheet() const;
     void setTheme(const QString &theme);
     void refresh();
 

@@ -2,9 +2,7 @@
 
 #include "IPlugin.h"
 
-/**
- * Calculator plugin backed by a small recursive-descent parser.
- */
+// 使用递归下降解析器计算表达式的插件。
 class CalcPlugin : public IPlugin {
     Q_OBJECT
 public:

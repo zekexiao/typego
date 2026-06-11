@@ -4,24 +4,26 @@
 
 class PluginManager;
 class Settings;
-class ThemeManager;
 class QWidget;
 
+// 提供设置入口和设置界面的插件。
 class SettingsPlugin : public IPlugin {
     Q_OBJECT
 public:
-    SettingsPlugin(Settings *settings, PluginManager *pluginManager, ThemeManager *themeManager, QObject *parent = nullptr);
+    SettingsPlugin(Settings *settings, PluginManager *pluginManager, QObject *parent = nullptr);
 
     QString command() const override { return QStringLiteral("set"); }
+    QStringList aliases() const override { return {QStringLiteral("user"), QStringLiteral("plugin")}; }
     QString description() const override { return tr("Open Settings"); }
     QVariantList query(const QString &args) override;
     bool execute(const QVariantMap &action) override;
+    void activateCommand(const QString &command) override;
     QWidget *viewUrl() override;
 
 private:
     Settings *m_settings;
     PluginManager *m_pluginManager;
-    ThemeManager *m_themeManager;
     QWidget *m_view = nullptr;
+    QString m_activeCommand = QStringLiteral("set");
 };
 

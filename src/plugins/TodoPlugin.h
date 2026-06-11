@@ -6,6 +6,7 @@
 
 class QWidget;
 
+// 提供任务管理命令和任务视图的插件。
 class TodoPlugin : public IPlugin {
     Q_OBJECT
 public:

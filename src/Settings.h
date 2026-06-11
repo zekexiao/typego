@@ -3,6 +3,7 @@
 #include <QObject>
 #include <QSettings>
 
+// 统一读取、保存并通知应用设置变更。
 class Settings : public QObject {
     Q_OBJECT
     Q_PROPERTY(int hotkeyModifiers READ hotkeyModifiers WRITE setHotkeyModifiers NOTIFY hotkeyModifiersChanged)
@@ -13,6 +14,7 @@ class Settings : public QObject {
     Q_PROPERTY(QString theme READ theme WRITE setTheme NOTIFY themeChanged)
     Q_PROPERTY(bool showFloatIcon READ showFloatIcon WRITE setShowFloatIcon NOTIFY showFloatIconChanged)
     Q_PROPERTY(bool autoHideOnFocusLoss READ autoHideOnFocusLoss WRITE setAutoHideOnFocusLoss NOTIFY autoHideOnFocusLossChanged)
+    Q_PROPERTY(bool appLaunchRequiresDoubleClick READ appLaunchRequiresDoubleClick WRITE setAppLaunchRequiresDoubleClick NOTIFY appLaunchRequiresDoubleClickChanged)
 
 public:
     explicit Settings(QObject *parent = nullptr);
@@ -51,6 +53,9 @@ public:
     bool autoHideOnFocusLoss() const;
     void setAutoHideOnFocusLoss(bool enabled);
 
+    bool appLaunchRequiresDoubleClick() const;
+    void setAppLaunchRequiresDoubleClick(bool enabled);
+
 signals:
     void hotkeyModifiersChanged();
     void hotkeyKeyChanged();
@@ -60,6 +65,7 @@ signals:
     void themeChanged();
     void showFloatIconChanged();
     void autoHideOnFocusLossChanged();
+    void appLaunchRequiresDoubleClickChanged();
 
 private:
     QSettings m_settings;

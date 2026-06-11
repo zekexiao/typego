@@ -20,13 +20,18 @@ void PluginManager::setSettings(Settings *settings)
 void PluginManager::registerPlugin(IPlugin *plugin)
 {
     if (!plugin) return;
-    QString cmd = plugin->command().toLower();
-    if (m_plugins.contains(cmd)) {
-        qWarning() << "Plugin command conflict:" << cmd;
-        return;
+    QStringList commands = plugin->aliases();
+    commands.prepend(plugin->command());
+    for (const QString &command : commands) {
+        const QString cmd = command.toLower().trimmed();
+        if (cmd.isEmpty()) continue;
+        if (m_plugins.contains(cmd)) {
+            qWarning() << "Plugin command conflict:" << cmd;
+            continue;
+        }
+        m_plugins[cmd] = plugin;
+        qDebug() << "Plugin registered:" << cmd << "-" << plugin->description();
     }
-    m_plugins[cmd] = plugin;
-    qDebug() << "Plugin registered:" << cmd << "-" << plugin->description();
 }
 
 QVariantList PluginManager::queryCommand(const QString &cmd, const QString &args)
@@ -104,7 +109,9 @@ QString PluginManager::commandDescription(const QString &cmd) const
 QWidget *PluginManager::viewForCommand(const QString &cmd) const
 {
     IPlugin *plugin = m_plugins.value(cmd.toLower(), nullptr);
-    return plugin ? plugin->viewUrl() : nullptr;
+    if (!plugin) return nullptr;
+    plugin->activateCommand(cmd.toLower());
+    return plugin->viewUrl();
 }
 
 bool PluginManager::autoEnterForCommand(const QString &cmd) const

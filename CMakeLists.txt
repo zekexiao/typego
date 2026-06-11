@@ -11,7 +11,6 @@ list(PREPEND CMAKE_PREFIX_PATH "C:/Qt/6.10.3/msvc2022_64")
 find_package(Qt6 REQUIRED COMPONENTS Core Gui Widgets Svg Network LinguistTools)
 
 set(CMAKE_RC_FLAGS "-I ${CMAKE_SOURCE_DIR}")
-set(QWINDOWKIT_BUILD_STATIC OFF)
 
 # Everything SDK
 set(EVERYTHING_SDK_DIR "${CMAKE_SOURCE_DIR}/third_party/everything-sdk")
@@ -20,8 +19,21 @@ set(QT_DEFAULT_MAJOR_VERSION 6)
 set(QAPPLICATION_CLASS QApplication)
 add_subdirectory(third_party/SingleApplication)
 
-# spdlog is provided by vcpkg.
-find_package(spdlog CONFIG REQUIRED)
+# QWindowKit 由 git submodule 提供，仅构建 Widgets 静态模块。
+set(QWINDOWKIT_BUILD_STATIC ON CACHE BOOL "" FORCE)
+set(QWINDOWKIT_BUILD_WIDGETS ON CACHE BOOL "" FORCE)
+set(QWINDOWKIT_BUILD_QUICK OFF CACHE BOOL "" FORCE)
+set(QWINDOWKIT_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
+set(QWINDOWKIT_BUILD_DOCUMENTATIONS OFF CACHE BOOL "" FORCE)
+set(QWINDOWKIT_INSTALL OFF CACHE BOOL "" FORCE)
+add_subdirectory(third_party/qwindowkit EXCLUDE_FROM_ALL)
+
+# spdlog 由 git submodule 提供，仅构建项目需要的静态库。
+set(SPDLOG_BUILD_EXAMPLE OFF CACHE BOOL "" FORCE)
+set(SPDLOG_BUILD_TESTS OFF CACHE BOOL "" FORCE)
+set(SPDLOG_BUILD_BENCH OFF CACHE BOOL "" FORCE)
+set(SPDLOG_INSTALL OFF CACHE BOOL "" FORCE)
+add_subdirectory(third_party/spdlog EXCLUDE_FROM_ALL)
 
 qt_add_executable(qingzhou
     src/main.cpp
@@ -62,6 +74,7 @@ target_link_libraries(qingzhou PRIVATE
     Qt6::Svg
     Qt6::Network
     SingleApplication::SingleApplication
+    QWindowKit::Widgets
     spdlog::spdlog
     "${EVERYTHING_SDK_DIR}/lib/Everything64.lib"
 )

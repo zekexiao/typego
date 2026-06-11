@@ -6,6 +6,7 @@
 
 class ThemeManager;
 
+// 根据当前主题高亮搜索输入内容。
 class InputHighlighter : public QSyntaxHighlighter {
     Q_OBJECT
 public:

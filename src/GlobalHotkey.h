@@ -3,6 +3,7 @@
 #include <QObject>
 #include <QAbstractNativeEventFilter>
 
+// 注册并监听系统级全局快捷键。
 class GlobalHotkey : public QObject, public QAbstractNativeEventFilter {
     Q_OBJECT
 public:

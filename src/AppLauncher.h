@@ -20,6 +20,7 @@ struct PinItem {
     QString iconPath;
 };
 
+// 负责发现、搜索、启动和固定应用程序。
 class AppLauncher : public QObject {
     Q_OBJECT
     Q_PROPERTY(QVariantList pinnedApps READ pinnedApps NOTIFY pinsChanged)

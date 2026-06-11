@@ -5,6 +5,7 @@
 #include <spdlog/spdlog.h>
 #include <memory>
 
+// 封装应用日志初始化、分级记录和 Qt 消息转发。
 class Logger : public QObject {
     Q_OBJECT
 public:

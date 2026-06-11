@@ -73,6 +73,12 @@ int main(int argc, char *argv[])
     Updater updater;
 
     themeManager.setTheme(settings.theme());
+    auto applyGlobalStyle = [&]() {
+        app.setStyleSheet(themeManager.styleSheet());
+    };
+    QObject::connect(&themeManager, &ThemeManager::paletteChanged, &app, applyGlobalStyle);
+    QObject::connect(&themeManager, &ThemeManager::themeChanged, &app, applyGlobalStyle);
+    applyGlobalStyle();
     QObject::connect(&settings, &Settings::themeChanged, &themeManager, [&]() {
         themeManager.setTheme(settings.theme());
     });
@@ -84,14 +90,14 @@ int main(int argc, char *argv[])
     pluginManager.registerPlugin(new AppPlugin(&launcher, &pluginManager));
     pluginManager.registerPlugin(new CalcPlugin(&pluginManager));
     pluginManager.registerPlugin(new DirectoryPlugin(&pluginManager));
-    auto *settingsPlugin = new SettingsPlugin(&settings, &pluginManager, &themeManager, &pluginManager);
+    auto *settingsPlugin = new SettingsPlugin(&settings, &pluginManager, &pluginManager);
     pluginManager.registerPlugin(settingsPlugin);
     pluginManager.setSettings(&settings);
     pluginManager.registerPlugin(new FilePlugin(&pluginManager));
     auto *todoPlugin = new TodoPlugin(&pluginManager);
     pluginManager.registerPlugin(todoPlugin);
 
-    MainWindow window(&launcher, &pluginManager, &settings, &themeManager, &updater);
+    MainWindow window(&launcher, &pluginManager, &settings, &updater);
     window.setWindowIcon(appIcon);
 
     FloatIcon floatIcon(&settings, &themeManager, &window);
