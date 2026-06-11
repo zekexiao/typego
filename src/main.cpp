@@ -1,68 +1,66 @@
-#include <singleapplication.h>
-#include <QQmlApplicationEngine>
-#include <QQmlContext>
-#include <QSystemTrayIcon>
-#include <QMenu>
+﻿#include <singleapplication.h>
+#include <QApplication>
 #include <QAction>
-#include <QQuickWindow>
-#include <QStyle>
-#include <QDebug>
+#include <QGuiApplication>
+#include <QIcon>
+#include <QMenu>
+#include <QPainter>
+#include <QPixmap>
+#include <QProcess>
+#include <QScreen>
+#include <QStyleHints>
+#include <QSvgRenderer>
+#include <QSystemTrayIcon>
 #include <QTranslator>
 #include <QLocale>
-#include <QProcess>
-#include <QIcon>
-#include <QPixmap>
-#include <QSvgRenderer>
-#include <QPainter>
-#include <QWKQuick/qwkquickglobal.h>
-#include <QStyleHints>
-#include <QQmlComponent>
-#include <QScreen>
-#include <QQuickView>
-#include <QQuickItem>
+
 #include "AppLauncher.h"
 #include "GlobalHotkey.h"
-#include "Settings.h"
-#include "InputHighlighter.h"
 #include "Logger.h"
+#include "MainWindow.h"
+#include "Settings.h"
 #include "ThemeManager.h"
-#include "plugins/PluginManager.h"
+#include "Updater.h"
 #include "plugins/AppPlugin.h"
 #include "plugins/CalcPlugin.h"
 #include "plugins/DirectoryPlugin.h"
-#include "plugins/SettingsPlugin.h"
 #include "plugins/FilePlugin.h"
+#include "plugins/PluginManager.h"
+#include "plugins/SettingsPlugin.h"
 #include "plugins/TodoPlugin.h"
+
+static QIcon buildAppIcon()
+{
+    QIcon appIcon;
+    QSvgRenderer iconRenderer(QStringLiteral(":/assets/icon.svg"));
+    const QList<int> iconSizes = {16, 24, 32, 48, 64, 128, 256};
+    for (int size : iconSizes) {
+        QPixmap pixmap(size, size);
+        pixmap.fill(Qt::transparent);
+        QPainter painter(&pixmap);
+        iconRenderer.render(&painter);
+        appIcon.addPixmap(pixmap);
+    }
+    return appIcon;
+}
 
 int main(int argc, char *argv[])
 {
     Logger::instance().init();
     qInstallMessageHandler(Logger::qtMessageHandler);
-    qputenv("QT_QUICK_CONTROLS_STYLE", "Basic");
+
     SingleApplication app(argc, argv);
     app.setQuitOnLastWindowClosed(false);
 
-    // Load custom icon from SVG
-    QIcon appIcon;
-    QSvgRenderer iconRenderer(QStringLiteral(":/assets/icon.svg"));
-    const QList<int> iconSizes = {16, 24, 32, 48, 64, 128, 256};
-    for (int sz : iconSizes) {
-        QPixmap pix(sz, sz);
-        pix.fill(Qt::transparent);
-        QPainter painter(&pix);
-        iconRenderer.render(&painter);
-        painter.end();
-        appIcon.addPixmap(pix);
-    }
+    const QIcon appIcon = buildAppIcon();
     app.setWindowIcon(appIcon);
 
-    // Load translations
     QTranslator translator;
     const QStringList uiLanguages = QLocale::system().uiLanguages();
     for (const QString &lang : uiLanguages) {
-        const QString baseName = "neoStart_" + QLocale(lang).name();
-        if (translator.load(":/i18n/" + baseName) ||
-            translator.load(baseName, QCoreApplication::applicationDirPath() + "/i18n")) {
+        const QString baseName = QStringLiteral("qingzhou_") + QLocale(lang).name();
+        if (translator.load(QStringLiteral(":/i18n/") + baseName) ||
+            translator.load(baseName, QCoreApplication::applicationDirPath() + QStringLiteral("/i18n"))) {
             app.installTranslator(&translator);
             break;
         }
@@ -72,119 +70,56 @@ int main(int argc, char *argv[])
     Settings settings;
     ThemeManager themeManager;
     GlobalHotkey hotkey;
+    Updater updater;
 
     themeManager.setTheme(settings.theme());
     QObject::connect(&settings, &Settings::themeChanged, &themeManager, [&]() {
         themeManager.setTheme(settings.theme());
+    });
+    QObject::connect(QGuiApplication::styleHints(), &QStyleHints::colorSchemeChanged, &themeManager, [&]() {
+        themeManager.refresh();
     });
 
     PluginManager pluginManager;
     pluginManager.registerPlugin(new AppPlugin(&launcher, &pluginManager));
     pluginManager.registerPlugin(new CalcPlugin(&pluginManager));
     pluginManager.registerPlugin(new DirectoryPlugin(&pluginManager));
-    pluginManager.registerPlugin(new SettingsPlugin(&pluginManager));
+    auto *settingsPlugin = new SettingsPlugin(&settings, &pluginManager, &themeManager, &pluginManager);
+    pluginManager.registerPlugin(settingsPlugin);
     pluginManager.setSettings(&settings);
     pluginManager.registerPlugin(new FilePlugin(&pluginManager));
-    TodoPlugin *todoPlugin = new TodoPlugin(&pluginManager);
+    auto *todoPlugin = new TodoPlugin(&pluginManager);
     pluginManager.registerPlugin(todoPlugin);
 
-    QQmlApplicationEngine engine;
-    QWK::registerTypes(&engine);
-    engine.rootContext()->setContextProperty("appLauncher", &launcher);
-    engine.rootContext()->setContextProperty("settings", &settings);
-    engine.rootContext()->setContextProperty("themeManager", &themeManager);
-    engine.rootContext()->setContextProperty("pluginManager", &pluginManager);
+    MainWindow window(&launcher, &pluginManager, &settings, &themeManager, &updater);
+    window.setWindowIcon(appIcon);
 
-    // 自动注入所有插件的上下文属性
-    for (const QString &cmd : pluginManager.commands()) {
-        IPlugin *p = pluginManager.plugin(cmd);
-        if (!p) continue;
-        QHash<QString, QObject*> props = p->contextProperties();
-        for (auto it = props.begin(); it != props.end(); ++it) {
-            engine.rootContext()->setContextProperty(it.key(), it.value());
-        }
-    }
-
-    InputHighlighter inputHighlighter;
-    inputHighlighter.setThemeManager(&themeManager);
-    engine.rootContext()->setContextProperty("inputHighlighter", &inputHighlighter);
-
-    // Listen for system color scheme changes
-    QObject::connect(QGuiApplication::styleHints(), &QStyleHints::colorSchemeChanged, &themeManager, [&]() {
-        themeManager.refresh();
-    });
-
-    engine.load(QUrl(QStringLiteral("qrc:/qml/main.qml")));
-    if (engine.rootObjects().isEmpty()) {
-        qWarning() << "Failed to load QML";
-        return -1;
-    }
-
-    QQuickWindow *window = qobject_cast<QQuickWindow *>(engine.rootObjects().first());
-    if (!window) {
-        qWarning() << "Root object is not a window";
-        return -1;
-    }
-    window->setIcon(appIcon);
-
-    // 浮动图标窗口
-    QQuickView *floatView = new QQuickView();
-    floatView->engine()->rootContext()->setContextProperty("themeManager", &themeManager);
-    floatView->engine()->rootContext()->setContextProperty("settings", &settings);
-    floatView->setSource(QUrl(QStringLiteral("qrc:/qml/FloatIcon.qml")));
-    floatView->setFlags(Qt::FramelessWindowHint | Qt::WindowStaysOnTopHint | Qt::Tool);
-    floatView->setColor(Qt::transparent);
-    floatView->setWidth(48);
-    floatView->setHeight(48);
-
-    QObject *floatRoot = floatView->rootObject();
-    if (floatRoot) {
-        bool ok = floatRoot->setProperty("mainWindow", QVariant::fromValue(window));
-        if (!ok) qWarning() << "Failed to set mainWindow property on float window";
-    }
-
-    QPoint pos = settings.floatIconPos();
+    FloatIcon floatIcon(&settings, &themeManager, &window);
+    QPoint floatPos = settings.floatIconPos();
     QScreen *screen = QGuiApplication::primaryScreen();
-    if (screen && (pos.x() < 0 || pos.y() < 0)) {
-        QRect geo = screen->availableGeometry();
-        floatView->setX(geo.right() - 60);
-        floatView->setY(geo.bottom() - 60);
+    if (screen && (floatPos.x() < 0 || floatPos.y() < 0)) {
+        const QRect geo = screen->availableGeometry();
+        floatIcon.move(geo.right() - 60, geo.bottom() - 60);
     } else {
-        floatView->setX(pos.x());
-        floatView->setY(pos.y());
+        floatIcon.move(floatPos);
     }
 
     auto updateFloatVisible = [&]() {
-        if (floatView) {
-            if (settings.showFloatIcon()) {
-                floatView->show();
-            } else {
-                floatView->hide();
-            }
-        }
+        settings.showFloatIcon() ? floatIcon.show() : floatIcon.hide();
     };
-    QObject::connect(&settings, &Settings::showFloatIconChanged, floatView, updateFloatVisible);
+    QObject::connect(&settings, &Settings::showFloatIconChanged, &floatIcon, updateFloatVisible);
     updateFloatVisible();
 
-    // 单例模式：第二个实例启动时，第一个实例收到通知并转到前台
-    QObject::connect(&app, &SingleApplication::instanceStarted, window, [window]() {
-        window->show();
-        window->raise();
-        window->requestActivate();
-    });
+    QObject::connect(&app, &SingleApplication::instanceStarted, &window, &MainWindow::showAndActivate);
 
-    // 全局热键：激活时显示/隐藏窗口
-    QObject::connect(&hotkey, &GlobalHotkey::activated, window, [window]() {
-        if (window->isVisible()) {
-            window->hide();
+    QObject::connect(&hotkey, &GlobalHotkey::activated, &window, [&]() {
+        if (window.isVisible()) {
+            window.hide();
         } else {
-            window->show();
-            window->raise();
-            window->requestActivate();
+            window.showAndActivate();
         }
     });
 
-    // 设置变化时重新注册热键
     auto reRegister = [&]() {
         hotkey.registerHotkey(settings.hotkeyModifiers(), settings.hotkeyKey());
     };
@@ -192,10 +127,9 @@ int main(int argc, char *argv[])
     QObject::connect(&settings, &Settings::hotkeyKeyChanged, &hotkey, reRegister);
     reRegister();
 
-    // 系统托盘
     QSystemTrayIcon trayIcon;
     trayIcon.setIcon(appIcon);
-    trayIcon.setToolTip("neoStart");
+    trayIcon.setToolTip(QStringLiteral("Glide"));
 
     QMenu trayMenu;
     QAction *showAction = trayMenu.addAction(QCoreApplication::translate("Main", "Show"));
@@ -204,38 +138,20 @@ int main(int argc, char *argv[])
     QAction *quitAction = trayMenu.addAction(QCoreApplication::translate("Main", "Quit"));
     trayIcon.setContextMenu(&trayMenu);
 
-    QObject::connect(showAction, &QAction::triggered, window, [window]() {
-        window->show();
-        window->raise();
-        window->requestActivate();
+    QObject::connect(showAction, &QAction::triggered, &window, &MainWindow::showAndActivate);
+    QObject::connect(settingsAction, &QAction::triggered, &window, [&]() {
+        window.showAndActivate();
+        window.openPluginView(settingsPlugin->command());
     });
-
-    QObject::connect(settingsAction, &QAction::triggered, window, [window]() {
-        window->show();
-        window->raise();
-        window->requestActivate();
-        QMetaObject::invokeMethod(window, "openSettings");
-    });
-
     QObject::connect(restartAction, &QAction::triggered, &app, [&app]() {
         QProcess::startDetached(QCoreApplication::applicationFilePath(), QStringList());
         app.quit();
     });
-
     QObject::connect(quitAction, &QAction::triggered, &app, &SingleApplication::quit);
-
-    QObject::connect(&trayIcon, &QSystemTrayIcon::activated, window, [window](QSystemTrayIcon::ActivationReason reason) {
-        if (reason == QSystemTrayIcon::Trigger) {
-            if (window->isVisible()) {
-                window->hide();
-            } else {
-                window->show();
-                window->raise();
-                window->requestActivate();
-            }
-        }
+    QObject::connect(&trayIcon, &QSystemTrayIcon::activated, &window, [&](QSystemTrayIcon::ActivationReason reason) {
+        if (reason != QSystemTrayIcon::Trigger) return;
+        window.isVisible() ? window.hide() : window.showAndActivate();
     });
-
     trayIcon.show();
 
     return app.exec();

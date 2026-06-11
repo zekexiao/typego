@@ -8,6 +8,7 @@
 #include "IPlugin.h"
 
 class Settings;
+class QWidget;
 
 /**
  * @brief 插件管理器
@@ -41,7 +42,7 @@ public:
     Q_INVOKABLE QString commandDescription(const QString &cmd) const;
 
     /// QML 可调用：获取命令对应的自定义视图 URL
-    Q_INVOKABLE QString viewUrlForCommand(const QString &cmd) const;
+    QWidget *viewForCommand(const QString &cmd) const;
 
     /// QML 可调用：命令无参数时是否直接进入
     Q_INVOKABLE bool autoEnterForCommand(const QString &cmd) const;

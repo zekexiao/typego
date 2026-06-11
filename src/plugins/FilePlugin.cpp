@@ -1,4 +1,4 @@
-#include "FilePlugin.h"
+﻿#include "FilePlugin.h"
 #include <QVariantMap>
 #include <QDir>
 #include <QFileInfo>
@@ -15,7 +15,7 @@
 FilePlugin::FilePlugin(QObject *parent)
     : IPlugin(parent)
 {
-    m_iconCacheDir = QDir::tempPath() + "/neoStart/icons";
+    m_iconCacheDir = QDir::tempPath() + "/qingzhou/icons";
 }
 
 FilePlugin::~FilePlugin() = default;
@@ -58,7 +58,7 @@ QVariantList FilePlugin::query(const QString &args)
         item["subtitle"] = tr("Powered by Everything for fast search");
         item["icon"] = "";
         QVariantMap action;
-        action["type"] = QString::fromUtf8(u8"none");
+        action["type"] = QStringLiteral("none");
         action["plugin"] = command();
         item["action"] = action;
         results.append(item);
@@ -81,7 +81,7 @@ QVariantList FilePlugin::query(const QString &args)
         }
         item["icon"] = "";
         QVariantMap action;
-        action["type"] = QString::fromUtf8(u8"none");
+        action["type"] = QStringLiteral("none");
         action["plugin"] = command();
         item["action"] = action;
         results.append(item);
@@ -96,7 +96,7 @@ QVariantList FilePlugin::query(const QString &args)
         item["subtitle"] = args;
         item["icon"] = "";
         QVariantMap action;
-        action["type"] = QString::fromUtf8(u8"none");
+        action["type"] = QStringLiteral("none");
         action["plugin"] = command();
         item["action"] = action;
         results.append(item);
@@ -116,7 +116,7 @@ QVariantList FilePlugin::query(const QString &args)
             item["icon"] = extractFileIcon(fullPath);
 
             QVariantMap action;
-            action["type"] = QString::fromUtf8(u8"openFile");
+            action["type"] = QStringLiteral("openFile");
             action["data"] = fullPath;
             action["plugin"] = command();
             item["action"] = action;
@@ -132,7 +132,7 @@ QVariantList FilePlugin::query(const QString &args)
     item["subtitle"] = tr("Everything SDK only supports Windows");
     item["icon"] = "";
     QVariantMap action;
-    action["type"] = QString::fromUtf8(u8"none");
+    action["type"] = QStringLiteral("none");
     action["plugin"] = command();
     item["action"] = action;
     results.append(item);
@@ -152,3 +152,4 @@ bool FilePlugin::execute(const QVariantMap &action)
     }
     return false;
 }
+

@@ -1,10 +1,4 @@
 <RCC>
-    <qresource prefix="/qml">
-        <file alias="main.qml">qml/main.qml</file>
-        <file alias="SettingsView.qml">qml/SettingsView.qml</file>
-        <file alias="TodoView.qml">qml/TodoView.qml</file>
-        <file alias="FloatIcon.qml">qml/FloatIcon.qml</file>
-    </qresource>
     <qresource prefix="/assets">
         <file alias="icon.svg">assets/icon.svg</file>
     </qresource>

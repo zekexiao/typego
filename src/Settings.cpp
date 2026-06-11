@@ -3,7 +3,7 @@
 
 Settings::Settings(QObject *parent)
     : QObject(parent)
-    , m_settings("neoStart", "neoStart")
+    , m_settings("qingzhou", "qingzhou")
 {
     m_modifiers = m_settings.value("hotkeyModifiers", 0x0C000000).toInt(); // Qt::AltModifier | Qt::ControlModifier
     m_key = m_settings.value("hotkeyKey", 0x20).toInt(); // Qt::Key_Space
@@ -176,9 +176,9 @@ void Settings::syncAutoStartRegistry(bool enabled)
     QSettings reg("HKEY_CURRENT_USER\\Software\\Microsoft\\Windows\\CurrentVersion\\Run", QSettings::NativeFormat);
     if (enabled) {
         QString path = QCoreApplication::applicationFilePath();
-        reg.setValue("neoStart", path.replace('/', '\\'));
+        reg.setValue("qingzhou", path.replace('/', '\\'));
     } else {
-        reg.remove("neoStart");
+        reg.remove("qingzhou");
     }
 #else
     Q_UNUSED(enabled)

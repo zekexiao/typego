@@ -22,7 +22,7 @@
 AppLauncher::AppLauncher(QObject *parent)
     : QObject(parent)
 {
-    m_iconCacheDir = QDir::tempPath() + "/neoStart/icons";
+    m_iconCacheDir = QDir::tempPath() + "/qingzhou/icons";
     QDir().mkpath(m_iconCacheDir);
 
     addBuiltinApps();

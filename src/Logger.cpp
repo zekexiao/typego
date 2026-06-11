@@ -7,7 +7,7 @@
 #include <QDateTime>
 #include <QRegularExpression>
 
-static const char *LOG_BASENAME = "neoStart.log";
+static const char *LOG_BASENAME = "qingzhou.log";
 static const int LOG_KEEP_DAYS = 7;
 
 static void cleanupOldLogs(const QString &logDir)
@@ -16,9 +16,9 @@ static void cleanupOldLogs(const QString &logDir)
     if (!dir.exists()) return;
 
     QDateTime now = QDateTime::currentDateTime();
-    QRegularExpression re(QStringLiteral(R"(neoStart_(\d{4})-(\d{2})-(\d{2})\.log)"));
+    QRegularExpression re(QStringLiteral(R"(qingzhou_(\d{4})-(\d{2})-(\d{2})\.log)"));
 
-    for (const QFileInfo &info : dir.entryInfoList(QStringList() << "neoStart_*.log", QDir::Files)) {
+    for (const QFileInfo &info : dir.entryInfoList(QStringList() << "qingzhou_*.log", QDir::Files)) {
         QRegularExpressionMatch match = re.match(info.fileName());
         if (match.hasMatch()) {
             int year = match.captured(1).toInt();
@@ -51,9 +51,9 @@ void Logger::init(const QString &logDir)
     if (dir.isEmpty()) {
         dir = QStandardPaths::writableLocation(QStandardPaths::AppDataLocation);
     }
-    // 确保在 neoStart 子目录下，即使 AppDataLocation 未包含应用名
-    if (!dir.endsWith("neoStart", Qt::CaseInsensitive)) {
-        dir += "/neoStart";
+    // 确保在 qingzhou 子目录下，即使 AppDataLocation 未包含应用名
+    if (!dir.endsWith("qingzhou", Qt::CaseInsensitive)) {
+        dir += "/qingzhou";
     }
     QDir().mkpath(dir);
 
@@ -68,7 +68,7 @@ void Logger::init(const QString &logDir)
     console_sink->set_level(spdlog::level::debug);
     file_sink->set_level(spdlog::level::debug);
 
-    m_logger = std::make_shared<spdlog::logger>("neoStart",
+    m_logger = std::make_shared<spdlog::logger>("qingzhou",
         spdlog::sinks_init_list{console_sink, file_sink});
     m_logger->set_level(spdlog::level::debug);
     m_logger->flush_on(spdlog::level::debug);

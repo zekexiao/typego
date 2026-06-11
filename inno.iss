@@ -2,11 +2,11 @@
 ; SEE THE DOCUMENTATION FOR DETAILS ON CREATING INNO SETUP SCRIPT FILES!
 ; Non-commercial use only
 
-#define MyAppName "neoStart"
+#define MyAppName "Glide"
 #define MyAppVersion "1.0"
 #define MyAppPublisher "Linger Me, Inc."
 #define MyAppURL "https://linger.me"
-#define MyAppExeName "neoStart.exe"
+#define MyAppExeName "Glide.exe"
 
 [Setup]
 ; NOTE: The value of AppId uniquely identifies this application. Do not use the same AppId value in installers for other applications.
@@ -43,8 +43,8 @@ Name: "english"; MessagesFile: "compiler:Default.isl"
 Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{cm:AdditionalIcons}"; Flags: unchecked
 
 [Files]
-Source: "C:\Sources\neoStart\neoStart\build\bin\{#MyAppExeName}"; DestDir: "{app}"; Flags: ignoreversion
-Source: "C:\Sources\neoStart\neoStart\build\bin\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
+Source: "C:\Sources\qingzhou\program\build\bin\{#MyAppExeName}"; DestDir: "{app}"; Flags: ignoreversion
+Source: "C:\Sources\qingzhou\program\build\bin\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
 ; NOTE: Don't use "Flags: ignoreversion" on any shared system files
 
 [Icons]

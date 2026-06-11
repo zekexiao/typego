@@ -1,27 +1,21 @@
-#pragma once
+﻿#pragma once
 
 #include "IPlugin.h"
 #include "../todo/TaskService.h"
 #include "../todo/TaskTreeModel.h"
 
-/**
- * @brief TODO 任务管理插件
- *
- * 命令: todo
- * 示例: todo
- */
+class QWidget;
+
 class TodoPlugin : public IPlugin {
     Q_OBJECT
 public:
     explicit TodoPlugin(QObject *parent = nullptr);
 
-    QString command() const override { return QString::fromUtf8(u8"todo"); }
+    QString command() const override { return QStringLiteral("todo"); }
     QString description() const override { return tr("Task Management"); }
     QVariantList query(const QString &args) override;
     bool execute(const QVariantMap &action) override;
-
-    QString viewUrl() const override { return QStringLiteral("qrc:/qml/TodoView.qml"); }
-    QHash<QString, QObject*> contextProperties() const override;
+    QWidget *viewUrl() override;
 
     TaskTreeModel *treeModel() const { return m_model; }
 
@@ -29,3 +23,4 @@ private:
     TaskService *m_service;
     TaskTreeModel *m_model;
 };
+

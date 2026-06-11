@@ -1,7 +1,5 @@
-#include "TodoPlugin.h"
+﻿#include "TodoPlugin.h"
 #include <QVariantMap>
-#include <QStandardPaths>
-#include <QDir>
 
 TodoPlugin::TodoPlugin(QObject *parent)
     : IPlugin(parent)
@@ -13,14 +11,11 @@ TodoPlugin::TodoPlugin(QObject *parent)
 QVariantList TodoPlugin::query(const QString &args)
 {
     Q_UNUSED(args)
-    QVariantList results;
-
     QVariantMap item;
     item["title"] = tr("Task Management");
     item["subtitle"] = tr("Manage TODO list and subtasks");
     item["icon"] = "";
-    results.append(item);
-    return results;
+    return QVariantList() << item;
 }
 
 bool TodoPlugin::execute(const QVariantMap &action)
@@ -29,9 +24,7 @@ bool TodoPlugin::execute(const QVariantMap &action)
     return true;
 }
 
-QHash<QString, QObject*> TodoPlugin::contextProperties() const
+QWidget *TodoPlugin::viewUrl()
 {
-    QHash<QString, QObject*> props;
-    props["taskTreeModel"] = m_model;
-    return props;
+    return nullptr;
 }

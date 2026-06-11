@@ -1,4 +1,4 @@
-#include "PluginManager.h"
+﻿#include "PluginManager.h"
 #include "../Settings.h"
 #include <QDebug>
 #include <QProcess>
@@ -43,7 +43,7 @@ QVariantList PluginManager::queryCommand(const QString &cmd, const QString &args
         item["subtitle"] = key + tr(" plugin has been disabled in settings");
         item["icon"] = "";
         QVariantMap action;
-        action["type"] = QString::fromUtf8(u8"none");
+        action["type"] = QStringLiteral("none");
         action["plugin"] = key;
         item["action"] = action;
         return QVariantList() << item;
@@ -58,7 +58,7 @@ bool PluginManager::executeAction(const QVariantMap &action)
     QString type = action.value("type").toString();
     if (type.isEmpty()) return false;
 
-    // 如果 action 中指定了 plugin，优先分发到对应插件执行
+    // 濡傛灉 action 涓寚瀹氫簡 plugin锛屼紭鍏堝垎鍙戝埌瀵瑰簲鎻掍欢鎵ц
     QString pluginCmd = action.value("plugin").toString().toLower();
     if (!pluginCmd.isEmpty()) {
         IPlugin *plugin = m_plugins.value(pluginCmd, nullptr);
@@ -67,7 +67,7 @@ bool PluginManager::executeAction(const QVariantMap &action)
         }
     }
 
-    // 通用动作类型
+    // 閫氱敤鍔ㄤ綔绫诲瀷
     if (type == "launch") {
         QString path = action.value("data").toString();
         if (!path.isEmpty()) {
@@ -101,11 +101,10 @@ QString PluginManager::commandDescription(const QString &cmd) const
     return QString();
 }
 
-QString PluginManager::viewUrlForCommand(const QString &cmd) const
+QWidget *PluginManager::viewForCommand(const QString &cmd) const
 {
     IPlugin *plugin = m_plugins.value(cmd.toLower(), nullptr);
-    if (plugin) return plugin->viewUrl();
-    return QString();
+    return plugin ? plugin->viewUrl() : nullptr;
 }
 
 bool PluginManager::autoEnterForCommand(const QString &cmd) const
@@ -119,3 +118,4 @@ IPlugin *PluginManager::plugin(const QString &cmd) const
 {
     return m_plugins.value(cmd.toLower(), nullptr);
 }
+

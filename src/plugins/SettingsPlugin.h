@@ -1,23 +1,27 @@
-#pragma once
+﻿#pragma once
 
 #include "IPlugin.h"
 
-/**
- * @brief 设置插件
- *
- * 命令: set
- * 示例: set
- * 回车后打开设置弹窗
- */
+class PluginManager;
+class Settings;
+class ThemeManager;
+class QWidget;
+
 class SettingsPlugin : public IPlugin {
     Q_OBJECT
 public:
-    explicit SettingsPlugin(QObject *parent = nullptr);
+    SettingsPlugin(Settings *settings, PluginManager *pluginManager, ThemeManager *themeManager, QObject *parent = nullptr);
 
-    QString command() const override { return QString::fromUtf8(u8"set"); }
+    QString command() const override { return QStringLiteral("set"); }
     QString description() const override { return tr("Open Settings"); }
     QVariantList query(const QString &args) override;
     bool execute(const QVariantMap &action) override;
+    QWidget *viewUrl() override;
 
-    QString viewUrl() const override { return QStringLiteral("qrc:/qml/SettingsView.qml"); }
+private:
+    Settings *m_settings;
+    PluginManager *m_pluginManager;
+    ThemeManager *m_themeManager;
+    QWidget *m_view = nullptr;
 };
+

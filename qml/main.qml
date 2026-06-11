@@ -13,7 +13,7 @@ Window {
     maximumHeight: 600
     height: titleBar.height + contentLayout.implicitHeight + 40
     visible: false
-    title: "neoStart"
+    title: "Glide"
 
     color: themeManager.bg
 
@@ -38,6 +38,14 @@ Window {
                 root.hide()
             }
         }
+    }
+
+    // 启动后延迟检查更新
+    Timer {
+        id: updateCheckTimer
+        interval: 3000
+        running: true
+        onTriggered: updater.checkForUpdate()
     }
 
     onActiveChanged: {
@@ -560,6 +568,140 @@ Window {
                 appLauncher.launch(item.path)
                 root.hide()
             }
+        }
+    }
+
+    // 更新提示弹窗
+    Popup {
+        id: updatePopup
+        anchors.centerIn: parent
+        width: 400
+        height: 280
+        modal: true
+        closePolicy: Popup.CloseOnEscape
+        background: Rectangle {
+            color: themeManager.bg
+            border.color: themeManager.border
+            border.width: 1
+            radius: 8
+        }
+
+        property string newVersion: ""
+        property string changelogText: ""
+        property string downloadUrl: ""
+
+        ColumnLayout {
+            anchors.fill: parent
+            anchors.margins: 20
+            spacing: 12
+
+            Text {
+                text: qsTr("发现新版本")
+                color: themeManager.text
+                font.pixelSize: 16
+                font.bold: true
+            }
+
+            Text {
+                text: qsTr("最新版本: %1").arg(updatePopup.newVersion)
+                color: themeManager.textSecondary
+                font.pixelSize: 13
+            }
+
+            ScrollView {
+                Layout.fillWidth: true
+                Layout.fillHeight: true
+                TextArea {
+                    text: updatePopup.changelogText
+                    color: themeManager.textSecondary
+                    font.pixelSize: 12
+                    readOnly: true
+                    wrapMode: TextArea.Wrap
+                    background: Rectangle {
+                        color: themeManager.bgSecondary
+                        radius: 4
+                    }
+                }
+            }
+
+            RowLayout {
+                Layout.fillWidth: true
+                spacing: 8
+
+                Button {
+                    text: qsTr("立即更新")
+                    Layout.fillWidth: true
+                    onClicked: {
+                        updater.downloadAndInstall(updatePopup.downloadUrl)
+                        updatePopup.close()
+                    }
+                }
+
+                Button {
+                    text: qsTr("稍后提醒")
+                    Layout.fillWidth: true
+                    onClicked: updatePopup.close()
+                }
+            }
+        }
+    }
+
+    // 下载进度弹窗
+    Popup {
+        id: downloadPopup
+        anchors.centerIn: parent
+        width: 320
+        height: 120
+        modal: true
+        closePolicy: Popup.NoAutoClose
+        background: Rectangle {
+            color: themeManager.bg
+            border.color: themeManager.border
+            border.width: 1
+            radius: 8
+        }
+
+        ColumnLayout {
+            anchors.fill: parent
+            anchors.margins: 20
+            spacing: 12
+
+            Text {
+                text: qsTr("正在下载更新...")
+                color: themeManager.text
+                font.pixelSize: 14
+            }
+
+            ProgressBar {
+                id: downloadProgressBar
+                Layout.fillWidth: true
+                from: 0
+                to: 100
+                value: 0
+            }
+        }
+    }
+
+    Connections {
+        target: updater
+        function onUpdateAvailable(version, changelog, url, mandatory) {
+            updatePopup.newVersion = version
+            updatePopup.changelogText = changelog
+            updatePopup.downloadUrl = url
+            updatePopup.open()
+        }
+        function onDownloadProgress(bytesReceived, bytesTotal) {
+            if (bytesTotal > 0) {
+                downloadProgressBar.value = (bytesReceived / bytesTotal) * 100
+            }
+            if (!downloadPopup.visible) downloadPopup.open()
+        }
+        function onDownloadFinished() {
+            downloadPopup.close()
+        }
+        function onDownloadError(message) {
+            downloadPopup.close()
+            console.error("Download error:", message)
         }
     }
 }

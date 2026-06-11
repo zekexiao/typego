@@ -14,17 +14,15 @@ Item {
         width: 48
         height: 48
         radius: 24
-        color: themeManager.accent
-        border.color: themeManager.border
-        border.width: 1
+        color: themeManager.surface
 
         Image {
             anchors.centerIn: parent
             source: "qrc:/assets/icon.svg"
-            width: 28
-            height: 28
-            sourceSize.width: 28
-            sourceSize.height: 28
+            width: 32
+            height: 32
+            sourceSize.width: 32
+            sourceSize.height: 32
         }
 
         MouseArea {
