@@ -1,0 +1,302 @@
+QWidget {
+    background-color: @BG@;
+    color: @TEXT@;
+    font-family: "Segoe UI Variable", "Segoe UI";
+    font-size: 14px;
+}
+
+QScrollArea,
+QScrollArea > QWidget > QWidget,
+QStackedWidget {
+    border: none;
+    background-color: transparent;
+}
+
+QWidget#windowTitleBar {
+    background-color: @SURFACE@;
+    border-bottom: 1px solid @BORDER@;
+}
+
+QLabel#windowTitle {
+    background-color: transparent;
+    color: @TEXT_SECONDARY@;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+QPushButton#windowCloseButton {
+    min-height: 0;
+    padding: 0;
+    background-color: transparent;
+    color: @TEXT_SECONDARY@;
+    border: none;
+    border-radius: 7px;
+    font-size: 18px;
+    font-weight: 400;
+}
+
+QPushButton#windowCloseButton:hover {
+    background-color: #e81123;
+    color: white;
+}
+
+QPushButton#windowCloseButton:pressed {
+    background-color: #c50f1f;
+    color: white;
+}
+
+QFrame#pluginCard {
+    background-color: @SURFACE@;
+    border: 1px solid @BORDER@;
+    border-radius: 10px;
+}
+
+QFrame#profileCard {
+    background-color: @SURFACE@;
+    border: 1px solid @BORDER@;
+    border-radius: 12px;
+}
+
+QLabel#profileAvatar {
+    background-color: @ACCENT@;
+    color: white;
+    border-radius: 24px;
+    font-size: 20px;
+    font-weight: 700;
+}
+
+QLabel#pluginCommand {
+    background-color: transparent;
+    color: @TEXT@;
+    font-weight: 600;
+}
+
+QLabel#pageTitle {
+    background-color: transparent;
+    color: @TEXT@;
+    font-size: 20px;
+    font-weight: 600;
+}
+
+QListWidget#settingsNavigation {
+    padding: 5px;
+    background-color: @SURFACE@;
+    border: 1px solid @BORDER@;
+    border-radius: 12px;
+}
+
+QListWidget#settingsNavigation::item {
+    min-height: 28px;
+    padding: 7px 10px;
+    border-radius: 8px;
+}
+
+QListWidget#settingsNavigation::item:selected {
+    background-color: @ACCENT@;
+    color: white;
+}
+
+QPushButton#managementButton {
+    min-height: 0;
+    padding: 5px;
+    background-color: @SURFACE@;
+    border: 1px solid @BORDER@;
+    border-radius: 19px;
+}
+
+QPushButton#managementButton:hover {
+    background-color: @HOVER@;
+    border-color: @BORDER_FOCUS@;
+}
+
+QLineEdit,
+QComboBox {
+    min-height: 24px;
+    padding: 6px 10px;
+    background-color: @SURFACE@;
+    color: @TEXT@;
+    border: 1px solid @BORDER@;
+    border-radius: 8px;
+    selection-background-color: @ACCENT@;
+    selection-color: white;
+}
+
+QLineEdit:focus,
+QComboBox:focus {
+    border: 2px solid @BORDER_FOCUS@;
+    padding: 5px 9px;
+}
+
+QLineEdit[placeholderText] {
+    color: @TEXT@;
+}
+
+QComboBox {
+    padding-right: 28px;
+}
+
+QComboBox:hover {
+    background-color: @HOVER@;
+}
+
+QComboBox::drop-down {
+    width: 24px;
+    border: none;
+    background-color: transparent;
+}
+
+QComboBox QAbstractItemView {
+    padding: 4px;
+    background-color: @SURFACE@;
+    color: @TEXT@;
+    border: 1px solid @BORDER@;
+    border-radius: 8px;
+    outline: none;
+    selection-background-color: @ACCENT@;
+    selection-color: white;
+}
+
+QListWidget,
+QTreeView {
+    padding: 4px;
+    background-color: @SURFACE@;
+    border: 1px solid @BORDER@;
+    border-radius: 12px;
+    outline: none;
+}
+
+QListWidget::item,
+QTreeView::item {
+    min-height: 34px;
+    padding: 7px 10px;
+    border-radius: 8px;
+}
+
+QListWidget::item:hover,
+QTreeView::item:hover {
+    background-color: @HOVER@;
+}
+
+QListWidget::item:selected,
+QTreeView::item:selected {
+    background-color: @ACCENT@;
+    color: white;
+}
+
+QPushButton {
+    min-height: 24px;
+    padding: 5px 14px;
+    background-color: @SURFACE@;
+    color: @TEXT@;
+    border: 1px solid @BORDER@;
+    border-radius: 8px;
+}
+
+QPushButton:hover {
+    background-color: @HOVER@;
+}
+
+QPushButton:pressed {
+    background-color: @SURFACE_PRESSED@;
+}
+
+QPushButton:disabled {
+    color: @PLACEHOLDER@;
+}
+
+QPushButton#primary {
+    background-color: @ACCENT@;
+    color: white;
+    border-color: @ACCENT@;
+    font-weight: 600;
+}
+
+QPushButton#primary:pressed {
+    background-color: @ACCENT_PRESSED@;
+    border-color: @ACCENT_PRESSED@;
+}
+
+QLabel#section {
+    padding-top: 8px;
+    color: @TEXT_SECONDARY@;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+QLabel#muted {
+    color: @TEXT_SECONDARY@;
+    font-size: 12px;
+}
+
+QCheckBox {
+    spacing: 8px;
+    background-color: transparent;
+}
+
+QCheckBox::indicator {
+    width: 16px;
+    height: 16px;
+    background-color: @SURFACE@;
+    border: 1px solid @BORDER@;
+    border-radius: 5px;
+}
+
+QCheckBox::indicator:hover {
+    border-color: @BORDER_FOCUS@;
+}
+
+QCheckBox::indicator:checked {
+    background-color: @ACCENT@;
+    border-color: @ACCENT@;
+    image: url(:/assets/check.svg);
+}
+
+QMenu {
+    padding: 5px;
+    background-color: @SURFACE@;
+    color: @TEXT@;
+    border: 1px solid @BORDER@;
+    border-radius: 10px;
+}
+
+QMenu::item {
+    padding: 6px 24px 6px 12px;
+    border-radius: 6px;
+}
+
+QMenu::item:selected {
+    background-color: @ACCENT@;
+    color: white;
+}
+
+QScrollBar:vertical {
+    width: 10px;
+    margin: 3px;
+    background: transparent;
+}
+
+QScrollBar::handle:vertical {
+    min-height: 28px;
+    background-color: @BORDER@;
+    border-radius: 4px;
+}
+
+QScrollBar::handle:vertical:hover {
+    background-color: @TEXT_SECONDARY@;
+}
+
+QScrollBar::add-line:vertical,
+QScrollBar::sub-line:vertical,
+QScrollBar::add-page:vertical,
+QScrollBar::sub-page:vertical {
+    height: 0;
+    background: transparent;
+}
+
+QToolTip {
+    padding: 5px 8px;
+    background-color: @SURFACE_PRESSED@;
+    color: @TEXT@;
+    border: 1px solid @BORDER@;
+    border-radius: 6px;
+}
