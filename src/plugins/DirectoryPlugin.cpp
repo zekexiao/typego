@@ -19,10 +19,10 @@ DirectoryPlugin::DirectoryPlugin(QObject *parent)
 QString DirectoryPlugin::resolvePath(const QString &args) const
 {
     if (args.trimmed().isEmpty()) {
-        return QDir::currentPath();
+        return QDir::homePath();
     }
     QString path = args.trimmed();
-    // 澶勭悊 ~ 灞曞紑
+    // 展开用户主目录。
     if (path.startsWith("~")) {
         path = QDir::homePath() + path.mid(1);
     }
@@ -30,10 +30,10 @@ QString DirectoryPlugin::resolvePath(const QString &args) const
     if (dir.exists()) {
         return dir.absolutePath();
     }
-    // Try resolving the path relative to the current directory.
-    QDir currentDir(QDir::currentPath());
-    if (currentDir.exists(path)) {
-        return currentDir.absoluteFilePath(path);
+    // 相对路径以用户主目录为基准。
+    QDir homeDir(QDir::homePath());
+    if (homeDir.exists(path)) {
+        return homeDir.absoluteFilePath(path);
     }
     return QString();
 }
@@ -44,8 +44,8 @@ QVariantList DirectoryPlugin::query(const QString &args)
     QString path = resolvePath(args);
 
     if (path.isEmpty()) {
-        // 璺緞涓嶅瓨鍦紝杩斿洖褰撳墠鐩綍鍐呭浣滀负 fallback
-        path = QDir::currentPath();
+        // 路径不存在时回退到用户主目录。
+        path = QDir::homePath();
     }
 
     QDir dir(path);
@@ -62,7 +62,7 @@ QVariantList DirectoryPlugin::query(const QString &args)
         return results;
     }
 
-    // Add an action for opening the current directory.
+    // 添加打开当前目录的操作。
     QVariantMap enterItem;
     enterItem["title"] = tr("Open ") + dir.dirName();
     enterItem["subtitle"] = dir.absolutePath();
@@ -74,7 +74,7 @@ QVariantList DirectoryPlugin::query(const QString &args)
     enterItem["action"] = enterAction;
     results.append(enterItem);
 
-    // 鍒楀嚭瀛愮洰褰曞拰鏂囦欢
+    // 列出子目录和文件。
     QFileIconProvider provider;
     QString cacheDir = QDir::tempPath() + "/qingzhou/icons";
     QDir().mkpath(cacheDir);
@@ -86,7 +86,7 @@ QVariantList DirectoryPlugin::query(const QString &args)
         item["title"] = fi.fileName();
         item["subtitle"] = fi.isDir() ? tr("Folder") : fi.suffix().toUpper();
         
-        // 鍥炬爣缂撳瓨锛氬厛妫€鏌ユ槸鍚﹀凡缂撳瓨锛岄伩鍏嶉噸澶嶈皟鐢?provider.icon()
+        // 优先使用图标缓存，避免重复调用 provider.icon()。
         QString cachePath = cacheDir + "/dir_" + QString::number(qHash(fi.absoluteFilePath()), 16) + ".png";
         if (QFile::exists(cachePath)) {
             item["icon"] = cachePath;
@@ -132,7 +132,7 @@ bool DirectoryPlugin::execute(const QVariantMap &action)
     } else if (type == "openFile") {
         return QDesktopServices::openUrl(QUrl::fromLocalFile(data));
     } else if (type == "navigate") {
-        // Navigation actions open the selected directory.
+        // 导航操作直接打开选中的目录。
 #ifdef Q_OS_WIN
         HINSTANCE result = ShellExecuteW(nullptr, L"open", (LPCWSTR)data.utf16(), nullptr, nullptr, SW_SHOWNORMAL);
         return (INT_PTR)result > 32;

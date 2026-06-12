@@ -17,6 +17,7 @@ public:
     QString description() const override { return tr("Open Settings"); }
     QVariantList query(const QString &args) override;
     bool execute(const QVariantMap &action) override;
+    bool supportsAutoEnter() const override { return true; }
     void activateCommand(const QString &command) override;
     QWidget *viewUrl() override;
 

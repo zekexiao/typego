@@ -6,8 +6,7 @@
 // 统一读取、保存并通知应用设置变更。
 class Settings : public QObject {
     Q_OBJECT
-    Q_PROPERTY(int hotkeyModifiers READ hotkeyModifiers WRITE setHotkeyModifiers NOTIFY hotkeyModifiersChanged)
-    Q_PROPERTY(int hotkeyKey READ hotkeyKey WRITE setHotkeyKey NOTIFY hotkeyKeyChanged)
+    Q_PROPERTY(QString globalHotkey READ globalHotkey WRITE setGlobalHotkey NOTIFY globalHotkeyChanged)
     Q_PROPERTY(QString searchEngine READ searchEngine WRITE setSearchEngine NOTIFY searchEngineChanged)
     Q_PROPERTY(bool pluginAutoEnter READ pluginAutoEnter WRITE setPluginAutoEnter NOTIFY pluginAutoEnterChanged)
     Q_PROPERTY(bool autoStart READ autoStart WRITE setAutoStart NOTIFY autoStartChanged)
@@ -19,20 +18,17 @@ class Settings : public QObject {
 public:
     explicit Settings(QObject *parent = nullptr);
 
-    int hotkeyModifiers() const;
-    void setHotkeyModifiers(int mods);
-
-    int hotkeyKey() const;
-    void setHotkeyKey(int key);
+    QString globalHotkey() const;
+    void setGlobalHotkey(const QString &shortcut);
 
     QString searchEngine() const;
     void setSearchEngine(const QString &engine);
 
-    Q_INVOKABLE QString hotkeyText() const;
-
     // 插件启用管理
     Q_INVOKABLE bool isPluginEnabled(const QString &name) const;
     Q_INVOKABLE void setPluginEnabled(const QString &name, bool enabled);
+    QString pluginHotkey(const QString &name) const;
+    void setPluginHotkey(const QString &name, const QString &shortcut);
 
     // 插件全局空参数自动进入开关
     Q_INVOKABLE bool pluginAutoEnter() const;
@@ -57,10 +53,11 @@ public:
     void setAppLaunchRequiresDoubleClick(bool enabled);
 
 signals:
-    void hotkeyModifiersChanged();
-    void hotkeyKeyChanged();
+    void globalHotkeyChanged();
     void searchEngineChanged();
     void pluginAutoEnterChanged();
+    void pluginEnabledChanged(const QString &name);
+    void pluginHotkeyChanged(const QString &name);
     void autoStartChanged();
     void themeChanged();
     void showFloatIconChanged();
@@ -69,8 +66,6 @@ signals:
 
 private:
     QSettings m_settings;
-    int m_modifiers = 0;
-    int m_key = 0;
     bool m_autoStart = false;
     void syncAutoStartRegistry(bool enabled);
 };

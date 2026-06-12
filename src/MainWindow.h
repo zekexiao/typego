@@ -29,6 +29,7 @@ public:
 
 public slots:
     bool openPluginView(const QString &command);
+    void activateCommand(const QString &command);
     void showAndActivate();
 
 protected:

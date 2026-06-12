@@ -3,10 +3,10 @@
 #include "IPlugin.h"
 
 /**
- * @brief 鐩綍璺宠浆鎻掍欢
+ * @brief 目录浏览和跳转插件
  *
- * 鍛戒护: cd
- * 绀轰緥: cd .., cd D:\\, cd Documents
+ * 命令: cd
+ * 示例: cd .., cd D:\\, cd Documents
  */
 class DirectoryPlugin : public IPlugin {
     Q_OBJECT

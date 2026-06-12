@@ -16,6 +16,7 @@ public:
     QString description() const override { return tr("Task Management"); }
     QVariantList query(const QString &args) override;
     bool execute(const QVariantMap &action) override;
+    bool supportsAutoEnter() const override { return true; }
     QWidget *viewUrl() override;
 
     TaskTreeModel *treeModel() const { return m_model; }

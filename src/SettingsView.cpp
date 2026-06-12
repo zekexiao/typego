@@ -11,6 +11,7 @@
 #include <QEvent>
 #include <QFrame>
 #include <QLabel>
+#include <QKeySequenceEdit>
 #include <QListWidget>
 #include <QPushButton>
 #include <QScrollArea>
@@ -94,19 +95,10 @@ SettingsView::SettingsView(Settings *settings, PluginManager *pluginManager, QWi
 
     auto *settingsLayout = createPage(tr("Settings"));
     addSection(settingsLayout, tr("Global Hotkey"));
-    auto *mods = new QHBoxLayout;
-    m_altCheck = new QCheckBox(QStringLiteral("Alt"));
-    m_ctrlCheck = new QCheckBox(QStringLiteral("Ctrl"));
-    m_shiftCheck = new QCheckBox(QStringLiteral("Shift"));
-    mods->addWidget(m_altCheck);
-    mods->addWidget(m_ctrlCheck);
-    mods->addWidget(m_shiftCheck);
-    mods->addStretch();
-    settingsLayout->addLayout(mods);
-    m_keyCombo = new QComboBox;
-    m_keyCombo->addItems({"Space","A","B","C","D","E","F","G","H","I","J","K","L","M","N","O","P","Q","R","S","T","U","V","W","X","Y","Z","0","1","2","3","4","5","6","7","8","9","F1","F2","F3","F4","F5","F6","F7","F8","F9","F10","F11","F12"});
-    m_keyCombo->installEventFilter(this);
-    settingsLayout->addWidget(m_keyCombo);
+    m_globalHotkeyEdit = new QKeySequenceEdit;
+    m_globalHotkeyEdit->setMaximumSequenceLength(1);
+    m_globalHotkeyEdit->setClearButtonEnabled(true);
+    settingsLayout->addWidget(m_globalHotkeyEdit);
     addSection(settingsLayout, tr("Theme"));
     m_themeCombo = new QComboBox;
     m_themeCombo->addItem(tr("System"), QStringLiteral("system"));
@@ -155,6 +147,17 @@ SettingsView::SettingsView(Settings *settings, PluginManager *pluginManager, QWi
         check->setProperty("cmd", cmd);
         m_pluginChecks.append(check);
         cardLayout->addWidget(check);
+        auto *hotkeyEdit = new QKeySequenceEdit;
+        hotkeyEdit->setProperty("cmd", cmd);
+        hotkeyEdit->setMaximumSequenceLength(1);
+        hotkeyEdit->setClearButtonEnabled(true);
+        hotkeyEdit->setToolTip(tr("Global plugin hotkey"));
+        hotkeyEdit->setFixedWidth(150);
+        m_pluginHotkeyEdits.append(hotkeyEdit);
+        auto *hotkeyLabel = new QLabel(tr("Hotkey"));
+        hotkeyLabel->setObjectName(QStringLiteral("muted"));
+        cardLayout->addWidget(hotkeyLabel);
+        cardLayout->addWidget(hotkeyEdit);
         pluginLayout->addWidget(card);
     }
     pluginLayout->addStretch();
@@ -174,12 +177,7 @@ SettingsView::SettingsView(Settings *settings, PluginManager *pluginManager, QWi
         emit closeRequested();
     });
     connect(buttons, &QDialogButtonBox::accepted, this, [this]() {
-        int mods = 0;
-        if (m_altCheck->isChecked()) mods |= Qt::AltModifier;
-        if (m_ctrlCheck->isChecked()) mods |= Qt::ControlModifier;
-        if (m_shiftCheck->isChecked()) mods |= Qt::ShiftModifier;
-        m_settings->setHotkeyModifiers(mods);
-        m_settings->setHotkeyKey(selectedKey());
+        m_settings->setGlobalHotkey(m_globalHotkeyEdit->keySequence().toString(QKeySequence::PortableText));
         m_settings->setSearchEngine(m_engineCombo->currentText());
         m_settings->setTheme(m_themeCombo->currentData().toString());
         m_settings->setAutoStart(m_autoStartCheck->isChecked());
@@ -189,6 +187,10 @@ SettingsView::SettingsView(Settings *settings, PluginManager *pluginManager, QWi
         m_settings->setPluginAutoEnter(m_pluginAutoEnterCheck->isChecked());
         for (QCheckBox *check : m_pluginChecks) {
             m_settings->setPluginEnabled(check->property("cmd").toString(), check->isChecked());
+        }
+        for (QKeySequenceEdit *edit : m_pluginHotkeyEdits) {
+            m_settings->setPluginHotkey(edit->property("cmd").toString(),
+                                        edit->keySequence().toString(QKeySequence::PortableText));
         }
     });
 
@@ -222,11 +224,8 @@ bool SettingsView::eventFilter(QObject *watched, QEvent *event)
 
 void SettingsView::reload()
 {
-    const int mods = m_settings->hotkeyModifiers();
-    m_altCheck->setChecked(mods & Qt::AltModifier);
-    m_ctrlCheck->setChecked(mods & Qt::ControlModifier);
-    m_shiftCheck->setChecked(mods & Qt::ShiftModifier);
-    m_keyCombo->setCurrentIndex(keyIndex(m_settings->hotkeyKey()));
+    m_globalHotkeyEdit->setKeySequence(
+        QKeySequence::fromString(m_settings->globalHotkey(), QKeySequence::PortableText));
     m_engineCombo->setCurrentText(m_settings->searchEngine());
     m_autoStartCheck->setChecked(m_settings->autoStart());
     m_floatIconCheck->setChecked(m_settings->showFloatIcon());
@@ -238,17 +237,8 @@ void SettingsView::reload()
     for (QCheckBox *check : m_pluginChecks) {
         check->setChecked(m_settings->isPluginEnabled(check->property("cmd").toString()));
     }
-}
-
-int SettingsView::selectedKey() const
-{
-    static const QList<int> keys = {0x20,0x41,0x42,0x43,0x44,0x45,0x46,0x47,0x48,0x49,0x4A,0x4B,0x4C,0x4D,0x4E,0x4F,0x50,0x51,0x52,0x53,0x54,0x55,0x56,0x57,0x58,0x59,0x5A,0x30,0x31,0x32,0x33,0x34,0x35,0x36,0x37,0x38,0x39,0x70,0x71,0x72,0x73,0x74,0x75,0x76,0x77,0x78,0x79,0x7A,0x7B};
-    return keys.value(m_keyCombo->currentIndex(), 0x20);
-}
-
-int SettingsView::keyIndex(int key) const
-{
-    static const QList<int> keys = {0x20,0x41,0x42,0x43,0x44,0x45,0x46,0x47,0x48,0x49,0x4A,0x4B,0x4C,0x4D,0x4E,0x4F,0x50,0x51,0x52,0x53,0x54,0x55,0x56,0x57,0x58,0x59,0x5A,0x30,0x31,0x32,0x33,0x34,0x35,0x36,0x37,0x38,0x39,0x70,0x71,0x72,0x73,0x74,0x75,0x76,0x77,0x78,0x79,0x7A,0x7B};
-    const int index = keys.indexOf(key);
-    return index >= 0 ? index : 0;
+    for (QKeySequenceEdit *edit : m_pluginHotkeyEdits) {
+        edit->setKeySequence(QKeySequence::fromString(
+            m_settings->pluginHotkey(edit->property("cmd").toString()), QKeySequence::PortableText));
+    }
 }

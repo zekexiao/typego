@@ -63,7 +63,7 @@ bool PluginManager::executeAction(const QVariantMap &action)
     QString type = action.value("type").toString();
     if (type.isEmpty()) return false;
 
-    // 濡傛灉 action 涓寚瀹氫簡 plugin锛屼紭鍏堝垎鍙戝埌瀵瑰簲鎻掍欢鎵ц
+    // action 指定插件时优先交给对应插件执行。
     QString pluginCmd = action.value("plugin").toString().toLower();
     if (!pluginCmd.isEmpty()) {
         IPlugin *plugin = m_plugins.value(pluginCmd, nullptr);
@@ -72,7 +72,7 @@ bool PluginManager::executeAction(const QVariantMap &action)
         }
     }
 
-    // 閫氱敤鍔ㄤ綔绫诲瀷
+    // 通用动作类型。
     if (type == "launch") {
         QString path = action.value("data").toString();
         if (!path.isEmpty()) {
@@ -116,9 +116,10 @@ QWidget *PluginManager::viewForCommand(const QString &cmd) const
 
 bool PluginManager::autoEnterForCommand(const QString &cmd) const
 {
-    if (m_settings && !m_settings->isPluginEnabled(cmd.toLower())) return false;
-    if (m_settings) return m_settings->pluginAutoEnter();
-    return false;
+    IPlugin *plugin = m_plugins.value(cmd.toLower(), nullptr);
+    if (!plugin || !plugin->supportsAutoEnter()) return false;
+    if (!m_settings || !m_settings->isPluginEnabled(cmd.toLower())) return false;
+    return m_settings->pluginAutoEnter();
 }
 
 IPlugin *PluginManager::plugin(const QString &cmd) const

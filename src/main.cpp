@@ -8,6 +8,7 @@
 #include <QPixmap>
 #include <QProcess>
 #include <QScreen>
+#include <QSet>
 #include <QStyleHints>
 #include <QSvgRenderer>
 #include <QSystemTrayIcon>
@@ -127,11 +128,27 @@ int main(int argc, char *argv[])
     });
 
     auto reRegister = [&]() {
-        hotkey.registerHotkey(settings.hotkeyModifiers(), settings.hotkeyKey());
+        hotkey.registerHotkey(settings.globalHotkey());
     };
-    QObject::connect(&settings, &Settings::hotkeyModifiersChanged, &hotkey, reRegister);
-    QObject::connect(&settings, &Settings::hotkeyKeyChanged, &hotkey, reRegister);
+    QObject::connect(&settings, &Settings::globalHotkeyChanged, &hotkey, reRegister);
     reRegister();
+
+    auto registerPluginHotkeys = [&]() {
+        hotkey.clearPluginHotkeys();
+        QSet<IPlugin *> registered;
+        IPlugin *settingsPluginInstance = pluginManager.plugin(QStringLiteral("set"));
+        for (const QString &command : pluginManager.commands()) {
+            IPlugin *plugin = pluginManager.plugin(command);
+            if (!plugin || plugin == settingsPluginInstance || registered.contains(plugin)) continue;
+            registered.insert(plugin);
+            if (!settings.isPluginEnabled(plugin->command())) continue;
+            hotkey.registerPluginHotkey(plugin->command(), settings.pluginHotkey(plugin->command()));
+        }
+    };
+    QObject::connect(&settings, &Settings::pluginHotkeyChanged, &hotkey, registerPluginHotkeys);
+    QObject::connect(&settings, &Settings::pluginEnabledChanged, &hotkey, registerPluginHotkeys);
+    QObject::connect(&hotkey, &GlobalHotkey::commandActivated, &window, &MainWindow::activateCommand);
+    registerPluginHotkeys();
 
     QSystemTrayIcon trayIcon;
     trayIcon.setIcon(appIcon);

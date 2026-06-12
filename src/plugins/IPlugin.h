@@ -20,6 +20,7 @@ public:
     virtual QString description() const = 0;
     virtual QVariantList query(const QString &args) = 0;
     virtual bool execute(const QVariantMap &action) = 0;
+    virtual bool supportsAutoEnter() const { return false; }
     virtual void activateCommand(const QString &command) { Q_UNUSED(command) }
 
     // The widget is created lazily. Once inserted into a layout, Qt owns it.

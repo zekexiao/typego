@@ -4,10 +4,10 @@
 #include "../AppLauncher.h"
 
 /**
- * @brief 搴旂敤鎼滅储鎻掍欢
+ * @brief 应用搜索插件
  *
- * 鍛戒护: app
- * 绀轰緥: app vscode
+ * 命令: app
+ * 示例: app vscode
  */
 class AppPlugin : public IPlugin {
     Q_OBJECT

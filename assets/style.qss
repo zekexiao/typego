@@ -110,6 +110,7 @@ QPushButton#managementButton:hover {
 }
 
 QLineEdit,
+QKeySequenceEdit,
 QComboBox {
     min-height: 24px;
     padding: 6px 10px;
@@ -122,6 +123,7 @@ QComboBox {
 }
 
 QLineEdit:focus,
+QKeySequenceEdit:focus,
 QComboBox:focus {
     border: 2px solid @BORDER_FOCUS@;
     padding: 5px 9px;
@@ -165,11 +167,25 @@ QTreeView {
     outline: none;
 }
 
-QListWidget::item,
+QListWidget::item {
+    min-height: 46px;
+    padding: 8px 14px;
+    border-radius: 8px;
+}
+
 QTreeView::item {
     min-height: 34px;
     padding: 7px 10px;
     border-radius: 8px;
+}
+
+QListWidget#settingsNavigation::item {
+    min-height: 28px;
+    padding: 7px 10px;
+}
+
+QPushButton#pinnedAppButton {
+    padding: 6px 12px;
 }
 
 QListWidget::item:hover,

@@ -1,12 +1,19 @@
 #include "Settings.h"
 #include <QGuiApplication>
+#include <QKeySequence>
+
+static Qt::Key legacyHotkeyKey(int key)
+{
+    if (key >= 0x70 && key <= 0x7B) {
+        return static_cast<Qt::Key>(Qt::Key_F1 + key - 0x70);
+    }
+    return static_cast<Qt::Key>(key);
+}
 
 Settings::Settings(QObject *parent)
     : QObject(parent)
     , m_settings("qingzhou", "qingzhou")
 {
-    m_modifiers = m_settings.value("hotkeyModifiers", 0x0C000000).toInt(); // Qt::AltModifier | Qt::ControlModifier
-    m_key = m_settings.value("hotkeyKey", 0x20).toInt(); // Qt::Key_Space
     m_autoStart = m_settings.value("autoStart", false).toBool();
     syncAutoStartRegistry(m_autoStart);
 }
@@ -24,63 +31,25 @@ void Settings::setSearchEngine(const QString &engine)
     emit searchEngineChanged();
 }
 
-int Settings::hotkeyModifiers() const
+QString Settings::globalHotkey() const
 {
-    return m_modifiers;
-}
-
-void Settings::setHotkeyModifiers(int mods)
-{
-    if (m_modifiers == mods) return;
-    m_modifiers = mods;
-    m_settings.setValue("hotkeyModifiers", m_modifiers);
-    emit hotkeyModifiersChanged();
-}
-
-int Settings::hotkeyKey() const
-{
-    return m_key;
-}
-
-void Settings::setHotkeyKey(int key)
-{
-    if (m_key == key) return;
-    m_key = key;
-    m_settings.setValue("hotkeyKey", m_key);
-    emit hotkeyKeyChanged();
-}
-
-QString Settings::hotkeyText() const
-{
-    QStringList parts;
-    if (m_modifiers & 0x08000000) parts << "Alt";      // Qt::AltModifier
-    if (m_modifiers & 0x04000000) parts << "Ctrl";     // Qt::ControlModifier
-    if (m_modifiers & 0x02000000) parts << "Shift";    // Qt::ShiftModifier
-    if (m_modifiers & 0x10000000) parts << "Meta";     // Qt::MetaModifier
-
-    QString keyStr;
-    switch (m_key) {
-    case 0x20: keyStr = "Space"; break;
-    case 0x30: keyStr = "0"; break;
-    case 0x31: keyStr = "1"; break;
-    case 0x32: keyStr = "2"; break;
-    case 0x33: keyStr = "3"; break;
-    case 0x34: keyStr = "4"; break;
-    case 0x35: keyStr = "5"; break;
-    case 0x36: keyStr = "6"; break;
-    case 0x37: keyStr = "7"; break;
-    case 0x38: keyStr = "8"; break;
-    case 0x39: keyStr = "9"; break;
-    default:
-        if (m_key >= 0x41 && m_key <= 0x5A) {
-            keyStr = QChar(m_key);
-        } else {
-            keyStr = QString("Key_%1").arg(m_key, 0, 16);
-        }
+    if (m_settings.contains(QStringLiteral("globalHotkey"))) {
+        return m_settings.value(QStringLiteral("globalHotkey")).toString();
     }
 
-    parts << keyStr;
-    return parts.join("+");
+    // 兼容旧版拆分保存的修饰键和按键。
+    const int modifiers = m_settings.value(QStringLiteral("hotkeyModifiers"),
+                                           static_cast<int>(Qt::AltModifier | Qt::ControlModifier)).toInt();
+    const int key = m_settings.value(QStringLiteral("hotkeyKey"), static_cast<int>(Qt::Key_Space)).toInt();
+    const QKeySequence sequence(QKeyCombination(Qt::KeyboardModifiers(modifiers), legacyHotkeyKey(key)));
+    return sequence.toString(QKeySequence::PortableText);
+}
+
+void Settings::setGlobalHotkey(const QString &shortcut)
+{
+    if (globalHotkey() == shortcut) return;
+    m_settings.setValue(QStringLiteral("globalHotkey"), shortcut);
+    emit globalHotkeyChanged();
 }
 
 bool Settings::isPluginEnabled(const QString &name) const
@@ -90,8 +59,21 @@ bool Settings::isPluginEnabled(const QString &name) const
 
 void Settings::setPluginEnabled(const QString &name, bool enabled)
 {
-    qDebug() << "setPluginEnabled:" << name << enabled;
+    if (isPluginEnabled(name) == enabled) return;
     m_settings.setValue("plugins/" + name, enabled);
+    emit pluginEnabledChanged(name);
+}
+
+QString Settings::pluginHotkey(const QString &name) const
+{
+    return m_settings.value("pluginHotkeys/" + name).toString();
+}
+
+void Settings::setPluginHotkey(const QString &name, const QString &shortcut)
+{
+    if (pluginHotkey(name) == shortcut) return;
+    m_settings.setValue("pluginHotkeys/" + name, shortcut);
+    emit pluginHotkeyChanged(name);
 }
 
 bool Settings::pluginAutoEnter() const

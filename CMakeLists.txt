@@ -19,6 +19,10 @@ set(QT_DEFAULT_MAJOR_VERSION 6)
 set(QAPPLICATION_CLASS QApplication)
 add_subdirectory(third_party/SingleApplication)
 
+set(QHOTKEY_EXAMPLES OFF CACHE BOOL "" FORCE)
+set(QHOTKEY_INSTALL OFF CACHE BOOL "" FORCE)
+add_subdirectory(third_party/QHotkey EXCLUDE_FROM_ALL)
+
 # QWindowKit 由 git submodule 提供，仅构建 Widgets 静态模块。
 set(QWINDOWKIT_BUILD_STATIC ON CACHE BOOL "" FORCE)
 set(QWINDOWKIT_BUILD_WIDGETS ON CACHE BOOL "" FORCE)
@@ -74,6 +78,7 @@ target_link_libraries(qingzhou PRIVATE
     Qt6::Svg
     Qt6::Network
     SingleApplication::SingleApplication
+    QHotkey::QHotkey
     QWindowKit::Widgets
     spdlog::spdlog
     "${EVERYTHING_SDK_DIR}/lib/Everything64.lib"

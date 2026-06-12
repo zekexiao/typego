@@ -55,8 +55,8 @@ MainWindow::MainWindow(AppLauncher *launcher, PluginManager *pluginManager, Sett
 {
     setAttribute(Qt::WA_DontCreateNativeAncestors);
     setWindowTitle(QStringLiteral("Glide"));
-    resize(640, 420);
-    setMinimumWidth(640);
+    resize(760, 460);
+    setMinimumWidth(720);
 
     auto *layout = new QVBoxLayout(this);
     layout->setContentsMargins(0, 0, 0, 0);
@@ -119,6 +119,7 @@ MainWindow::MainWindow(AppLauncher *launcher, PluginManager *pluginManager, Sett
 
     m_stack = new QStackedWidget;
     m_resultsList = new QListWidget;
+    m_resultsList->setIconSize(QSize(40, 40));
     m_stack->addWidget(m_resultsList);
     contentLayout->addWidget(m_stack, 1);
 
@@ -330,10 +331,20 @@ void MainWindow::rebuildPinnedApps()
     for (const QVariant &value : m_launcher->pinnedApps()) {
         const QVariantMap pin = value.toMap();
         auto *button = new QPushButton(pin.value(QStringLiteral("name")).toString());
+        button->setObjectName(QStringLiteral("pinnedAppButton"));
         const QString icon = pin.value(QStringLiteral("icon")).toString();
         if (!icon.isEmpty()) button->setIcon(QIcon(icon));
+        button->setIconSize(QSize(24, 24));
         const QString path = pin.value(QStringLiteral("path")).toString();
         connect(button, &QPushButton::clicked, this, [this, path]() { m_launcher->launch(path); hide(); });
+        button->setContextMenuPolicy(Qt::CustomContextMenu);
+        connect(button, &QPushButton::customContextMenuRequested, this, [this, button, path](const QPoint &pos) {
+            QMenu menu(this);
+            QAction *unpinAction = menu.addAction(tr("Unpin from Start"));
+            if (menu.exec(button->mapToGlobal(pos)) == unpinAction) {
+                m_launcher->unpinApp(path);
+            }
+        });
         m_pinnedLayout->addWidget(button);
     }
     m_pinnedLayout->addStretch();
@@ -354,6 +365,17 @@ bool MainWindow::openPluginView(const QString &command)
     m_stack->setCurrentWidget(view);
     m_openPluginCmd = command;
     return true;
+}
+
+void MainWindow::activateCommand(const QString &command)
+{
+    showAndActivate();
+    m_searchEdit->setText(command + QStringLiteral(" "));
+    performSearch();
+    IPlugin *plugin = m_pluginManager->plugin(command);
+    if (plugin && plugin->supportsAutoEnter()) {
+        openPluginView(command);
+    }
 }
 
 void MainWindow::openResults()

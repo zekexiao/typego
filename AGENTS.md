@@ -12,6 +12,7 @@
 - 不使用 vcpkg。
 - 第三方依赖使用 git submodule 管理，不要手工复制依赖到仓库。
 - spdlog 使用 `third_party/spdlog` git submodule，并通过根目录 `CMakeLists.txt` 的 `add_subdirectory` 接入。
+- 全局快捷键使用 `third_party/QHotkey` git submodule，不要手写平台原生热键监听。
 - 新增或更新 submodule 时，同步维护 `.gitmodules` 和仓库记录的 submodule 提交。
 
 ## 构建与验证
