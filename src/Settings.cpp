@@ -12,7 +12,7 @@ static Qt::Key legacyHotkeyKey(int key)
 
 Settings::Settings(QObject *parent)
     : QObject(parent)
-    , m_settings("qingzhou", "qingzhou")
+    , m_settings("TypeGo", "TypeGo")
 {
     m_autoStart = m_settings.value("autoStart", false).toBool();
     syncAutoStartRegistry(m_autoStart);
@@ -107,6 +107,18 @@ QString Settings::theme() const
     return m_settings.value("theme", QStringLiteral("system")).toString();
 }
 
+bool Settings::frostedGlass() const
+{
+    return m_settings.value("frostedGlass", true).toBool();
+}
+
+void Settings::setFrostedGlass(bool enabled)
+{
+    if (frostedGlass() == enabled) return;
+    m_settings.setValue("frostedGlass", enabled);
+    emit frostedGlassChanged();
+}
+
 void Settings::setTheme(const QString &theme)
 {
     QString current = this->theme();
@@ -164,15 +176,117 @@ void Settings::setAppLaunchRequiresDoubleClick(bool enabled)
     emit appLaunchRequiresDoubleClickChanged();
 }
 
+bool Settings::showAllAppsWhenSearchEmpty() const
+{
+    return m_settings.value("showAllAppsWhenSearchEmpty", true).toBool();
+}
+
+void Settings::setShowAllAppsWhenSearchEmpty(bool enabled)
+{
+    if (showAllAppsWhenSearchEmpty() == enabled) return;
+    m_settings.setValue("showAllAppsWhenSearchEmpty", enabled);
+    emit showAllAppsWhenSearchEmptyChanged();
+}
+
+bool Settings::showInTaskbar() const
+{
+    return m_settings.value("showInTaskbar", false).toBool();
+}
+
+void Settings::setShowInTaskbar(bool enabled)
+{
+    if (showInTaskbar() == enabled) return;
+    m_settings.setValue("showInTaskbar", enabled);
+    emit showInTaskbarChanged();
+}
+
+bool Settings::hideUninstallEntries() const
+{
+    return m_settings.value("hideUninstallEntries", true).toBool();
+}
+
+void Settings::setHideUninstallEntries(bool enabled)
+{
+    if (hideUninstallEntries() == enabled) return;
+    m_settings.setValue("hideUninstallEntries", enabled);
+    emit hideUninstallEntriesChanged();
+}
+
+bool Settings::startHiddenOnBoot() const
+{
+    return m_settings.value("startHiddenOnBoot", false).toBool();
+}
+
+void Settings::setStartHiddenOnBoot(bool enabled)
+{
+    if (startHiddenOnBoot() == enabled) return;
+    m_settings.setValue("startHiddenOnBoot", enabled);
+    syncAutoStartRegistry(m_autoStart);
+    emit startHiddenOnBootChanged();
+}
+
+QStringList Settings::customScanDirs() const
+{
+    return m_settings.value("customScanDirs").toStringList();
+}
+
+void Settings::setCustomScanDirs(const QStringList &dirs)
+{
+    QStringList normalized;
+    for (const QString &dir : dirs) {
+        const QString trimmed = dir.trimmed();
+        if (!trimmed.isEmpty() && !normalized.contains(trimmed, Qt::CaseInsensitive)) {
+            normalized.append(trimmed);
+        }
+    }
+    if (customScanDirs() == normalized) return;
+    m_settings.setValue("customScanDirs", normalized);
+    emit customScanDirsChanged();
+}
+
+bool Settings::customScanDirsRecursive() const
+{
+    return m_settings.value("customScanDirsRecursive", false).toBool();
+}
+
+void Settings::setCustomScanDirsRecursive(bool enabled)
+{
+    if (customScanDirsRecursive() == enabled) return;
+    m_settings.setValue("customScanDirsRecursive", enabled);
+    emit customScanDirsRecursiveChanged();
+}
+
+QString Settings::uiFontFamily() const
+{
+    if (m_settings.contains(QStringLiteral("uiFontFamily"))) {
+        return m_settings.value(QStringLiteral("uiFontFamily")).toString();
+    }
+    if (m_settings.value(QStringLiteral("useSystemWenkaiFont"), false).toBool()) {
+        return QStringLiteral("LXGW WenKai");
+    }
+    return QString();
+}
+
+void Settings::setUiFontFamily(const QString &family)
+{
+    const QString normalized = family.trimmed();
+    if (uiFontFamily() == normalized) return;
+    m_settings.setValue(QStringLiteral("uiFontFamily"), normalized);
+    emit uiFontFamilyChanged();
+}
+
 void Settings::syncAutoStartRegistry(bool enabled)
 {
 #ifdef Q_OS_WIN
     QSettings reg("HKEY_CURRENT_USER\\Software\\Microsoft\\Windows\\CurrentVersion\\Run", QSettings::NativeFormat);
     if (enabled) {
         QString path = QCoreApplication::applicationFilePath();
-        reg.setValue("qingzhou", path.replace('/', '\\'));
+        path.replace('/', '\\');
+        QString command = QStringLiteral("\"%1\"").arg(path);
+        if (startHiddenOnBoot()) command += QStringLiteral(" --background");
+        reg.setValue("TypeGo", command);
     } else {
-        reg.remove("qingzhou");
+        reg.remove("TypeGo");
     }
 #else
     Q_UNUSED(enabled)

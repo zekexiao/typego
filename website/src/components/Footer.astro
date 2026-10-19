@@ -1,0 +1,16 @@
+---
+import { copy, type Language } from "../config";
+const { lang } = Astro.props as { lang: Language };
+const t = copy[lang];
+---
+
+<footer>
+  <div class="footer-inner">
+    <div>
+      <div class="logo"><img src="/assets/icon.png" alt="" /><span>TypeGo</span></div>
+      <p>{lang === "zh" ? "专注速度与效率的 Windows 启动器。" : "A Windows launcher focused on speed and efficiency."}</p>
+    </div>
+    <div class="footer-links">{t.nav.map(([name, url]) => <a href={url}>{name}</a>)}</div>
+  </div>
+  <div class="copyright">© {new Date().getFullYear()} TypeGo. {lang === "zh" ? "保留所有权利。" : "All rights reserved."}</div>
+</footer>

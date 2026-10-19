@@ -2,9 +2,9 @@
 
 #include "IPlugin.h"
 #include "../todo/TaskService.h"
-#include "../todo/TaskTreeModel.h"
 
 class QWidget;
+class TodoView;
 
 // 提供任务管理命令和任务视图的插件。
 class TodoPlugin : public IPlugin {
@@ -16,13 +16,12 @@ public:
     QString description() const override { return tr("Task Management"); }
     QVariantList query(const QString &args) override;
     bool execute(const QVariantMap &action) override;
+    LaunchMode launchMode(const QString &args) const override;
     bool supportsAutoEnter() const override { return true; }
     QWidget *viewUrl() override;
 
-    TaskTreeModel *treeModel() const { return m_model; }
-
 private:
     TaskService *m_service;
-    TaskTreeModel *m_model;
+    TodoView *m_view = nullptr;
 };
 

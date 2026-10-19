@@ -1,4 +1,5 @@
 #include "AppLauncher.h"
+#include "Settings.h"
 #include "utils/PinyinConverter.h"
 #include <QProcess>
 #include <QDesktopServices>
@@ -12,25 +13,30 @@
 #include <QJsonDocument>
 #include <QJsonArray>
 #include <QJsonObject>
+#include <QSaveFile>
 #include <QStandardPaths>
+#include <utility>
 
 #ifdef Q_OS_WIN
 #include <windows.h>
 #include <shlobj.h>
 #endif
 
-AppLauncher::AppLauncher(QObject *parent)
+AppLauncher::AppLauncher(Settings *settings, QObject *parent)
     : QObject(parent)
+    , m_settings(settings)
 {
-    m_iconCacheDir = QDir::tempPath() + "/qingzhou/icons";
+    m_iconCacheDir = QDir::tempPath() + "/TypeGo/icons";
     QDir().mkpath(m_iconCacheDir);
 
-    addBuiltinApps();
-    scanStartMenu();
-    loadPins();
-
-    // Default pins on first run
-    if (m_pins.isEmpty()) {
+    rebuildApps();
+    if (m_settings) {
+        connect(m_settings, &Settings::hideUninstallEntriesChanged, this, &AppLauncher::rebuildApps);
+        connect(m_settings, &Settings::customScanDirsChanged, this, &AppLauncher::rebuildApps);
+        connect(m_settings, &Settings::customScanDirsRecursiveChanged, this, &AppLauncher::rebuildApps);
+    }
+    // 仅首次运行时创建默认固定项，已保存的空列表必须保持为空。
+    if (!loadPins()) {
         pinApp(QStringLiteral("calc"), tr("Calculator"), QString());
         pinApp(QStringLiteral("taskmgr"), tr("Task Manager"), QString());
     }
@@ -42,6 +48,8 @@ static AppItem makeAppItem(const QString &name, const QString &path, const QStri
     item.name = name;
     item.path = path;
     item.desc = desc;
+    item.lowerName = name.toLower();
+    item.lowerDesc = desc.toLower();
     item.iconPath = iconPath;
     item.pinyin = PinyinConverter::instance().toPinyin(name);
     item.pinyinAcronym = PinyinConverter::instance().toAcronym(name);
@@ -59,6 +67,16 @@ void AppLauncher::addBuiltinApps()
     m_apps.append(makeAppItem(tr("Task Manager"), "taskmgr", tr("Windows Task Manager"), extractIcon(winDir + "\\System32\\taskmgr.exe")));
     m_apps.append(makeAppItem(tr("Settings"), "ms-settings:", tr("Windows Settings"), extractIcon(QStringLiteral("ms-settings:"))));
     m_apps.append(makeAppItem(tr("Browser"), "https://www.bing.com", tr("Open Bing Search"), extractIcon(QStringLiteral("https://www.bing.com"))));
+}
+
+void AppLauncher::rebuildApps()
+{
+    m_apps.clear();
+    m_appPaths.clear();
+    addBuiltinApps();
+    scanStartMenu();
+    scanCustomDirs();
+    emit appsChanged();
 }
 
 static QPixmap hIconToPixmap(HICON hIcon)
@@ -173,46 +191,74 @@ void AppLauncher::scanStartMenu()
         if (!dirs.contains(p)) dirs << p;
     }
 
-    QSet<QString> seen;
     for (const QString &dirPath : dirs) {
-        QDir dir(dirPath);
-        if (!dir.exists()) continue;
-
-        QFileInfoList files = dir.entryInfoList(QStringList() << "*.lnk", QDir::Files | QDir::NoDotAndDotDot);
-        for (const QFileInfo &fi : files) {
-            QString name = fi.completeBaseName();
-            if (seen.contains(name)) continue;
-            seen.insert(name);
-            QString icon = extractIcon(fi.absoluteFilePath());
-            m_apps.append(makeAppItem(name, fi.absoluteFilePath(), tr("Start Menu"), icon));
-        }
-
-        QFileInfoList subdirs = dir.entryInfoList(QDir::Dirs | QDir::NoDotAndDotDot);
-        for (const QFileInfo &sdi : subdirs) {
-            QDir subDir(sdi.absoluteFilePath());
-            QFileInfoList subFiles = subDir.entryInfoList(QStringList() << "*.lnk", QDir::Files | QDir::NoDotAndDotDot);
-            for (const QFileInfo &fi : subFiles) {
-                QString name = fi.completeBaseName();
-                if (seen.contains(name)) continue;
-                seen.insert(name);
-                QString icon = extractIcon(fi.absoluteFilePath());
-                m_apps.append(makeAppItem(name, fi.absoluteFilePath(), tr("Start Menu") + " / " + sdi.fileName(), icon));
-            }
-        }
+        scanDirectory(dirPath, tr("Start Menu"), true, 0, 8);
     }
 #endif
+}
+
+void AppLauncher::scanCustomDirs()
+{
+    if (!m_settings) return;
+    const bool recursive = m_settings->customScanDirsRecursive();
+    for (const QString &dirPath : m_settings->customScanDirs()) {
+        scanDirectory(dirPath, tr("Custom Directory"), recursive, 0, 3);
+    }
+}
+
+void AppLauncher::scanDirectory(const QString &dirPath, const QString &desc, bool recursive, int depth, int maxDepth)
+{
+    QDir dir(dirPath);
+    if (!dir.exists()) return;
+
+    const QFileInfoList entries = dir.entryInfoList(QStringList() << "*.lnk" << "*.exe",
+                                                    QDir::Files | QDir::NoDotAndDotDot,
+                                                    QDir::Name);
+    for (const QFileInfo &fi : entries) {
+        const QString name = fi.completeBaseName();
+        const QString filePath = fi.absoluteFilePath();
+        if (shouldHideEntry(name, filePath)) continue;
+
+        const QString pathKey = filePath.toLower();
+        if (m_appPaths.contains(pathKey)) continue;
+        m_appPaths.insert(pathKey);
+
+        m_apps.append(makeAppItem(name, filePath, desc, extractIcon(filePath)));
+    }
+
+    if (!recursive || depth >= maxDepth) return;
+    const QFileInfoList subdirs = dir.entryInfoList(QDir::Dirs | QDir::NoDotAndDotDot, QDir::Name);
+    for (const QFileInfo &subdir : subdirs) {
+        scanDirectory(subdir.absoluteFilePath(),
+                      desc + QStringLiteral(" / ") + subdir.fileName(),
+                      true,
+                      depth + 1,
+                      maxDepth);
+    }
+}
+
+bool AppLauncher::shouldHideEntry(const QString &name, const QString &path) const
+{
+    if (!m_settings || !m_settings->hideUninstallEntries()) return false;
+    const QString text = (name + QStringLiteral(" ") + path).toLower();
+    return text.contains(QStringLiteral("uninstall"))
+        || text.contains(QStringLiteral("unins"))
+        || text.contains(QStringLiteral("uninstaller"))
+        || text.contains(QStringLiteral("remove "))
+        || text.contains(QStringLiteral("卸载"));
 }
 
 QVariantList AppLauncher::search(const QString &query)
 {
     QVariantList results;
+    results.reserve(m_apps.size());
     QString q = query.trimmed().toLower();
 
     for (const auto &app : m_apps) {
         bool match = q.isEmpty();
         if (!match) {
-            if (app.name.toLower().contains(q)) match = true;
-            else if (app.desc.toLower().contains(q)) match = true;
+            if (app.lowerName.contains(q)) match = true;
+            else if (app.lowerDesc.contains(q)) match = true;
             else if (app.pinyin.contains(q)) match = true;
             else if (app.pinyinAcronym.contains(q)) match = true;
         }
@@ -243,6 +289,10 @@ bool AppLauncher::launch(const QString &path)
     }
 
     QFileInfo fi(path);
+    if (fi.isDir()) {
+        return QDesktopServices::openUrl(QUrl::fromLocalFile(path));
+    }
+
     if (fi.suffix().toLower() == "lnk") {
 #ifdef Q_OS_WIN
         HINSTANCE result = ShellExecuteW(nullptr, L"open", (LPCWSTR)path.utf16(), nullptr, nullptr, SW_SHOWNORMAL);
@@ -262,16 +312,16 @@ QString AppLauncher::pinFilePath() const
     return dir + "/pins.json";
 }
 
-void AppLauncher::loadPins()
+bool AppLauncher::loadPins()
 {
     QString path = pinFilePath();
     QFile file(path);
-    if (!file.open(QIODevice::ReadOnly)) return;
+    if (!file.open(QIODevice::ReadOnly)) return false;
     QByteArray data = file.readAll();
     file.close();
 
     QJsonDocument doc = QJsonDocument::fromJson(data);
-    if (!doc.isArray()) return;
+    if (!doc.isArray()) return false;
     QJsonArray arr = doc.array();
     for (const QJsonValue &v : arr) {
         QJsonObject o = v.toObject();
@@ -281,6 +331,7 @@ void AppLauncher::loadPins()
         p.iconPath = o.value("iconPath").toString();
         m_pins.append(p);
     }
+    return true;
 }
 
 void AppLauncher::savePins() const
@@ -294,10 +345,11 @@ void AppLauncher::savePins() const
         arr.append(o);
     }
     QJsonDocument doc(arr);
-    QFile file(pinFilePath());
+    QSaveFile file(pinFilePath());
     if (file.open(QIODevice::WriteOnly)) {
-        file.write(doc.toJson(QJsonDocument::Compact));
-        file.close();
+        if (file.write(doc.toJson(QJsonDocument::Compact)) >= 0) {
+            file.commit();
+        }
     }
 }
 

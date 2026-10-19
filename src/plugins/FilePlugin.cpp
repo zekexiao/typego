@@ -6,6 +6,7 @@
 #include <QDesktopServices>
 #include <QUrl>
 #include <QDebug>
+#include <limits>
 
 #ifdef Q_OS_WIN
 #include <windows.h>
@@ -15,7 +16,7 @@
 FilePlugin::FilePlugin(QObject *parent)
     : IPlugin(parent)
 {
-    m_iconCacheDir = QDir::tempPath() + "/qingzhou/icons";
+    m_iconCacheDir = QDir::tempPath() + "/TypeGo/icons";
 }
 
 FilePlugin::~FilePlugin() = default;
@@ -47,6 +48,17 @@ QString FilePlugin::extractFileIcon(const QString &filePath)
     return "";
 }
 
+QString FilePlugin::typeLabel(const QFileInfo &fileInfo, bool isFolder) const
+{
+    if (isFolder) return tr("Folder");
+
+    const QString suffix = fileInfo.suffix().trimmed();
+    if (!suffix.isEmpty()) {
+        return tr("%1 File").arg(suffix.toUpper());
+    }
+    return tr("File");
+}
+
 QVariantList FilePlugin::query(const QString &args)
 {
     QVariantList results;
@@ -66,7 +78,6 @@ QVariantList FilePlugin::query(const QString &args)
     }
 
     Everything_SetSearchW((LPCWSTR)args.utf16());
-    Everything_SetMax(50);
     Everything_SetRequestFlags(EVERYTHING_REQUEST_FULL_PATH_AND_FILE_NAME);
 
     if (!Everything_QueryW(TRUE)) {
@@ -90,6 +101,10 @@ QVariantList FilePlugin::query(const QString &args)
     }
 
     DWORD count = Everything_GetNumResults();
+    const DWORD totalCount = Everything_GetTotResults();
+    const DWORD maxReserve = static_cast<DWORD>((std::numeric_limits<int>::max)());
+    const DWORD reserveCount = qMin<DWORD>(count, maxReserve - (totalCount > count ? 1 : 0));
+    results.reserve(static_cast<int>(reserveCount + (totalCount > count ? 1 : 0)));
     if (count == 0) {
         QVariantMap item;
         item["title"] = tr("No files found");
@@ -109,19 +124,35 @@ QVariantList FilePlugin::query(const QString &args)
         if (Everything_GetResultFullPathNameW(i, wpath, 1024) > 0) {
             QString fullPath = QString::fromWCharArray(wpath);
             QFileInfo fi(fullPath);
+            const bool isFolder = Everything_IsFolderResult(i);
+            const QString kind = typeLabel(fi, isFolder);
 
             QVariantMap item;
             item["title"] = fi.fileName();
-            item["subtitle"] = fi.absolutePath();
-            item["icon"] = extractFileIcon(fullPath);
+            item["subtitle"] = kind + QStringLiteral(" · ") + fi.absolutePath();
+            item["kind"] = kind;
+            item["path"] = fullPath;
+            item["icon"] = "";
 
             QVariantMap action;
-            action["type"] = QStringLiteral("openFile");
+            action["type"] = isFolder ? QStringLiteral("openFolder") : QStringLiteral("openFile");
             action["data"] = fullPath;
             action["plugin"] = command();
             item["action"] = action;
             results.append(item);
         }
+    }
+
+    if (totalCount > count) {
+        QVariantMap item;
+        item["title"] = tr("Showing %1 of %2 results").arg(count).arg(totalCount);
+        item["subtitle"] = tr("Use a more specific keyword to narrow the results");
+        item["icon"] = "";
+        QVariantMap action;
+        action["type"] = QStringLiteral("none");
+        action["plugin"] = command();
+        item["action"] = action;
+        results.append(item);
     }
 
     Everything_Reset();
@@ -148,6 +179,8 @@ bool FilePlugin::execute(const QVariantMap &action)
     if (data.isEmpty()) return false;
 
     if (type == "openFile") {
+        return QDesktopServices::openUrl(QUrl::fromLocalFile(data));
+    } else if (type == "openFolder") {
         return QDesktopServices::openUrl(QUrl::fromLocalFile(data));
     }
     return false;

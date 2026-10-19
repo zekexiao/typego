@@ -1,0 +1,11 @@
+{
+  "devDependencies": {
+    "wrangler": "^4.100.0"
+  },
+  "scripts": {
+    "site:install": "cd website && corepack pnpm install --prefer-offline --config.confirmModulesPurge=false",
+    "site:build": "cd website && corepack pnpm build",
+    "site:deploy": "npm run site:build && wrangler pages deploy website/dist --project-name=typego --branch=main --commit-dirty=true",
+    "site:list": "wrangler pages deployment list --project-name=typego"
+  }
+}

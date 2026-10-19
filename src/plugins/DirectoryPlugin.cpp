@@ -64,7 +64,7 @@ QVariantList DirectoryPlugin::query(const QString &args)
 
     // 添加打开当前目录的操作。
     QVariantMap enterItem;
-    enterItem["title"] = tr("Open ") + dir.dirName();
+    enterItem["title"] = tr("Open %1").arg(dir.dirName());
     enterItem["subtitle"] = dir.absolutePath();
     enterItem["icon"] = "";
     QVariantMap enterAction;
@@ -74,31 +74,15 @@ QVariantList DirectoryPlugin::query(const QString &args)
     enterItem["action"] = enterAction;
     results.append(enterItem);
 
-    // 列出子目录和文件。
-    QFileIconProvider provider;
-    QString cacheDir = QDir::tempPath() + "/qingzhou/icons";
-    QDir().mkpath(cacheDir);
-    
+    // 列出子目录和文件。图标由结果列表异步加载，避免阻塞输入。
     QFileInfoList entries = dir.entryInfoList(QDir::Dirs | QDir::Files | QDir::NoDotAndDotDot,
                                                QDir::DirsFirst | QDir::Name);
     for (const QFileInfo &fi : entries) {
         QVariantMap item;
         item["title"] = fi.fileName();
         item["subtitle"] = fi.isDir() ? tr("Folder") : fi.suffix().toUpper();
-        
-        // 优先使用图标缓存，避免重复调用 provider.icon()。
-        QString cachePath = cacheDir + "/dir_" + QString::number(qHash(fi.absoluteFilePath()), 16) + ".png";
-        if (QFile::exists(cachePath)) {
-            item["icon"] = cachePath;
-        } else {
-            QIcon icon = provider.icon(fi);
-            QPixmap pixmap = icon.pixmap(QSize(32, 32));
-            if (!pixmap.isNull() && pixmap.save(cachePath, "PNG")) {
-                item["icon"] = cachePath;
-            } else {
-                item["icon"] = "";
-            }
-        }
+        item["path"] = fi.absoluteFilePath();
+        item["icon"] = "";
 
         QVariantMap action;
         if (fi.isDir()) {

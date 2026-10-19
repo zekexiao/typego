@@ -31,18 +31,23 @@ public:
     /// cmd: 命令名，args: 参数
     /// 返回结果列表，每个元素是 QVariantMap
     Q_INVOKABLE QVariantList queryCommand(const QString &cmd, const QString &args);
+    QVariantList queryCommand(const QString &cmd, const QString &args, IPlugin::QueryContext context);
 
     /// QML 可调用：执行某个结果项的动作
     Q_INVOKABLE bool executeAction(const QVariantMap &action);
 
     /// QML 可调用：获取所有命令名列表
     Q_INVOKABLE QStringList commands() const;
+    bool hasCommand(const QString &cmd) const;
 
     /// QML 可调用：获取命令描述
     Q_INVOKABLE QString commandDescription(const QString &cmd) const;
 
     /// QML 可调用：获取命令对应的自定义视图 URL
     QWidget *viewForCommand(const QString &cmd) const;
+    QWidget *viewForCommand(const QString &cmd, const QString &args) const;
+    IPlugin::LaunchMode launchModeForCommand(const QString &cmd, const QString &args) const;
+    QWidget *settingsWidgetForCommand(const QString &cmd) const;
 
     /// QML 可调用：命令无参数时是否直接进入
     Q_INVOKABLE bool autoEnterForCommand(const QString &cmd) const;
@@ -52,5 +57,6 @@ public:
 
 private:
     QHash<QString, IPlugin *> m_plugins;
+    QStringList m_commands;
     Settings *m_settings = nullptr;
 };

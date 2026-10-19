@@ -2,6 +2,8 @@
 
 #include "IPlugin.h"
 
+class QFileInfo;
+
 // everything 文件搜索
 class FilePlugin : public IPlugin {
     Q_OBJECT
@@ -17,5 +19,5 @@ public:
 private:
     QString m_iconCacheDir;
     QString extractFileIcon(const QString &filePath);
+    QString typeLabel(const QFileInfo &fileInfo, bool isFolder) const;
 };
-

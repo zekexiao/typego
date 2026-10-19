@@ -11,9 +11,16 @@ class Settings : public QObject {
     Q_PROPERTY(bool pluginAutoEnter READ pluginAutoEnter WRITE setPluginAutoEnter NOTIFY pluginAutoEnterChanged)
     Q_PROPERTY(bool autoStart READ autoStart WRITE setAutoStart NOTIFY autoStartChanged)
     Q_PROPERTY(QString theme READ theme WRITE setTheme NOTIFY themeChanged)
+    Q_PROPERTY(bool frostedGlass READ frostedGlass WRITE setFrostedGlass NOTIFY frostedGlassChanged)
     Q_PROPERTY(bool showFloatIcon READ showFloatIcon WRITE setShowFloatIcon NOTIFY showFloatIconChanged)
     Q_PROPERTY(bool autoHideOnFocusLoss READ autoHideOnFocusLoss WRITE setAutoHideOnFocusLoss NOTIFY autoHideOnFocusLossChanged)
     Q_PROPERTY(bool appLaunchRequiresDoubleClick READ appLaunchRequiresDoubleClick WRITE setAppLaunchRequiresDoubleClick NOTIFY appLaunchRequiresDoubleClickChanged)
+    Q_PROPERTY(bool showAllAppsWhenSearchEmpty READ showAllAppsWhenSearchEmpty WRITE setShowAllAppsWhenSearchEmpty NOTIFY showAllAppsWhenSearchEmptyChanged)
+    Q_PROPERTY(bool showInTaskbar READ showInTaskbar WRITE setShowInTaskbar NOTIFY showInTaskbarChanged)
+    Q_PROPERTY(bool hideUninstallEntries READ hideUninstallEntries WRITE setHideUninstallEntries NOTIFY hideUninstallEntriesChanged)
+    Q_PROPERTY(bool startHiddenOnBoot READ startHiddenOnBoot WRITE setStartHiddenOnBoot NOTIFY startHiddenOnBootChanged)
+    Q_PROPERTY(bool customScanDirsRecursive READ customScanDirsRecursive WRITE setCustomScanDirsRecursive NOTIFY customScanDirsRecursiveChanged)
+    Q_PROPERTY(QString uiFontFamily READ uiFontFamily WRITE setUiFontFamily NOTIFY uiFontFamilyChanged)
 
 public:
     explicit Settings(QObject *parent = nullptr);
@@ -40,6 +47,8 @@ public:
 
     QString theme() const;
     void setTheme(const QString &theme);
+    bool frostedGlass() const;
+    void setFrostedGlass(bool enabled);
 
     bool showFloatIcon() const;
     void setShowFloatIcon(bool enabled);
@@ -52,6 +61,26 @@ public:
     bool appLaunchRequiresDoubleClick() const;
     void setAppLaunchRequiresDoubleClick(bool enabled);
 
+    bool showAllAppsWhenSearchEmpty() const;
+    void setShowAllAppsWhenSearchEmpty(bool enabled);
+
+    bool showInTaskbar() const;
+    void setShowInTaskbar(bool enabled);
+
+    bool hideUninstallEntries() const;
+    void setHideUninstallEntries(bool enabled);
+
+    bool startHiddenOnBoot() const;
+    void setStartHiddenOnBoot(bool enabled);
+
+    QStringList customScanDirs() const;
+    void setCustomScanDirs(const QStringList &dirs);
+    bool customScanDirsRecursive() const;
+    void setCustomScanDirsRecursive(bool enabled);
+
+    QString uiFontFamily() const;
+    void setUiFontFamily(const QString &family);
+
 signals:
     void globalHotkeyChanged();
     void searchEngineChanged();
@@ -60,9 +89,17 @@ signals:
     void pluginHotkeyChanged(const QString &name);
     void autoStartChanged();
     void themeChanged();
+    void frostedGlassChanged();
     void showFloatIconChanged();
     void autoHideOnFocusLossChanged();
     void appLaunchRequiresDoubleClickChanged();
+    void showAllAppsWhenSearchEmptyChanged();
+    void showInTaskbarChanged();
+    void hideUninstallEntriesChanged();
+    void startHiddenOnBootChanged();
+    void customScanDirsChanged();
+    void customScanDirsRecursiveChanged();
+    void uiFontFamilyChanged();
 
 private:
     QSettings m_settings;

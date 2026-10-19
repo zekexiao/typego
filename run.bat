@@ -4,7 +4,7 @@ setlocal
 set "PROJECT_DIR=%~dp0"
 set "PROJECT_DIR=%PROJECT_DIR:~0,-1%"
 set "QT_DIR=C:\Qt\6.10.3\msvc2022_64"
-set "APP_PATH=%PROJECT_DIR%\build\bin\qingzhou.exe"
+set "APP_PATH=%PROJECT_DIR%\build\bin\TypeGo.exe"
 
 set "PATH=%QT_DIR%\bin;%PATH%"
 set "QT_PLUGIN_PATH=%QT_DIR%\plugins"

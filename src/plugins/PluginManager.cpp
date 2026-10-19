@@ -30,11 +30,17 @@ void PluginManager::registerPlugin(IPlugin *plugin)
             continue;
         }
         m_plugins[cmd] = plugin;
+        m_commands.append(cmd);
         qDebug() << "Plugin registered:" << cmd << "-" << plugin->description();
     }
 }
 
 QVariantList PluginManager::queryCommand(const QString &cmd, const QString &args)
+{
+    return queryCommand(cmd, args, IPlugin::QueryContext::Auto);
+}
+
+QVariantList PluginManager::queryCommand(const QString &cmd, const QString &args, IPlugin::QueryContext context)
 {
     QString key = cmd.toLower().trimmed();
     IPlugin *plugin = m_plugins.value(key, nullptr);
@@ -42,7 +48,7 @@ QVariantList PluginManager::queryCommand(const QString &cmd, const QString &args
         qDebug() << "Unknown command:" << cmd;
         return QVariantList();
     }
-    if (m_settings && !m_settings->isPluginEnabled(key)) {
+    if (m_settings && !m_settings->isPluginEnabled(plugin->command())) {
         QVariantMap item;
         item["title"] = tr("Plugin disabled");
         item["subtitle"] = key + tr(" plugin has been disabled in settings");
@@ -53,7 +59,7 @@ QVariantList PluginManager::queryCommand(const QString &cmd, const QString &args
         item["action"] = action;
         return QVariantList() << item;
     }
-    return plugin->query(args);
+    return plugin->query(args, context);
 }
 
 bool PluginManager::executeAction(const QVariantMap &action)
@@ -96,7 +102,12 @@ bool PluginManager::executeAction(const QVariantMap &action)
 
 QStringList PluginManager::commands() const
 {
-    return m_plugins.keys();
+    return m_commands;
+}
+
+bool PluginManager::hasCommand(const QString &cmd) const
+{
+    return m_plugins.contains(cmd.toLower().trimmed());
 }
 
 QString PluginManager::commandDescription(const QString &cmd) const
@@ -108,17 +119,37 @@ QString PluginManager::commandDescription(const QString &cmd) const
 
 QWidget *PluginManager::viewForCommand(const QString &cmd) const
 {
+    return viewForCommand(cmd, QString());
+}
+
+QWidget *PluginManager::viewForCommand(const QString &cmd, const QString &args) const
+{
     IPlugin *plugin = m_plugins.value(cmd.toLower(), nullptr);
     if (!plugin) return nullptr;
     plugin->activateCommand(cmd.toLower());
+    plugin->activateQuery(args);
     return plugin->viewUrl();
+}
+
+IPlugin::LaunchMode PluginManager::launchModeForCommand(const QString &cmd, const QString &args) const
+{
+    IPlugin *plugin = m_plugins.value(cmd.toLower().trimmed(), nullptr);
+    if (!plugin) return IPlugin::LaunchMode::List;
+    if (m_settings && !m_settings->isPluginEnabled(plugin->command())) return IPlugin::LaunchMode::List;
+    return plugin->launchMode(args);
+}
+
+QWidget *PluginManager::settingsWidgetForCommand(const QString &cmd) const
+{
+    IPlugin *plugin = m_plugins.value(cmd.toLower().trimmed(), nullptr);
+    return plugin ? plugin->settingsWidget() : nullptr;
 }
 
 bool PluginManager::autoEnterForCommand(const QString &cmd) const
 {
     IPlugin *plugin = m_plugins.value(cmd.toLower(), nullptr);
     if (!plugin || !plugin->supportsAutoEnter()) return false;
-    if (!m_settings || !m_settings->isPluginEnabled(cmd.toLower())) return false;
+    if (!m_settings || !m_settings->isPluginEnabled(plugin->command())) return false;
     return m_settings->pluginAutoEnter();
 }
 

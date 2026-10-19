@@ -1,3 +1,14 @@
+# 构建产物
 build
+build-validation
+dist-validation
+package-validation
+dist
+cmake-build-*
+
+# 本地缓存与依赖
+.cache
+node_modules
+
+# IDE
 .idea
-cmake*

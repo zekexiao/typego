@@ -1,0 +1,59 @@
+---
+import { ArrowRight, AppWindow, Gauge, Keyboard, Puzzle, Search, Settings2 } from "@lucide/astro";
+import Layout from "../layouts/Layout.astro";
+import ProductWindow from "./ProductWindow.astro";
+import { copy, site, type Language } from "../config";
+const { lang } = Astro.props as { lang: Language };
+const t = copy[lang];
+const zh = lang === "zh";
+const features = zh ? [
+  ["毫秒级响应", "打开即用，输入即达，把等待时间留给更重要的事。", Gauge],
+  ["应用与文件搜索", "在一个入口中快速找到应用、文件和目录。", Search],
+  ["命令插件", "计算、目录、待办等能力都可通过命令直接调用。", Puzzle],
+  ["全局快捷键", "使用自定义快捷键，从任何位置立即唤起。", Keyboard],
+  ["灵活设置", "双击启动、固定应用、结果高度均可按习惯调整。", Settings2],
+  ["原生 Windows 体验", "轻量无边框界面，融入桌面而不打扰工作。", AppWindow],
+] : [
+  ["Instant response", "Open, type, and reach what you need without waiting.", Gauge],
+  ["Apps and files", "Find apps, files, and folders from one focused entry point.", Search],
+  ["Command plugins", "Run calculator, directory, todo, and more with commands.", Puzzle],
+  ["Global hotkeys", "Open TypeGo instantly from anywhere with your own shortcut.", Keyboard],
+  ["Flexible settings", "Tune launch behavior, pinned apps, and result height.", Settings2],
+  ["Native Windows feel", "A lightweight frameless interface that stays out of your way.", AppWindow],
+];
+---
+
+<Layout lang={lang} description={zh ? "TypeGo 是轻量、高效的 Windows 启动器，内存使用低至 35 MB。" : "TypeGo is a fast, lightweight Windows launcher using as little as 35 MB of memory."}>
+  <section class="hero section">
+    <div class="hero-intro">
+      <div class="hero-copy">
+        <div class="eyebrow">{zh ? "为 Windows 效率而生" : "Built for Windows productivity"}</div>
+        <h1>{zh ? <>轻快启动一切，<em>内存低至 35 MB</em></> : <>Launch anything fast, <em>from just 35 MB</em></>}</h1>
+      </div>
+      <div class="hero-side">
+        <p>{zh ? "TypeGo 把应用、文件、命令与插件放进一个简洁入口。轻量驻留，随时响应，不打断你的思路。" : "TypeGo brings apps, files, commands, and plugins into one focused launcher. It stays light and responds the moment you need it."}</p>
+        <div class="hero-actions">
+          <a class="button primary" href={site.downloadUrl}>{t.download}<ArrowRight size={17} /></a>
+          <a class="button" href={lang === "zh" ? "/download#changelog" : "/en/download#changelog"}>{zh ? "查看更新日志" : "View changelog"}</a>
+        </div>
+        <span class="requirements">{t.requirements}</span>
+      </div>
+    </div>
+    <div class="product-stage"><ProductWindow lang={lang} /></div>
+  </section>
+
+  <section class="metrics section">
+    <div><strong>35<span>MB</span></strong><p>{zh ? "最低内存占用" : "Memory usage as low as"}</p></div>
+    <div><strong>1<span>入口</span></strong><p>{zh ? "应用、文件与命令" : "Apps, files, and commands"}</p></div>
+    <div><strong>0<span>干扰</span></strong><p>{zh ? "用完即隐，保持专注" : "Disappears when you're done"}</p></div>
+  </section>
+
+  <section class="section">
+    <div class="section-title"><span>{zh ? "核心能力" : "Core features"}</span><h2>{zh ? "少一点负担，多一点效率" : "Less overhead. More momentum."}</h2><p>{zh ? "每一项能力都围绕更快找到、更快执行而设计。" : "Every capability is designed to help you find and act faster."}</p></div>
+    <div class="feature-grid">
+      {features.map(([title, desc, Icon]) => <article class="card"><Icon size={24} /><h3>{title}</h3><p>{desc}</p></article>)}
+    </div>
+  </section>
+
+  <section class="cta section"><div><span>TypeGo 1.0</span><h2>{zh ? "更轻的常驻，更快的抵达。" : "A lighter footprint. A faster way there."}</h2></div><a class="button" href={site.downloadUrl}>{t.download}<ArrowRight size={17} /></a></section>
+</Layout>

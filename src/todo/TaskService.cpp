@@ -10,16 +10,22 @@ TaskService::TaskService(QObject *parent)
 {
     QString path = QStandardPaths::writableLocation(QStandardPaths::AppDataLocation);
     path += "/todo.json";
-    m_storage = new JsonTaskStorage(path);
+    m_storage = std::make_unique<JsonTaskStorage>(path);
     m_storage->load(m_repo);
 }
 
+TaskService::~TaskService() = default;
+
 QString TaskService::createTask(const QString &title, const QString &parentId)
 {
+    const QString normalizedTitle = title.trimmed();
+    if (normalizedTitle.isEmpty()) return QString();
+    if (!parentId.isEmpty() && !m_repo->exists(parentId)) return QString();
+
     Task t;
     t.id = QUuid::createUuid().toString(QUuid::WithoutBraces);
     t.parentId = parentId;
-    t.title = title.isEmpty() ? tr("New Task") : title;
+    t.title = normalizedTitle;
     t.completed = false;
     t.priority = 0;
     t.createdTime = QDateTime::currentDateTime();
@@ -44,6 +50,17 @@ void TaskService::deleteTask(const QString &id)
 
 void TaskService::setCompleted(const QString &id, bool completed)
 {
+    setCompletedRecursive(id, completed);
+
+    const Task task = m_repo->find(id);
+    if (!task.parentId.isEmpty()) {
+        updateParentCompletion(task.parentId);
+    }
+    persist();
+}
+
+void TaskService::setCompletedRecursive(const QString &id, bool completed)
+{
     Task t = m_repo->find(id);
     if (t.id.isEmpty()) return;
 
@@ -55,22 +72,18 @@ void TaskService::setCompleted(const QString &id, bool completed)
     // 递归设置子任务状态
     auto children = m_repo->childrenOf(id);
     for (const auto &child : children) {
-        setCompleted(child.id, completed);
+        setCompletedRecursive(child.id, completed);
     }
-
-    // 更新父任务的完成状态
-    if (!t.parentId.isEmpty()) {
-        updateParentCompletion(t.parentId);
-    }
-
-    persist();
 }
 
 void TaskService::updateTitle(const QString &id, const QString &title)
 {
+    const QString normalizedTitle = title.trimmed();
+    if (normalizedTitle.isEmpty()) return;
     Task t = m_repo->find(id);
     if (t.id.isEmpty()) return;
-    t.title = title;
+    if (t.title == normalizedTitle) return;
+    t.title = normalizedTitle;
     t.updatedTime = QDateTime::currentDateTime();
     m_repo->update(t);
     persist();
@@ -80,7 +93,29 @@ void TaskService::updateNote(const QString &id, const QString &note)
 {
     Task t = m_repo->find(id);
     if (t.id.isEmpty()) return;
+    if (t.note == note) return;
     t.note = note;
+    t.updatedTime = QDateTime::currentDateTime();
+    m_repo->update(t);
+    persist();
+}
+
+void TaskService::updatePriority(const QString &id, int priority)
+{
+    priority = qBound(0, priority, 2);
+    Task t = m_repo->find(id);
+    if (t.id.isEmpty() || t.priority == priority) return;
+    t.priority = priority;
+    t.updatedTime = QDateTime::currentDateTime();
+    m_repo->update(t);
+    persist();
+}
+
+void TaskService::updateDueTime(const QString &id, const QDateTime &dueTime)
+{
+    Task t = m_repo->find(id);
+    if (t.id.isEmpty() || t.dueTime == dueTime) return;
+    t.dueTime = dueTime;
     t.updatedTime = QDateTime::currentDateTime();
     m_repo->update(t);
     persist();

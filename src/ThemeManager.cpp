@@ -2,11 +2,99 @@
 #include <QFile>
 #include <QGuiApplication>
 #include <QStyleHints>
+#include <QApplication>
+#include <QEvent>
+#include <QStyle>
+#include <QWidget>
+
+#ifdef Q_OS_WIN
+#include <windows.h>
+#include <dwmapi.h>
+#endif
+
+namespace {
+QString translucentColor(const QColor &color, int alpha)
+{
+    return QStringLiteral("rgba(%1, %2, %3, %4)")
+        .arg(color.red()).arg(color.green()).arg(color.blue()).arg(alpha);
+}
+}
 
 ThemeManager::ThemeManager(QObject *parent)
     : QObject(parent)
 {
     updatePalette();
+    qApp->installEventFilter(this);
+    connect(this, &ThemeManager::paletteChanged, this, [this]() {
+        for (QWidget *window : QApplication::topLevelWidgets()) {
+            if (window->isVisible()) applyWindowMaterial(window);
+        }
+    });
+}
+
+bool ThemeManager::eventFilter(QObject *watched, QEvent *event)
+{
+    if (event->type() == QEvent::Polish) {
+        if (auto *window = qobject_cast<QWidget *>(watched);
+            window && window->isWindow()
+            && !window->property("skipWindowMaterial").toBool()
+            && !window->property("useWindowMaterial").toBool()) {
+            // 在首次绘制前确定底色，避免弹出过程中重新 polish 改变布局与背景。
+            window->setProperty("frostedWindow", false);
+        }
+    }
+    if (event->type() == QEvent::Show) {
+        if (auto *window = qobject_cast<QWidget *>(watched); window && window->isWindow()) {
+            applyWindowMaterial(window);
+        }
+    }
+    return QObject::eventFilter(watched, event);
+}
+
+void ThemeManager::applyWindowMaterial(QWidget *window)
+{
+    // 悬浮图标使用逐像素透明，不能扩展为矩形系统材质。
+    if (window->property("skipWindowMaterial").toBool()) return;
+
+    const bool frosted = m_frostedGlass && window->property("useWindowMaterial").toBool();
+    const auto cached = m_windowMaterials.constFind(window);
+    // 隐藏后再次唤起不重复提交 DWM 材质；句柄重建或外观变化时才更新。
+    if (cached != m_windowMaterials.cend()
+        && cached->nativeId == quintptr(window->internalWinId())
+        && cached->dark == m_isDark && cached->frosted == frosted) return;
+    if (cached == m_windowMaterials.cend()) {
+        connect(window, &QObject::destroyed, this, [this, window]() {
+            m_windowMaterials.remove(window);
+        });
+    }
+
+    bool enabled = false;
+#ifdef Q_OS_WIN
+    const HWND hwnd = reinterpret_cast<HWND>(window->winId());
+    // 系统负责顶层圆角裁剪，弹出窗口仍保持实色，避免透明角落和边框残影。
+    const DWM_WINDOW_CORNER_PREFERENCE corners = DWMWCP_ROUND;
+    DwmSetWindowAttribute(hwnd, DWMWA_WINDOW_CORNER_PREFERENCE, &corners, sizeof(corners));
+    const BOOL dark = m_isDark;
+    DwmSetWindowAttribute(hwnd, DWMWA_USE_IMMERSIVE_DARK_MODE, &dark, sizeof(dark));
+    // 仅显式接入的自定义主窗口扩展玻璃，不能改动 Qt 弹出容器和原生对话框的边框。
+    if (window->property("useWindowMaterial").toBool()) {
+        const DWM_SYSTEMBACKDROP_TYPE backdrop = frosted ? DWMSBT_TRANSIENTWINDOW : DWMSBT_NONE;
+        if (SUCCEEDED(DwmSetWindowAttribute(hwnd, DWMWA_SYSTEMBACKDROP_TYPE,
+                                           &backdrop, sizeof(backdrop)))) {
+            // 与 QWindowKit 保持一致，只从左侧扩展，避免系统强调色重新露出原生标题栏。
+            const MARGINS margins = {frosted ? 65536 : 0, 0, 0, 0};
+            enabled = SUCCEEDED(DwmExtendFrameIntoClientArea(hwnd, &margins)) && frosted;
+        }
+    }
+#endif
+    m_windowMaterials.insert(window, {quintptr(window->internalWinId()), m_isDark, frosted});
+    const QVariant previous = window->property("frostedWindow");
+    if (!previous.isValid() || previous.toBool() != enabled) {
+        window->setProperty("frostedWindow", enabled);
+        window->style()->unpolish(window);
+        window->style()->polish(window);
+        window->update();
+    }
 }
 
 QString ThemeManager::theme() const
@@ -22,6 +110,9 @@ QString ThemeManager::styleSheet() const
     }
 
     QString style = QString::fromUtf8(file.readAll());
+    style.replace(QStringLiteral("@GLASS_TINT@"), translucentColor(bg(), m_frostedGlass ? (m_isDark ? 72 : 100) : 255));
+    style.replace(QStringLiteral("@GLASS_SURFACE@"), translucentColor(surface(), m_frostedGlass ? (m_isDark ? 100 : 125) : 255));
+    style.replace(QStringLiteral("@GLASS_INSET@"), translucentColor(bg(), m_frostedGlass ? 65 : 255));
     style.replace(QStringLiteral("@BG@"), bg().name(QColor::HexRgb));
     style.replace(QStringLiteral("@SURFACE@"), surface().name(QColor::HexRgb));
     style.replace(QStringLiteral("@SURFACE_PRESSED@"), surfacePressed().name(QColor::HexRgb));
@@ -34,6 +125,11 @@ QString ThemeManager::styleSheet() const
     style.replace(QStringLiteral("@ACCENT@"), accent().name(QColor::HexRgb));
     style.replace(QStringLiteral("@ACCENT_PRESSED@"), accentPressed().name(QColor::HexRgb));
     style.replace(QStringLiteral("@PLACEHOLDER@"), placeholder().name(QColor::HexRgb));
+    style.replace(QStringLiteral("@ERROR@"), error().name(QColor::HexRgb));
+    // 关闭按钮的按下色基于悬停色加深，保持两套主题下的一致反馈。
+    QColor closeHover = closeButtonHover();
+    style.replace(QStringLiteral("@CLOSE_HOVER@"), closeHover.name(QColor::HexRgb));
+    style.replace(QStringLiteral("@CLOSE_PRESSED@"), closeHover.darker(115).name(QColor::HexRgb));
     return style;
 }
 
@@ -49,6 +145,16 @@ void ThemeManager::setTheme(const QString &theme)
 void ThemeManager::refresh()
 {
     updatePalette();
+}
+
+void ThemeManager::setFrostedGlass(bool enabled)
+{
+    if (m_frostedGlass == enabled) return;
+    m_frostedGlass = enabled;
+    for (QWidget *window : QApplication::topLevelWidgets()) {
+        if (window->isVisible()) applyWindowMaterial(window);
+    }
+    emit frostedGlassChanged();
 }
 
 bool ThemeManager::isDark() const

@@ -2,6 +2,9 @@
 
 #include <QObject>
 #include <QColor>
+#include <QHash>
+
+class QWidget;
 
 // 管理当前主题及界面调色板。
 class ThemeManager : public QObject {
@@ -31,6 +34,7 @@ public:
     QString styleSheet() const;
     void setTheme(const QString &theme);
     void refresh();
+    void setFrostedGlass(bool enabled);
 
     bool isDark() const;
 
@@ -53,10 +57,22 @@ public:
 signals:
     void themeChanged();
     void paletteChanged();
+    void frostedGlassChanged();
+
+protected:
+    bool eventFilter(QObject *watched, QEvent *event) override;
 
 private:
+    void applyWindowMaterial(QWidget *window);
     void updatePalette();
 
     QString m_theme = QStringLiteral("system");
     bool m_isDark = true;
+    bool m_frostedGlass = true;
+    struct WindowMaterialState {
+        quintptr nativeId;
+        bool dark;
+        bool frosted;
+    };
+    QHash<QWidget *, WindowMaterialState> m_windowMaterials;
 };

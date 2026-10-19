@@ -2,6 +2,7 @@
 
 #include <QObject>
 #include <QDateTime>
+#include <memory>
 #include "TaskRepository.h"
 #include "JsonTaskStorage.h"
 
@@ -12,6 +13,7 @@ class TaskService : public QObject {
     Q_OBJECT
 public:
     explicit TaskService(QObject *parent = nullptr);
+    ~TaskService() override;
 
     TaskRepository *repository() const { return m_repo; }
 
@@ -32,13 +34,16 @@ public:
 
     /// 更新备注
     Q_INVOKABLE void updateNote(const QString &id, const QString &note);
+    Q_INVOKABLE void updatePriority(const QString &id, int priority);
+    Q_INVOKABLE void updateDueTime(const QString &id, const QDateTime &dueTime);
 
     /// 保存到磁盘
     Q_INVOKABLE void persist();
 
 private:
+    void setCompletedRecursive(const QString &id, bool completed);
     void updateParentCompletion(const QString &parentId);
 
     TaskRepository *m_repo;
-    JsonTaskStorage *m_storage;
+    std::unique_ptr<JsonTaskStorage> m_storage;
 };

@@ -1,16 +1,50 @@
 #pragma once
 
+#include <QCheckBox>
+#include <QColor>
+#include <QKeySequenceEdit>
+#include <QList>
 #include <QWidget>
 
 class PluginManager;
 class Settings;
-class QCheckBox;
 class QComboBox;
 class QListWidget;
-class QKeySequenceEdit;
 class QStackedWidget;
 
-// 提供用户、设置和插件管理的双栏界面。
+class HotkeyEdit final : public QKeySequenceEdit {
+    Q_OBJECT
+public:
+    explicit HotkeyEdit(QWidget *parent = nullptr);
+
+protected:
+    bool event(QEvent *event) override;
+    void keyPressEvent(QKeyEvent *event) override;
+};
+
+// 设置项使用紧凑开关，颜色仍由全局主题样式注入。
+class SettingsSwitch final : public QCheckBox {
+    Q_OBJECT
+    Q_PROPERTY(QColor accentColor READ accentColor WRITE setAccentColor)
+public:
+    explicit SettingsSwitch(QWidget *parent = nullptr);
+    QSize sizeHint() const override;
+    QSize minimumSizeHint() const override;
+
+    QColor accentColor() const { return m_accentColor; }
+    void setAccentColor(const QColor &color)
+    {
+        m_accentColor = color;
+        update();
+    }
+
+protected:
+    void paintEvent(QPaintEvent *event) override;
+
+private:
+    QColor m_accentColor = QColor(QStringLiteral("#0a84ff"));
+};
+
 class SettingsView : public QWidget {
     Q_OBJECT
 public:
@@ -29,14 +63,22 @@ private:
     PluginManager *m_pluginManager;
     QListWidget *m_navigation;
     QStackedWidget *m_pages;
-    QKeySequenceEdit *m_globalHotkeyEdit;
+    HotkeyEdit *m_globalHotkeyEdit;
     QComboBox *m_themeCombo;
+    QCheckBox *m_frostedGlassCheck;
     QComboBox *m_engineCombo;
     QCheckBox *m_autoStartCheck;
     QCheckBox *m_floatIconCheck;
     QCheckBox *m_autoHideCheck;
+    QCheckBox *m_startHiddenOnBootCheck;
     QCheckBox *m_appDoubleClickCheck;
+    QCheckBox *m_showAllAppsCheck;
+    QCheckBox *m_showInTaskbarCheck;
+    QCheckBox *m_hideUninstallCheck;
+    QCheckBox *m_customScanRecursiveCheck;
+    QComboBox *m_fontCombo;
+    QListWidget *m_customScanDirsList;
     QCheckBox *m_pluginAutoEnterCheck;
     QList<QCheckBox *> m_pluginChecks;
-    QList<QKeySequenceEdit *> m_pluginHotkeyEdits;
+    QList<HotkeyEdit *> m_pluginHotkeyEdits;
 };

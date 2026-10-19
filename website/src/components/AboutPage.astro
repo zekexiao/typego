@@ -1,0 +1,12 @@
+---
+import { Focus, Gauge, Layers } from "@lucide/astro";
+import Layout from "../layouts/Layout.astro";
+import { type Language } from "../config";
+const { lang } = Astro.props as { lang: Language }; const zh = lang === "zh";
+const values = zh ? [["性能优先", "每个功能都从启动速度、内存占用和响应延迟出发。", Gauge], ["保持专注", "界面只在需要时出现，完成操作后立即回到工作。", Focus], ["能力可扩展", "通过命令和插件把常见工作流收进一个入口。", Layers]] : [["Performance first", "Every feature starts with launch speed, memory use, and response latency.", Gauge], ["Stay focused", "The interface appears only when needed and gets out of the way after.", Focus], ["Extensible by design", "Commands and plugins bring common workflows into one entry point.", Layers]];
+---
+<Layout lang={lang} title={zh ? "关于" : "About"} description={zh ? "了解 TypeGo 的设计理念。" : "Learn about TypeGo's design principles."}>
+  <section class="page-head section"><span>{zh ? "关于 TypeGo" : "About TypeGo"}</span><h1>{zh ? "让工具跟上思考的速度" : "Tools should keep up with thought"}</h1><p>{zh ? "TypeGo 是一款专注 Windows 的桌面启动器。我们相信高频工具应该足够快、足够轻，也足够安静。" : "TypeGo is a desktop launcher built for Windows. We believe frequently used tools should be fast, lightweight, and quiet."}</p></section>
+  <section class="story section"><div><span>35 MB</span><h2>{zh ? "轻量不是附加项，是设计起点" : "Lightweight is the starting point"}</h2></div><p>{zh ? "常驻工具会陪伴用户整个工作日，因此每一兆内存、每一次分配和每一段等待都值得认真对待。TypeGo 将性能和内存效率作为首要原则，在能力增长的同时保持克制。" : "A resident tool stays with you all day, so every megabyte, allocation, and pause matters. TypeGo treats performance and memory efficiency as first principles while growing its capabilities with restraint."}</p></section>
+  <section class="feature-grid values-grid section">{values.map(([title, desc, Icon]) => <article class="card"><Icon size={24}/><h3>{title}</h3><p>{desc}</p></article>)}</section>
+</Layout>

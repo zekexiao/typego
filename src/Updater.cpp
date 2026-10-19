@@ -6,7 +6,20 @@
 #include <QDir>
 #include <QProcess>
 #include <QDebug>
+#include <QSettings>
 #include <QStandardPaths>
+#include <QUuid>
+
+static QString updateClientId()
+{
+    QSettings settings(QStringLiteral("TypeGo"), QStringLiteral("TypeGo"));
+    QString id = settings.value(QStringLiteral("updateClientId")).toString();
+    if (id.isEmpty()) {
+        id = QUuid::createUuid().toString(QUuid::WithoutBraces);
+        settings.setValue(QStringLiteral("updateClientId"), id);
+    }
+    return id;
+}
 
 Updater::Updater(QObject *parent)
     : QObject(parent)
@@ -16,7 +29,8 @@ Updater::Updater(QObject *parent)
 
 QString Updater::currentVersion() const
 {
-    return QStringLiteral("1.0.0");
+    // 统一使用应用版本（由 VERSION 文件注入），不要再硬编码，否则与后端版本串不等会反复提示更新。
+    return QCoreApplication::applicationVersion();
 }
 
 void Updater::checkForUpdate()
@@ -24,8 +38,9 @@ void Updater::checkForUpdate()
     QString platform = QStringLiteral("windows");
     QString arch = QStringLiteral("amd64");
 
-    QString apiUrl = QStringLiteral("http://127.0.0.1:8080/api/v1/update/latest?platform=%1&arch=%2")
-                         .arg(platform, arch);
+    QString apiUrl = QStringLiteral("http://127.0.0.1:8080/api/v1/update/latest"
+                                    "?platform=%1&arch=%2&current_version=%3&client_id=%4")
+                         .arg(platform, arch, currentVersion(), updateClientId());
 
     QNetworkRequest request(apiUrl);
     QNetworkReply *reply = m_manager->get(request);
@@ -62,7 +77,7 @@ void Updater::checkForUpdate()
 void Updater::downloadAndInstall(const QString &url)
 {
     QString downloadPath = QDir(QStandardPaths::writableLocation(QStandardPaths::TempLocation))
-                               .filePath(QStringLiteral("qingzhou_update.exe"));
+                               .filePath(QStringLiteral("TypeGo_update.exe"));
 
     m_downloadFile = new QFile(downloadPath, this);
     if (!m_downloadFile->open(QIODevice::WriteOnly)) {
@@ -118,7 +133,7 @@ void Updater::onDownloadFinished()
     // Write updater bat and launch it
     QString exePath = QCoreApplication::applicationFilePath();
     QString batPath = QDir(QStandardPaths::writableLocation(QStandardPaths::TempLocation))
-                          .filePath(QStringLiteral("qingzhou_updater.bat"));
+                          .filePath(QStringLiteral("TypeGo_updater.bat"));
 
     QFile bat(batPath);
     if (bat.open(QIODevice::WriteOnly | QIODevice::Text)) {

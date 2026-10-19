@@ -26,6 +26,12 @@ bool SettingsPlugin::execute(const QVariantMap &action)
     return true;
 }
 
+IPlugin::LaunchMode SettingsPlugin::launchMode(const QString &args) const
+{
+    Q_UNUSED(args)
+    return LaunchMode::FullView;
+}
+
 void SettingsPlugin::activateCommand(const QString &command)
 {
     m_activeCommand = command;

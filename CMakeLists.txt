@@ -1,5 +1,14 @@
 cmake_minimum_required(VERSION 3.20)
-project(qingzhou VERSION 1.0 LANGUAGES CXX)
+
+# 版本号单一来源：仓库根目录的 VERSION 文件。
+# 程序内显示、更新检查上报的版本都从这里派生，避免多处硬编码漂移。
+file(READ "${CMAKE_SOURCE_DIR}/VERSION" TYPEGO_VERSION_RAW)
+string(STRIP "${TYPEGO_VERSION_RAW}" TYPEGO_VERSION)
+if(NOT TYPEGO_VERSION MATCHES "^[0-9]+\\.[0-9]+(\\.[0-9]+)?$")
+    message(FATAL_ERROR "VERSION 文件内容非法: '${TYPEGO_VERSION}'，应为 主.次[.补丁]")
+endif()
+
+project(TypeGo VERSION ${TYPEGO_VERSION} LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -8,7 +17,7 @@ set(CMAKE_AUTORCC ON)
 
 list(PREPEND CMAKE_PREFIX_PATH "C:/Qt/6.10.3/msvc2022_64")
 
-find_package(Qt6 REQUIRED COMPONENTS Core Gui Widgets Svg Network LinguistTools)
+find_package(Qt6 REQUIRED COMPONENTS Core Gui Widgets Svg Network Concurrent LinguistTools)
 
 set(CMAKE_RC_FLAGS "-I ${CMAKE_SOURCE_DIR}")
 
@@ -39,7 +48,7 @@ set(SPDLOG_BUILD_BENCH OFF CACHE BOOL "" FORCE)
 set(SPDLOG_INSTALL OFF CACHE BOOL "" FORCE)
 add_subdirectory(third_party/spdlog EXCLUDE_FROM_ALL)
 
-qt_add_executable(qingzhou
+qt_add_executable(TypeGo
     src/main.cpp
     src/MainWindow.cpp
     src/SettingsView.cpp
@@ -53,30 +62,49 @@ qt_add_executable(qingzhou
     src/plugins/PluginManager.cpp
     src/plugins/AppPlugin.cpp
     src/plugins/CalcPlugin.cpp
+    src/plugins/ConvertPlugin.cpp
     src/plugins/DirectoryPlugin.cpp
     src/plugins/SettingsPlugin.cpp
     src/plugins/FilePlugin.cpp
+    src/plugins/ShellPlugin.cpp
     src/plugins/TodoPlugin.cpp
     src/todo/Task.cpp
     src/todo/TaskRepository.cpp
     src/todo/JsonTaskStorage.cpp
     src/todo/TaskService.cpp
-    src/todo/TaskTreeModel.cpp
+    src/todo/TodoView.cpp
     src/Updater.cpp
     resources.qrc
     assets/app_icon.rc
 )
 
-target_compile_options(qingzhou PRIVATE
+# 图标更新后强制重新编译 Windows 资源。
+set_source_files_properties(assets/app_icon.rc PROPERTIES
+    OBJECT_DEPENDS "${CMAKE_SOURCE_DIR}/assets/icon.ico"
+)
+
+target_compile_options(TypeGo PRIVATE
     $<$<CXX_COMPILER_ID:MSVC>:/utf-8>
 )
 
-target_link_libraries(qingzhou PRIVATE
+# 把 VERSION 注入编译期，供应用内版本显示与更新检查使用。
+target_compile_definitions(TypeGo PRIVATE TYPEGO_VERSION="${TYPEGO_VERSION}")
+
+# Inno Setup 的安装包版本必须与 VERSION 一致，否则官网与安装程序会显示不同版本号。
+# ISCC 不参与 CMake 构建，因此在配置阶段做一致性校验，漂移时直接报错。
+file(READ "${CMAKE_SOURCE_DIR}/inno.iss" TYPEGO_INNO_CONTENT)
+string(REGEX MATCH "#define[ \t]+MyAppVersion[ \t]+\"([^\"]+)\"" TYPEGO_INNO_MATCH "${TYPEGO_INNO_CONTENT}")
+if(NOT CMAKE_MATCH_1 STREQUAL TYPEGO_VERSION)
+    message(FATAL_ERROR "inno.iss 的 MyAppVersion='${CMAKE_MATCH_1}' 与 VERSION 文件 '${TYPEGO_VERSION}' 不一致，请把两者统一到同一个版本号后重新配置。")
+endif()
+
+target_link_libraries(TypeGo PRIVATE
     Qt6::Core
     Qt6::Gui
     Qt6::Widgets
     Qt6::Svg
     Qt6::Network
+    Qt6::Concurrent
     SingleApplication::SingleApplication
     QHotkey::QHotkey
     QWindowKit::Widgets
@@ -84,14 +112,30 @@ target_link_libraries(qingzhou PRIVATE
     "${EVERYTHING_SDK_DIR}/lib/Everything64.lib"
 )
 
-set_target_properties(qingzhou PROPERTIES
+if(WIN32)
+    target_link_libraries(TypeGo PRIVATE dwmapi)
+endif()
+
+set_target_properties(TypeGo PROPERTIES
     WIN32_EXECUTABLE TRUE
     RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin"
 )
 
+# 每次构建前更新 TS，避免新增界面文本遗漏翻译。
+add_custom_target(update_translation_sources ALL
+    COMMAND Qt6::lupdate
+        "${CMAKE_SOURCE_DIR}/src"
+        -ts "${CMAKE_SOURCE_DIR}/i18n/TypeGo_zh_CN.ts"
+        -no-obsolete
+    WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
+    COMMENT "Updating translation source files"
+    VERBATIM
+)
+add_dependencies(TypeGo update_translation_sources)
+
 # Translations
-qt_add_translations(qingzhou
+qt_add_translations(TypeGo
     TS_FILES
-        i18n/qingzhou_zh_CN.ts
+        i18n/TypeGo_zh_CN.ts
     LUPDATE_OPTIONS -no-obsolete
 )

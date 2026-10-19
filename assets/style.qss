@@ -1,8 +1,12 @@
+/* ????????? 12px?????? 8px??? 14px????? 12px??? 20px? */
 QWidget {
-    background-color: @BG@;
+    background-color: transparent;
     color: @TEXT@;
-    font-family: "Segoe UI Variable", "Segoe UI";
     font-size: 14px;
+}
+
+QLabel {
+    background-color: transparent;
 }
 
 QScrollArea,
@@ -13,7 +17,7 @@ QStackedWidget {
 }
 
 QWidget#windowTitleBar {
-    background-color: @SURFACE@;
+    background-color: @GLASS_SURFACE@;
     border-bottom: 1px solid @BORDER@;
 }
 
@@ -30,29 +34,30 @@ QPushButton#windowCloseButton {
     background-color: transparent;
     color: @TEXT_SECONDARY@;
     border: none;
-    border-radius: 7px;
+    border-radius: 8px;
     font-size: 18px;
     font-weight: 400;
 }
 
 QPushButton#windowCloseButton:hover {
-    background-color: #e81123;
+    background-color: @CLOSE_HOVER@;
     color: white;
 }
 
 QPushButton#windowCloseButton:pressed {
-    background-color: #c50f1f;
+    background-color: @CLOSE_PRESSED@;
     color: white;
 }
 
-QFrame#pluginCard {
-    background-color: @SURFACE@;
+QFrame#settingsGroup,
+QFrame#aboutCard {
+    background-color: @GLASS_SURFACE@;
     border: 1px solid @BORDER@;
     border-radius: 10px;
 }
 
 QFrame#profileCard {
-    background-color: @SURFACE@;
+    background-color: @GLASS_SURFACE@;
     border: 1px solid @BORDER@;
     border-radius: 12px;
 }
@@ -78,35 +83,141 @@ QLabel#pageTitle {
     font-weight: 600;
 }
 
-QListWidget#settingsNavigation {
-    padding: 5px;
-    background-color: @SURFACE@;
+QPushButton#titleBackButton {
+    min-height: 0;
+    padding: 0;
+    background-color: transparent;
+    color: @TEXT_SECONDARY@;
+    border: none;
+    border-radius: 8px;
+    font-size: 18px;
+    font-weight: 600;
+}
+
+QPushButton#titleBackButton:hover {
+    background-color: @HOVER@;
+    color: @TEXT@;
+}
+
+QPushButton#pluginSettingsButton {
+    min-width: 68px;
+    padding-left: 10px;
+    padding-right: 10px;
+}
+
+QWidget#settingsView QLabel#pageTitle {
+    font-size: 22px;
+    font-weight: 600;
+}
+
+QWidget#settingsView QLabel#section {
+    padding: 8px 2px 0 2px;
+}
+
+QWidget#settingsRow,
+QWidget#pluginRow,
+QWidget#scanDirectoryEditor,
+QScrollArea#settingsScroll,
+QWidget#settingsPage {
+    background-color: transparent;
+    border: none;
+}
+
+QLabel#settingLabel {
+    color: @TEXT@;
+    font-weight: 500;
+}
+
+QFrame#settingsDivider {
+    background-color: @BORDER@;
+    border: none;
+}
+
+QFrame#settingsFooter {
+    background-color: transparent;
+    border: none;
+    border-top: 1px solid @BORDER@;
+}
+
+QListWidget#scanDirectoryList {
+    padding: 0;
+    background-color: transparent;
+    border: none;
+    border-radius: 0;
+}
+
+QListWidget#scanDirectoryList::item {
+    min-height: 20px;
+    padding: 5px 7px;
+    border-radius: 5px;
+}
+
+QListWidget#scanDirectoryList::item:selected {
+    color: @TEXT@;
+    background-color: @HOVER@;
+}
+
+QLabel#aboutName {
+    color: @TEXT@;
+    font-size: 22px;
+    font-weight: 600;
+}
+
+QLabel#aboutDescription {
+    padding-top: 5px;
+    color: @TEXT_SECONDARY@;
+    font-size: 13px;
+}
+
+SettingsSwitch {
+    qproperty-accentColor: @ACCENT@;
+}
+
+QWidget#convertView {
+    background-color: transparent;
+}
+
+QWidget#convertCard {
+    background-color: @GLASS_SURFACE@;
     border: 1px solid @BORDER@;
     border-radius: 12px;
 }
 
+QLabel#convertValue {
+    background-color: transparent;
+    color: @TEXT@;
+    font-size: 18px;
+    font-weight: 600;
+}
+
+QListWidget#settingsNavigation {
+    padding: 2px 12px 2px 0;
+    background-color: transparent;
+    border: none;
+    border-right: 1px solid @BORDER@;
+    border-radius: 0;
+}
+
 QListWidget#settingsNavigation::item {
-    min-height: 28px;
+    min-height: 20px;
     padding: 7px 10px;
-    border-radius: 8px;
+    color: @TEXT_SECONDARY@;
+    background-color: transparent;
+    border: none;
+    border-left: 2px solid transparent;
+    border-radius: 6px;
+}
+
+QListWidget#settingsNavigation::item:hover {
+    color: @TEXT@;
+    background-color: @HOVER@;
 }
 
 QListWidget#settingsNavigation::item:selected {
-    background-color: @ACCENT@;
-    color: white;
-}
-
-QPushButton#managementButton {
-    min-height: 0;
-    padding: 5px;
-    background-color: @SURFACE@;
-    border: 1px solid @BORDER@;
-    border-radius: 19px;
-}
-
-QPushButton#managementButton:hover {
+    color: @ACCENT@;
     background-color: @HOVER@;
-    border-color: @BORDER_FOCUS@;
+    border-left: 2px solid @ACCENT@;
+    font-weight: 600;
 }
 
 QLineEdit,
@@ -114,12 +225,39 @@ QKeySequenceEdit,
 QComboBox {
     min-height: 24px;
     padding: 6px 10px;
-    background-color: @SURFACE@;
+    background-color: @GLASS_SURFACE@;
     color: @TEXT@;
     border: 1px solid @BORDER@;
     border-radius: 8px;
     selection-background-color: @ACCENT@;
     selection-color: white;
+}
+
+QFrame#commandInput {
+    min-height: 36px;
+    background-color: @GLASS_SURFACE@;
+    border: 1px solid @BORDER@;
+    border-radius: 8px;
+}
+
+/* Qt 样式表不支持 :focus-within，聚焦状态由 CommandLineEdit 设置 focused 动态属性。 */
+QFrame#commandInput[focused="true"] {
+    border: 1px solid @BORDER_FOCUS@;
+}
+
+QLabel#commandBadge {
+    padding: 3px 7px;
+    background-color: @ACCENT@;
+    color: white;
+    border-radius: 6px;
+}
+
+QLineEdit#commandArgumentEdit,
+QLineEdit#commandArgumentEdit:focus {
+    min-height: 24px;
+    padding: 0;
+    background-color: transparent;
+    border: none;
 }
 
 QLineEdit:focus,
@@ -137,6 +275,10 @@ QComboBox {
     padding-right: 28px;
 }
 
+QComboBox:focus {
+    padding-right: 27px;
+}
+
 QComboBox:hover {
     background-color: @HOVER@;
 }
@@ -152,36 +294,113 @@ QComboBox QAbstractItemView {
     background-color: @SURFACE@;
     color: @TEXT@;
     border: 1px solid @BORDER@;
-    border-radius: 8px;
+    border-radius: 0;
     outline: none;
     selection-background-color: @ACCENT@;
     selection-color: white;
 }
 
 QListWidget,
+QListView,
 QTreeView {
     padding: 4px;
-    background-color: @SURFACE@;
+    background-color: @GLASS_SURFACE@;
     border: 1px solid @BORDER@;
     border-radius: 12px;
     outline: none;
 }
 
 QListWidget::item {
-    min-height: 46px;
-    padding: 8px 14px;
+    min-height: 24px;
+    padding: 6px 12px;
     border-radius: 8px;
 }
 
 QTreeView::item {
-    min-height: 34px;
-    padding: 7px 10px;
+    min-height: 24px;
+    padding: 6px 12px;
     border-radius: 8px;
 }
 
-QListWidget#settingsNavigation::item {
-    min-height: 28px;
-    padding: 7px 10px;
+QTreeWidget#todoTree {
+    padding: 6px;
+    background-color: transparent;
+    border: none;
+}
+
+QTreeWidget#todoTree::item {
+    min-height: 24px;
+    padding: 6px 12px;
+    border-radius: 8px;
+}
+
+QTreeWidget#todoTree::item:disabled {
+    min-height: 24px;
+    padding: 12px 10px 4px 10px;
+    background-color: transparent;
+    color: @TEXT_SECONDARY@;
+}
+
+QTreeWidget#todoTree::item:selected,
+QTreeWidget#todoTree::item:selected:active,
+QTreeWidget#todoTree::item:selected:!active {
+    background-color: @HOVER@;
+    color: @TEXT@;
+}
+
+QWidget#todoListPanel {
+    background-color: transparent;
+}
+
+QWidget#todoDetailPanel {
+    background-color: @GLASS_SURFACE@;
+    border: 1px solid @BORDER@;
+    border-radius: 12px;
+}
+
+QLabel#todoEmptyDetailLabel {
+    background-color: transparent;
+    color: @TEXT_SECONDARY@;
+    font-size: 14px;
+    font-weight: 500;
+}
+
+QWidget#todoDetailEditor {
+    background-color: transparent;
+}
+
+QLineEdit#todoTitleEdit {
+    font-weight: 600;
+}
+
+QTextEdit#todoNoteEdit {
+    padding: 8px 10px;
+    background-color: @GLASS_INSET@;
+    color: @TEXT@;
+    border: 1px solid @BORDER@;
+    border-radius: 8px;
+    selection-background-color: @ACCENT@;
+    selection-color: white;
+}
+
+QPlainTextEdit#shellOutput {
+    padding: 10px;
+    background-color: @GLASS_INSET@;
+    color: @TEXT@;
+    border: 1px solid @BORDER@;
+    border-radius: 8px;
+    font-family: "Cascadia Mono", "Consolas";
+    font-size: 12px;
+    selection-background-color: @ACCENT@;
+    selection-color: white;
+}
+
+QLineEdit#todoSearch {
+    background-color: @GLASS_INSET@;
+}
+
+QPushButton#todoBackButton {
+    min-width: 56px;
 }
 
 QPushButton#pinnedAppButton {
@@ -199,10 +418,17 @@ QTreeView::item:selected {
     color: white;
 }
 
+/* 搜索结果由 ResultItemDelegate 自绘，样式表只负责容器外观和文字基色。 */
+QListView#searchResults {
+    color: @TEXT@;
+    selection-background-color: transparent;
+    selection-color: @TEXT@;
+}
+
 QPushButton {
     min-height: 24px;
-    padding: 5px 14px;
-    background-color: @SURFACE@;
+    padding: 6px 12px;
+    background-color: @GLASS_SURFACE@;
     color: @TEXT@;
     border: 1px solid @BORDER@;
     border-radius: 8px;
@@ -232,14 +458,26 @@ QPushButton#primary:pressed {
     border-color: @ACCENT_PRESSED@;
 }
 
+QPushButton#danger {
+    color: @ERROR@;
+    border-color: @ERROR@;
+}
+
+QPushButton#danger:hover {
+    background-color: @ERROR@;
+    color: white;
+}
+
 QLabel#section {
     padding-top: 8px;
+    background-color: transparent;
     color: @TEXT_SECONDARY@;
     font-size: 12px;
     font-weight: 600;
 }
 
 QLabel#muted {
+    background-color: transparent;
     color: @TEXT_SECONDARY@;
     font-size: 12px;
 }
@@ -252,13 +490,28 @@ QCheckBox {
 QCheckBox::indicator {
     width: 16px;
     height: 16px;
-    background-color: @SURFACE@;
+    background-color: @GLASS_SURFACE@;
     border: 1px solid @BORDER@;
     border-radius: 5px;
 }
 
 QCheckBox::indicator:hover {
     border-color: @BORDER_FOCUS@;
+}
+
+QWidget#windowTitleBar QWidget#titleBackSlot {
+    background-color: transparent;
+    border: none;
+}
+
+QWidget#windowTitleBar QPushButton#titleBackButton:hover {
+    background-color: @HOVER@;
+    color: @TEXT@;
+}
+
+QWidget#windowTitleBar QPushButton#titleBackButton:pressed {
+    background-color: @SURFACE_PRESSED@;
+    color: @TEXT@;
 }
 
 QCheckBox::indicator:checked {
@@ -272,12 +525,13 @@ QMenu {
     background-color: @SURFACE@;
     color: @TEXT@;
     border: 1px solid @BORDER@;
-    border-radius: 10px;
+    border-radius: 0;
 }
 
 QMenu::item {
+    min-height: 24px;
     padding: 6px 24px 6px 12px;
-    border-radius: 6px;
+    border-radius: 8px;
 }
 
 QMenu::item:selected {
@@ -315,4 +569,63 @@ QToolTip {
     color: @TEXT@;
     border: 1px solid @BORDER@;
     border-radius: 6px;
+}
+
+/* 顶层只绘制一层染色，子页面保持透明，避免多层背景累积遮住磨砂。 */
+QWidget[frostedWindow="true"] {
+    background-color: @GLASS_TINT@;
+}
+
+/* 系统不支持材质时仍保留完整底色，不让文字直接落在桌面上。 */
+QWidget[frostedWindow="false"] {
+    background-color: @BG@;
+}
+
+/* 弹出窗口独立合成，底板与视口均使用实色，不能借用主窗口的半透明底。 */
+QDialog {
+    background-color: @BG@;
+}
+
+QMenu[frostedWindow="false"],
+QComboBox QAbstractItemView > QWidget {
+    background-color: @SURFACE@;
+}
+
+/* ???????????????????????? */
+QKeySequenceEdit QLineEdit,
+QKeySequenceEdit QLineEdit:focus {
+    padding: 0;
+    border: none;
+    background-color: transparent;
+}
+
+QComboBox QAbstractItemView::item {
+    min-height: 24px;
+    padding: 6px 12px;
+    border-radius: 8px;
+}
+
+/* 与列表控件一致：hover 用浅底，选中用主题色。 */
+QComboBox QAbstractItemView::item:hover {
+    background-color: @HOVER@;
+    color: @TEXT@;
+}
+
+QComboBox QAbstractItemView::item:selected {
+    background-color: @ACCENT@;
+    color: white;
+}
+
+QMenu::separator {
+    height: 1px;
+    margin: 4px 8px;
+    background-color: @BORDER@;
+}
+
+QMenu::item:disabled {
+    color: @PLACEHOLDER@;
+}
+
+QPushButton:focus {
+    border-color: @BORDER_FOCUS@;
 }
