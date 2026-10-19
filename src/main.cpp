@@ -14,6 +14,7 @@
 #include <QSet>
 #include <QStyleHints>
 #include <QSystemTrayIcon>
+#include <QTimer>
 #include <QTranslator>
 #include <QLocale>
 
@@ -23,6 +24,7 @@
 #include "MainWindow.h"
 #include "Settings.h"
 #include "ThemeManager.h"
+#include "Updater.h"
 #include "plugins/AppPlugin.h"
 #include "plugins/CalcPlugin.h"
 #include "plugins/ConvertPlugin.h"
@@ -108,6 +110,7 @@ int main(int argc, char *argv[])
     });
 
     PluginManager pluginManager;
+    Updater updater;
     pluginManager.registerPlugin(new AppPlugin(&launcher, &pluginManager));
     pluginManager.registerPlugin(new CalcPlugin(&pluginManager));
     pluginManager.registerPlugin(new ConvertPlugin(&pluginManager));
@@ -120,8 +123,12 @@ int main(int argc, char *argv[])
     auto *todoPlugin = new TodoPlugin(&pluginManager);
     pluginManager.registerPlugin(todoPlugin);
 
-    MainWindow window(&launcher, &pluginManager, &settings, nullptr, &themeManager);
+    MainWindow window(&launcher, &pluginManager, &settings, &updater, &themeManager);
     window.setWindowIcon(appIcon);
+
+    // 启动数秒后在后台静默检测 GitHub 更新，避免拖慢首屏、与托盘初始化抢占网络。
+    // 仅发现新版本时才弹出提示；失败与无更新都不打扰用户。
+    QTimer::singleShot(5000, &updater, &Updater::checkForUpdate);
 
     FloatIcon floatIcon(&settings, &themeManager, &window);
     QPoint floatPos = settings.floatIconPos();

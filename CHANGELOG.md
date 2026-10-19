@@ -1,5 +1,15 @@
 # TypeGo 更新日志
 
+## 1.1 - 2026-06-15
+
+### 中文
+
+- 新增启动时自动检测 GitHub Release 更新，发现新版本时提示并可一键下载安装
+
+### English
+
+- Added automatic GitHub Release update check at startup, with one-click download and install when a new version is found
+
 ## 1.0 - 2026-06-13
 
 ### 中文
