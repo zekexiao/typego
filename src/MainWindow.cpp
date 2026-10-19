@@ -12,6 +12,7 @@
 #include <QApplication>
 #include <QBoxLayout>
 #include <QCheckBox>
+#include <QCache>
 #include <QCloseEvent>
 #include <QComboBox>
 #include <QDesktopServices>
@@ -45,6 +46,8 @@
 #include <QScrollBar>
 #include <QShortcut>
 #include <QStackedWidget>
+#include <QStandardPaths>
+#include <QScopeGuard>
 #include <QStyle>
 #include <QTimer>
 #include <QTreeView>
@@ -176,8 +179,17 @@ QString extractIconAsync(const QString &filePath, const QString &cacheDir)
     if (QFile::exists(cachePath)) return cachePath;
 
 #ifdef Q_OS_WIN
+    const HRESULT initialized = CoInitializeEx(nullptr, COINIT_MULTITHREADED);
+    const auto uninitialize = qScopeGuard([initialized]() {
+        if (SUCCEEDED(initialized)) CoUninitialize();
+    });
+    QString iconSource = filePath;
+    if (!QFileInfo(filePath).isAbsolute() && !filePath.contains(QLatin1Char(':'))) {
+        const QString executable = QStandardPaths::findExecutable(filePath);
+        if (!executable.isEmpty()) iconSource = executable;
+    }
     SHFILEINFOW sfi = {};
-    if (SHGetFileInfoW(reinterpret_cast<LPCWSTR>(filePath.utf16()), 0, &sfi, sizeof(sfi), SHGFI_ICON | SHGFI_LARGEICON)) {
+    if (SHGetFileInfoW(reinterpret_cast<LPCWSTR>(iconSource.utf16()), 0, &sfi, sizeof(sfi), SHGFI_ICON | SHGFI_LARGEICON)) {
         const HICON hIcon = sfi.hIcon;
         if (hIcon) {
             QImage image = hIconToImage(hIcon);
@@ -234,11 +246,16 @@ public:
         }
         if (role == Qt::DecorationRole) {
             const QString iconPath = item.value(QStringLiteral("icon")).toString();
-            if (!iconPath.isEmpty()) return QIcon(iconPath);
+            if (!iconPath.isEmpty()) {
+                if (const QIcon *icon = m_icons.object(iconPath)) return *icon;
+                const QIcon icon(iconPath);
+                m_icons.insert(iconPath, new QIcon(icon));
+                return icon;
+            }
 
             const QString localPath = localPathOf(item);
             if (localPath.isEmpty()) return QVariant();
-            if (m_icons.contains(localPath)) return m_icons.value(localPath);
+            if (const QIcon *icon = m_icons.object(localPath)) return *icon;
             scheduleIconLoad(localPath);
         }
         if (role == Qt::UserRole) return item;
@@ -278,10 +295,8 @@ public:
         beginResetModel();
         m_results = results;
         m_visibleCount = qMin(InitialVisibleResults, m_results.size());
-        ++m_iconGeneration;
         m_iconQueue.clear();
         m_queuedIcons.clear();
-        m_pendingIcons.clear();
         endResetModel();
     }
 
@@ -306,17 +321,16 @@ private:
             const QString path = m_iconQueue.takeFirst();
             m_queuedIcons.remove(path);
             m_pendingIcons.insert(path);
-            const int generation = m_iconGeneration;
 
             auto *watcher = new QFutureWatcher<QString>(const_cast<ResultListModel *>(this));
             auto *self = const_cast<ResultListModel *>(this);
-            QObject::connect(watcher, &QFutureWatcher<QString>::finished, self, [self, watcher, path, generation]() {
+            QObject::connect(watcher, &QFutureWatcher<QString>::finished, self, [self, watcher, path]() {
                 const QString iconPath = watcher->result();
                 watcher->deleteLater();
-                if (generation != self->m_iconGeneration) return;
                 self->m_pendingIcons.remove(path);
+                // 缓存失败结果，避免不可读取的路径在每次重绘时反复排队。
+                self->m_icons.insert(path, new QIcon(iconPath));
                 if (!iconPath.isEmpty()) {
-                    self->m_icons.insert(path, QIcon(iconPath));
                     for (int row = 0; row < self->rowCount(); ++row) {
                         if (localPathOf(self->m_results.at(row).toMap()) == path) {
                             const QModelIndex idx = self->index(row, 0);
@@ -332,9 +346,8 @@ private:
 
     QVariantList m_results;
     int m_visibleCount = 0;
-    int m_iconGeneration = 0;
     QString m_iconCacheDir;
-    mutable QHash<QString, QIcon> m_icons;
+    mutable QCache<QString, QIcon> m_icons{256};
     mutable QSet<QString> m_pendingIcons;
     mutable QSet<QString> m_queuedIcons;
     mutable QStringList m_iconQueue;
@@ -754,17 +767,35 @@ MainWindow::MainWindow(AppLauncher *launcher, PluginManager *pluginManager, Sett
     contentLayout->addWidget(m_stack, 1);
 
     auto *debounce = new QTimer(this);
+    m_searchDebounce = debounce;
     debounce->setInterval(120);
     debounce->setSingleShot(true);
     connect(m_searchEdit->editor(), &QLineEdit::textChanged, debounce, qOverload<>(&QTimer::start));
     connect(debounce, &QTimer::timeout, this, &MainWindow::performSearch);
+    if (IPlugin *filePlugin = m_pluginManager->plugin(QStringLiteral("file"))) {
+        connect(m_searchEdit->editor(), &QLineEdit::textChanged, filePlugin, &IPlugin::cancelQuery);
+        connect(filePlugin, &IPlugin::queryResultsChanged, this, [this](const QString &query) {
+            if (query != m_fileSearchQuery || m_searchEdit->text() != m_lastSearchText
+                || m_stack->currentWidget() != m_resultsList) return;
+            setResults(queryFiles(query));
+            scheduleResultsLayout();
+        });
+    }
     connect(m_searchEdit->editor(), &QLineEdit::returnPressed, this, &MainWindow::launchCurrent);
     connect(m_resultsList, &QListView::clicked, this, [this](const QModelIndex &index) {
         if (m_settings->appLaunchRequiresDoubleClick() || m_commandMode) return;
+        if (m_searchEdit->text() != m_lastSearchText) {
+            performSearch();
+            return;
+        }
         if (index.data(Qt::UserRole).toMap().value(QStringLiteral("path")).toString().isEmpty()) return;
         launchCurrent();
     });
     connect(m_resultsList, &QListView::doubleClicked, this, [this](const QModelIndex &) {
+        if (m_searchEdit->text() != m_lastSearchText) {
+            performSearch();
+            return;
+        }
         if (m_settings->appLaunchRequiresDoubleClick() || m_commandMode) launchCurrent();
     });
     connect(m_resultsList, &QWidget::customContextMenuRequested, this, [this](const QPoint &pos) {
@@ -792,8 +823,11 @@ MainWindow::MainWindow(AppLauncher *launcher, PluginManager *pluginManager, Sett
     new QShortcut(QKeySequence(Qt::Key_Escape), this, [this]() { handleEscape(); });
 
     connect(m_launcher, &AppLauncher::pinsChanged, this, &MainWindow::rebuildPinnedApps);
-    connect(m_launcher, &AppLauncher::appsChanged, this, &MainWindow::performSearch);
-    connect(m_settings, &Settings::showAllAppsWhenSearchEmptyChanged, this, &MainWindow::performSearch);
+    auto refreshSearch = [this]() {
+        if (m_stack->currentWidget() == m_resultsList) performSearch();
+    };
+    connect(m_launcher, &AppLauncher::appsChanged, this, refreshSearch);
+    connect(m_settings, &Settings::showAllAppsWhenSearchEmptyChanged, this, refreshSearch);
     connect(m_settings, &Settings::showInTaskbarChanged, this, &MainWindow::applyTaskbarVisibility);
     if (m_updater) {
         connect(m_updater, &Updater::updateAvailable, this, [this](const QString &version, const QString &changelog, const QString &url, bool) {
@@ -801,14 +835,19 @@ MainWindow::MainWindow(AppLauncher *launcher, PluginManager *pluginManager, Sett
                 m_updater->downloadAndInstall(url);
             }
         });
-        connect(m_updater, &Updater::downloadProgress, this, [this](qint64 received, qint64 total) {
-            if (!m_downloadDialog) {
-                m_downloadDialog = new QProgressDialog(tr("Downloading update..."), QString(), 0, 100, this);
-                m_downloadDialog->setWindowModality(Qt::WindowModal);
-                m_downloadDialog->setCancelButton(nullptr);
-            }
-            if (total > 0) m_downloadDialog->setValue(static_cast<int>((received * 100) / total));
+        connect(m_updater, &Updater::downloadStarted, this, [this]() {
+            if (m_downloadDialog) delete m_downloadDialog;
+            m_downloadDialog = new QProgressDialog(tr("Downloading update..."), tr("Cancel"), 0, 0, this);
+            m_downloadDialog->setWindowModality(Qt::WindowModal);
+            connect(m_downloadDialog, &QProgressDialog::canceled, m_updater, &Updater::cancelDownload);
             m_downloadDialog->show();
+        });
+        connect(m_updater, &Updater::downloadProgress, this, [this](qint64 received, qint64 total) {
+            if (!m_downloadDialog) return;
+            if (total > 0) {
+                m_downloadDialog->setRange(0, 100);
+                m_downloadDialog->setValue(static_cast<int>((received * 100) / total));
+            }
         });
         connect(m_updater, &Updater::downloadFinished, this, [this]() {
             if (m_downloadDialog) m_downloadDialog->close();
@@ -841,6 +880,9 @@ bool MainWindow::event(QEvent *event)
 {
     if (event->type() == QEvent::WindowDeactivate && m_settings->autoHideOnFocusLoss()) {
         QTimer::singleShot(50, this, [this]() {
+            if (QApplication::activeModalWidget() || QApplication::activePopupWidget()) return;
+            QWidget *active = QApplication::activeWindow();
+            if (active && isAncestorOf(active)) return;
             if (!isActiveWindow() && m_settings->autoHideOnFocusLoss()) hide();
         });
     }
@@ -892,9 +934,12 @@ void MainWindow::resizeEvent(QResizeEvent *event)
 
 void MainWindow::performSearch()
 {
+    m_searchDebounce->stop();
+    m_fileSearchQuery.clear();
     const bool viewingPlugin = m_stack->currentWidget() == m_pluginPage;
 
     const QString text = m_searchEdit->text();
+    m_lastSearchText = text;
     const QString trimmed = text.trimmed();
     QVariantList results;
     m_commandMode = false;
@@ -911,16 +956,26 @@ void MainWindow::performSearch()
             openPluginView(m_currentCmd, args);
             return;
         }
-        results = m_pluginManager->queryCommand(m_currentCmd, args, IPlugin::QueryContext::Auto);
+        results = m_currentCmd == QStringLiteral("file") && m_settings->isPluginEnabled(QStringLiteral("file")) ? queryFiles(args)
+            : m_pluginManager->queryCommand(m_currentCmd, args, IPlugin::QueryContext::Auto);
     } else if (!trimmed.isEmpty() || m_settings->showAllAppsWhenSearchEmpty()) {
         results = m_launcher->search(text);
+    }
+
+    if (results.isEmpty() && !trimmed.isEmpty() && m_launcher->isScanning()
+        && (!m_commandMode || m_currentCmd == QStringLiteral("app"))) {
+        QVariantMap item;
+        item["title"] = tr("Scanning applications...");
+        item["subtitle"] = tr("Please wait for application indexing to finish.");
+        item["action"] = QVariantMap{{"type", "none"}};
+        results.append(item);
     }
 
     if (results.isEmpty() && !trimmed.isEmpty()
         && m_settings->searchEngine() == QStringLiteral("File Search")
         && m_settings->isPluginEnabled(QStringLiteral("file"))
         && m_pluginManager->plugin(QStringLiteral("file"))) {
-        results = m_pluginManager->queryCommand(QStringLiteral("file"), trimmed, IPlugin::QueryContext::Auto);
+        results = queryFiles(trimmed);
     }
 
     if (results.isEmpty() && !trimmed.isEmpty()) {
@@ -962,13 +1017,18 @@ void MainWindow::performSearch()
 
 void MainWindow::launchCurrent()
 {
+    // 回车和点击都必须与当前输入一致，且不能重置用户已选中的最新结果。
+    if (m_searchEdit->text() != m_lastSearchText) {
+        performSearch();
+        if (m_stack->currentWidget() != m_resultsList) return;
+    }
     if (m_commandMode) {
         QString command;
         QString args;
         commandParts(&command, &args);
         const IPlugin::LaunchMode mode = m_pluginManager->launchModeForCommand(command, args);
         if (mode != IPlugin::LaunchMode::List && openPluginView(command, args)) return;
-        setResults(m_pluginManager->queryCommand(command, args, IPlugin::QueryContext::Enter));
+        // 输入已刷新，直接执行当前选中结果，避免重查后意外跳回首项。
     }
 
     const QVariantMap item = currentItemData();
@@ -977,21 +1037,33 @@ void MainWindow::launchCurrent()
     if (action.value(QStringLiteral("type")).toString() == QStringLiteral("fileSearch")) {
         const QString query = action.value(QStringLiteral("data")).toString();
         if (query.isEmpty()) return;
-        setResults(m_pluginManager->queryCommand(QStringLiteral("file"), query));
+        setResults(queryFiles(query));
         updateCommandBar();
         openResults();
         return;
     }
     if (!action.isEmpty() && action.value(QStringLiteral("type")).toString() != QStringLiteral("none")) {
-        m_pluginManager->executeAction(action);
-        hide();
+        if (m_pluginManager->executeAction(action)) hide();
+        else QMessageBox::warning(this, tr("Action failed"), tr("The selected item could not be opened or executed."));
         return;
     }
     const QString path = item.value(QStringLiteral("path")).toString();
     if (!path.isEmpty()) {
-        m_launcher->launch(path);
-        hide();
+        launchPath(path);
     }
+}
+
+QVariantList MainWindow::queryFiles(const QString &query)
+{
+    m_fileSearchQuery = query.trimmed();
+    return m_pluginManager->queryCommand(QStringLiteral("file"), m_fileSearchQuery);
+}
+
+void MainWindow::launchPath(const QString &path)
+{
+    if (m_launcher->launch(path)) hide();
+    else QMessageBox::warning(this, tr("Cannot open item"),
+                              tr("Cannot open %1. Check that the file exists and an application is installed to open it.").arg(path));
 }
 
 void MainWindow::handleEscape()
@@ -1012,6 +1084,7 @@ void MainWindow::handleEscape()
 
 void MainWindow::moveSelection(int delta)
 {
+    if (m_searchEdit->text() != m_lastSearchText) performSearch();
     if (m_stack->currentWidget() != m_resultsList || m_resultsModel->rowCount() == 0) return;
     int row = m_resultsList->currentIndex().row();
     if (row < 0) row = 0;
@@ -1141,7 +1214,7 @@ void MainWindow::rebuildPinnedApps()
         if (!icon.isEmpty()) button->setIcon(QIcon(icon));
         button->setIconSize(QSize(24, 24));
         const QString path = pin.value(QStringLiteral("path")).toString();
-        connect(button, &QPushButton::clicked, this, [this, path]() { m_launcher->launch(path); hide(); });
+        connect(button, &QPushButton::clicked, this, [this, path]() { launchPath(path); });
         button->setContextMenuPolicy(Qt::CustomContextMenu);
         connect(button, &QPushButton::customContextMenuRequested, this, [this, button, path](const QPoint &pos) {
             QMenu menu(this);
@@ -1169,6 +1242,8 @@ bool MainWindow::openPluginView(const QString &command, const QString &args)
     IPlugin *plugin = m_pluginManager->plugin(command);
     QWidget *view = m_pluginManager->viewForCommand(command, args);
     if (!view) return false;
+    m_searchDebounce->stop();
+    m_fileSearchQuery.clear();
 
     if (plugin) {
         connect(plugin, &IPlugin::viewCloseRequested, this, &MainWindow::openResults, Qt::UniqueConnection);
@@ -1217,6 +1292,9 @@ void MainWindow::openResults()
     m_searchEdit->show();
     if (wasPluginPage) {
         m_searchEdit->setText(QString());
+        m_searchDebounce->stop();
+        m_lastSearchText.clear();
+        m_fileSearchQuery.clear();
         m_commandMode = false;
         m_currentCmd.clear();
         setResults(m_settings->showAllAppsWhenSearchEmpty() ? m_launcher->search(QString()) : QVariantList());

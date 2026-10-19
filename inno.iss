@@ -27,6 +27,7 @@
 [Setup]
 AppId={{6D89C8A8-0F94-446A-8E20-999BAA089BA4}
 AppName={#MyAppName}
+AppMutex=TypeGo.Installation
 AppVersion={#MyAppVersion}
 AppVerName={#MyAppName} {#MyAppVersion}
 AppPublisher={#MyAppPublisher}

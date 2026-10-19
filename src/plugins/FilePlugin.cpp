@@ -7,6 +7,7 @@
 #include <QUrl>
 #include <QDebug>
 #include <limits>
+#include <QtConcurrent>
 
 #ifdef Q_OS_WIN
 #include <windows.h>
@@ -16,42 +17,56 @@
 FilePlugin::FilePlugin(QObject *parent)
     : IPlugin(parent)
 {
-    m_iconCacheDir = QDir::tempPath() + "/TypeGo/icons";
+    connect(&m_watcher, &QFutureWatcher<QVariantList>::finished, this, [this]() {
+        m_searchRunning = false;
+        if (m_runningQuery != m_requestedQuery) {
+            if (!m_requestedQuery.isEmpty()) startSearch();
+            return;
+        }
+        m_results = m_watcher.result();
+        m_resultsReady = true;
+        emit queryResultsChanged(m_requestedQuery);
+    });
 }
 
 FilePlugin::~FilePlugin() = default;
 
-QString FilePlugin::extractFileIcon(const QString &filePath)
+void FilePlugin::cancelQuery()
 {
-    QString cacheName = QString::number(qHash(filePath), 16) + ".png";
-    QString cachePath = m_iconCacheDir + "/" + cacheName;
-
-    if (QFile::exists(cachePath)) {
-        return cachePath;
-    }
-
-    QFileIconProvider provider;
-    QIcon icon = provider.icon(QFileInfo(filePath));
-    if (icon.isNull()) return "";
-
-    QPixmap pixmap = icon.pixmap(QSize(32, 32));
-    if (pixmap.isNull()) return "";
-
-    if (pixmap.width() != 32 || pixmap.height() != 32) {
-        pixmap = pixmap.scaled(32, 32, Qt::KeepAspectRatio, Qt::SmoothTransformation);
-    }
-
-    QDir().mkpath(m_iconCacheDir);
-    if (pixmap.save(cachePath, "PNG")) {
-        return cachePath;
-    }
-    return "";
+    m_requestedQuery.clear();
+    m_resultsReady = false;
+    m_results.clear();
 }
 
-QString FilePlugin::typeLabel(const QFileInfo &fileInfo, bool isFolder) const
+QVariantList FilePlugin::query(const QString &args)
+{
+    const QString query = args.trimmed();
+    if (query != m_requestedQuery) {
+        m_requestedQuery = query;
+        m_resultsReady = false;
+        m_results.clear();
+    }
+    if (query.isEmpty()) return searchFiles(query);
+    if (m_resultsReady) return m_results;
+    if (!m_searchRunning) startSearch();
+    QVariantMap item;
+    item["title"] = tr("Searching files...");
+    item["subtitle"] = query;
+    item["action"] = QVariantMap{{"type", "none"}};
+    return {item};
+}
+
+void FilePlugin::startSearch()
+{
+    // SDK 使用全局查询状态，始终只运行一个查询，并仅保留最新待查词。
+    m_searchRunning = true;
+    m_runningQuery = m_requestedQuery;
+    m_watcher.setFuture(QtConcurrent::run(&FilePlugin::searchFiles, m_runningQuery));
+}
+
+QString FilePlugin::typeLabel(const QFileInfo &fileInfo, bool isFolder)
 {
     if (isFolder) return tr("Folder");
-
     const QString suffix = fileInfo.suffix().trimmed();
     if (!suffix.isEmpty()) {
         return tr("%1 File").arg(suffix.toUpper());
@@ -59,7 +74,7 @@ QString FilePlugin::typeLabel(const QFileInfo &fileInfo, bool isFolder) const
     return tr("File");
 }
 
-QVariantList FilePlugin::query(const QString &args)
+QVariantList FilePlugin::searchFiles(const QString &args)
 {
     QVariantList results;
 
@@ -71,13 +86,14 @@ QVariantList FilePlugin::query(const QString &args)
         item["icon"] = "";
         QVariantMap action;
         action["type"] = QStringLiteral("none");
-        action["plugin"] = command();
+        action["plugin"] = QStringLiteral("file");
         item["action"] = action;
         results.append(item);
         return results;
     }
 
     Everything_SetSearchW((LPCWSTR)args.utf16());
+    Everything_SetMax(200);
     Everything_SetRequestFlags(EVERYTHING_REQUEST_FULL_PATH_AND_FILE_NAME);
 
     if (!Everything_QueryW(TRUE)) {
@@ -93,7 +109,7 @@ QVariantList FilePlugin::query(const QString &args)
         item["icon"] = "";
         QVariantMap action;
         action["type"] = QStringLiteral("none");
-        action["plugin"] = command();
+        action["plugin"] = QStringLiteral("file");
         item["action"] = action;
         results.append(item);
         Everything_Reset();
@@ -112,7 +128,7 @@ QVariantList FilePlugin::query(const QString &args)
         item["icon"] = "";
         QVariantMap action;
         action["type"] = QStringLiteral("none");
-        action["plugin"] = command();
+        action["plugin"] = QStringLiteral("file");
         item["action"] = action;
         results.append(item);
         Everything_Reset();
@@ -137,7 +153,7 @@ QVariantList FilePlugin::query(const QString &args)
             QVariantMap action;
             action["type"] = isFolder ? QStringLiteral("openFolder") : QStringLiteral("openFile");
             action["data"] = fullPath;
-            action["plugin"] = command();
+            action["plugin"] = QStringLiteral("file");
             item["action"] = action;
             results.append(item);
         }
@@ -150,7 +166,7 @@ QVariantList FilePlugin::query(const QString &args)
         item["icon"] = "";
         QVariantMap action;
         action["type"] = QStringLiteral("none");
-        action["plugin"] = command();
+        action["plugin"] = QStringLiteral("file");
         item["action"] = action;
         results.append(item);
     }
@@ -164,7 +180,7 @@ QVariantList FilePlugin::query(const QString &args)
     item["icon"] = "";
     QVariantMap action;
     action["type"] = QStringLiteral("none");
-    action["plugin"] = command();
+    action["plugin"] = QStringLiteral("file");
     item["action"] = action;
     results.append(item);
 #endif
@@ -185,4 +201,3 @@ bool FilePlugin::execute(const QVariantMap &action)
     }
     return false;
 }
-

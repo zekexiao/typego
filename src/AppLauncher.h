@@ -5,6 +5,7 @@
 #include <QVariantList>
 #include <QList>
 #include <QSet>
+#include <QFutureWatcher>
 
 class Settings;
 
@@ -34,6 +35,7 @@ public:
 
     Q_INVOKABLE QVariantList search(const QString &query);
     Q_INVOKABLE bool launch(const QString &path);
+    bool isScanning() const { return !m_scanReady || m_scanning; }
 
     QVariantList pinnedApps() const;
     bool hasPinnedApps() const { return !m_pins.isEmpty(); }
@@ -47,10 +49,10 @@ signals:
 
 private:
     void rebuildApps();
-    void scanStartMenu();
-    void scanCustomDirs();
-    void scanDirectory(const QString &dirPath, const QString &desc, bool recursive, int depth = 0, int maxDepth = 0);
-    bool shouldHideEntry(const QString &name, const QString &path) const;
+    static QList<AppItem> scanApps(const QStringList &customDirs, bool recursive, bool hideUninstall);
+    static void scanDirectory(const QString &dirPath, const QString &desc, bool recursive, int depth, int maxDepth,
+                              bool hideUninstall, QList<AppItem> &apps, QSet<QString> &paths);
+    static bool shouldHideEntry(const QString &name, const QString &path);
     void addBuiltinApps();
     QString extractIcon(const QString &filePath);
     bool loadPins();
@@ -58,7 +60,10 @@ private:
     QString pinFilePath() const;
 
     QList<AppItem> m_apps;
-    QSet<QString> m_appPaths;
+    QFutureWatcher<QList<AppItem>> m_scanWatcher;
+    bool m_scanning = false;
+    bool m_scanPending = false;
+    bool m_scanReady = false;
     QString m_iconCacheDir;
     QList<PinItem> m_pins;
     Settings *m_settings = nullptr;

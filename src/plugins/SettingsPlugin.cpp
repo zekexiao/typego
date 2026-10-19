@@ -3,10 +3,11 @@
 
 #include <QVariantMap>
 
-SettingsPlugin::SettingsPlugin(Settings *settings, PluginManager *pluginManager, QObject *parent)
+SettingsPlugin::SettingsPlugin(Settings *settings, PluginManager *pluginManager, GlobalHotkey *hotkeys, QObject *parent)
     : IPlugin(parent)
     , m_settings(settings)
     , m_pluginManager(pluginManager)
+    , m_hotkeys(hotkeys)
 {
 }
 
@@ -43,7 +44,7 @@ void SettingsPlugin::activateCommand(const QString &command)
 QWidget *SettingsPlugin::viewUrl()
 {
     if (!m_view) {
-        m_view = new SettingsView(m_settings, m_pluginManager);
+        m_view = new SettingsView(m_settings, m_pluginManager, m_hotkeys);
         connect(static_cast<SettingsView *>(m_view), &SettingsView::closeRequested, this, &SettingsPlugin::viewCloseRequested);
         connect(m_view, &QObject::destroyed, this, [this]() { m_view = nullptr; });
     }

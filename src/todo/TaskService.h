@@ -25,6 +25,9 @@ public:
 
     /// 删除任务（递归删除子任务）
     Q_INVOKABLE void deleteTask(const QString &id);
+    bool undoDelete();
+    bool canUndoDelete() const { return !m_deletedTasks.isEmpty(); }
+    bool updateDetails(const QString &id, const QString &title, const QString &note, int priority, bool completed);
 
     /// 切换完成状态（递归影响子任务）
     Q_INVOKABLE void setCompleted(const QString &id, bool completed);
@@ -38,7 +41,10 @@ public:
     Q_INVOKABLE void updateDueTime(const QString &id, const QDateTime &dueTime);
 
     /// 保存到磁盘
-    Q_INVOKABLE void persist();
+    Q_INVOKABLE bool persist();
+
+signals:
+    void storageError(const QString &message);
 
 private:
     void setCompletedRecursive(const QString &id, bool completed);
@@ -46,4 +52,6 @@ private:
 
     TaskRepository *m_repo;
     std::unique_ptr<JsonTaskStorage> m_storage;
+    QList<Task> m_deletedTasks;
+    bool m_storageLoaded = false;
 };

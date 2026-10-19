@@ -11,7 +11,7 @@ TaskService::TaskService(QObject *parent)
     QString path = QStandardPaths::writableLocation(QStandardPaths::AppDataLocation);
     path += "/todo.json";
     m_storage = std::make_unique<JsonTaskStorage>(path);
-    m_storage->load(m_repo);
+    m_storageLoaded = m_storage->load(m_repo);
 }
 
 TaskService::~TaskService() = default;
@@ -44,8 +44,42 @@ QString TaskService::createSubTask(const QString &parentId, const QString &title
 
 void TaskService::deleteTask(const QString &id)
 {
+    if (!m_repo->exists(id)) return;
+    m_deletedTasks.clear();
+    QHash<QString, QList<Task>> children;
+    for (const Task &task : m_repo->tasks()) children[task.parentId].append(task);
+    m_deletedTasks.append(m_repo->find(id));
+    for (qsizetype i = 0; i < m_deletedTasks.size(); ++i) {
+        const QString parentId = m_deletedTasks.at(i).id;
+        m_deletedTasks.append(children.value(parentId));
+    }
     m_repo->removeRecursive(id);
     persist();
+}
+
+bool TaskService::undoDelete()
+{
+    if (m_deletedTasks.isEmpty()) return false;
+    for (const Task &task : m_deletedTasks) m_repo->add(task);
+    if (!persist()) return false;
+    m_deletedTasks.clear();
+    return true;
+}
+
+bool TaskService::updateDetails(const QString &id, const QString &title, const QString &note, int priority, bool completed)
+{
+    Task task = m_repo->find(id);
+    if (task.id.isEmpty() || title.trimmed().isEmpty()) return false;
+    task.title = title.trimmed();
+    task.note = note;
+    task.priority = qBound(0, priority, 2);
+    task.updatedTime = QDateTime::currentDateTime();
+    m_repo->update(task);
+    if (task.completed != completed) {
+        setCompletedRecursive(id, completed);
+        if (!task.parentId.isEmpty()) updateParentCompletion(task.parentId);
+    }
+    return persist();
 }
 
 void TaskService::setCompleted(const QString &id, bool completed)
@@ -121,9 +155,18 @@ void TaskService::updateDueTime(const QString &id, const QDateTime &dueTime)
     persist();
 }
 
-void TaskService::persist()
+bool TaskService::persist()
 {
-    m_storage->save(m_repo);
+    // 读取失败时保留原始文件，避免下一次编辑用空仓库覆盖已有任务。
+    if (!m_storageLoaded) {
+        emit storageError(tr("Existing task data could not be loaded. The original file has been kept; changes have not been saved."));
+        return false;
+    }
+    if (!m_storage->save(m_repo)) {
+        emit storageError(tr("Cannot save tasks. Check available disk space and folder permissions, then save again before closing TypeGo."));
+        return false;
+    }
+    return true;
 }
 
 void TaskService::updateParentCompletion(const QString &parentId)

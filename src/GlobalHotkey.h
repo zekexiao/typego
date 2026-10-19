@@ -11,15 +11,14 @@ class GlobalHotkey : public QObject {
 public:
     explicit GlobalHotkey(QObject *parent = nullptr);
 
-    bool registerHotkey(const QString &shortcut);
-    void clearPluginHotkeys();
-    bool registerPluginHotkey(const QString &command, const QString &shortcut);
+    bool applyShortcuts(const QString &mainShortcut, const QHash<QString, QString> &pluginShortcuts, QString *error);
 
 signals:
     void activated();
     void commandActivated(const QString &command);
 
 private:
-    QHotkey *m_mainHotkey;
-    QHash<QString, QHotkey *> m_pluginHotkeys;
+    QHash<QString, QHotkey *> m_hotkeys;
+    QString m_mainShortcut;
+    QHash<QString, QString> m_pluginShortcuts;
 };

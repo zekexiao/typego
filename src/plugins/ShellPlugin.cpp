@@ -5,6 +5,7 @@
 #include <QClipboard>
 #include <QComboBox>
 #include <QFormLayout>
+#include <QFileInfo>
 #include <QHBoxLayout>
 #include <QLabel>
 #include <QLineEdit>
@@ -37,47 +38,6 @@ QString defaultTerminalArgumentsTemplate()
 #endif
 }
 
-QStringList splitArguments(const QString &text)
-{
-    QStringList args;
-    QString current;
-    QChar quote;
-    bool escaping = false;
-
-    for (QChar ch : text) {
-        if (escaping) {
-            current.append(ch);
-            escaping = false;
-            continue;
-        }
-        if (ch == QLatin1Char('\\')) {
-            escaping = true;
-            continue;
-        }
-        if (!quote.isNull()) {
-            if (ch == quote) quote = QChar();
-            else current.append(ch);
-            continue;
-        }
-        if (ch == QLatin1Char('"') || ch == QLatin1Char('\'')) {
-            quote = ch;
-            continue;
-        }
-        if (ch.isSpace()) {
-            if (!current.isEmpty()) {
-                args.append(current);
-                current.clear();
-            }
-            continue;
-        }
-        current.append(ch);
-    }
-
-    if (escaping) current.append(QLatin1Char('\\'));
-    if (!current.isEmpty()) args.append(current);
-    return args;
-}
-
 QString terminalDisplayName(const QString &program, const QString &argumentsTemplate)
 {
     return program + QLatin1Char(' ') + argumentsTemplate;
@@ -104,6 +64,7 @@ public:
         m_status->setObjectName(QStringLiteral("muted"));
         m_output->setObjectName(QStringLiteral("shellOutput"));
         m_output->setReadOnly(true);
+        m_output->setMaximumBlockCount(2000);
         m_output->setLineWrapMode(QPlainTextEdit::NoWrap);
 
         auto *actions = new QHBoxLayout;
@@ -133,6 +94,10 @@ public:
             m_status->setText(status == QProcess::NormalExit
                                   ? QObject::tr("Finished with exit code %1").arg(code)
                                   : QObject::tr("Process crashed"));
+        });
+        connect(m_process, &QProcess::errorOccurred, this, [this](QProcess::ProcessError) {
+            m_runButton->setEnabled(m_process->state() == QProcess::NotRunning);
+            m_status->setText(QObject::tr("Cannot run command: %1").arg(m_process->errorString()));
         });
     }
 
@@ -166,15 +131,28 @@ private:
         m_output->clear();
         m_status->setText(QObject::tr("Running with %1").arg(terminalDisplayName(m_terminalProgram, m_terminalArgumentsTemplate)));
         m_runButton->setEnabled(false);
-        QString argsText = m_terminalArgumentsTemplate;
-        if (argsText.contains(QStringLiteral("{cmd}"))) {
-            argsText.replace(QStringLiteral("{cmd}"), m_command);
-        } else if (!argsText.isEmpty()) {
-            argsText += QLatin1Char(' ') + m_command;
-        } else {
-            argsText = m_command;
+        // cmd.exe 使用 Windows 原始命令行；其他终端将整条命令作为独立参数。
+#ifdef Q_OS_WIN
+        if (QFileInfo(m_terminalProgram).completeBaseName().compare(QStringLiteral("cmd"), Qt::CaseInsensitive) == 0) {
+            QString argsText = m_terminalArgumentsTemplate;
+            if (argsText.contains(QStringLiteral("{cmd}"))) argsText.replace(QStringLiteral("{cmd}"), m_command);
+            else argsText += QLatin1Char(' ') + m_command;
+            m_process->setNativeArguments(argsText);
+            m_process->start(m_terminalProgram, QStringList());
+            return;
         }
-        m_process->start(m_terminalProgram, splitArguments(argsText));
+        m_process->setNativeArguments(QString());
+#endif
+        QStringList arguments = QProcess::splitCommand(m_terminalArgumentsTemplate);
+        bool hasPlaceholder = false;
+        for (QString &argument : arguments) {
+            if (argument.contains(QStringLiteral("{cmd}"))) {
+                argument.replace(QStringLiteral("{cmd}"), m_command);
+                hasPlaceholder = true;
+            }
+        }
+        if (!hasPlaceholder) arguments.append(m_command);
+        m_process->start(m_terminalProgram, arguments);
     }
 
     QLabel *m_title;
@@ -259,15 +237,15 @@ QWidget *ShellPlugin::settingsWidget()
     layout->addWidget(note);
 
     auto *preset = new QComboBox(widget);
-    preset->addItem(tr("Command Prompt (cmd.exe /K)"), QStringList{QStringLiteral("cmd.exe"), QStringLiteral("/K {cmd}")});
-    preset->addItem(tr("PowerShell"), QStringList{QStringLiteral("powershell.exe"), QStringLiteral("-NoExit -Command {cmd}")});
-    preset->addItem(tr("Git Bash"), QStringList{QStringLiteral("git-bash.exe"), QStringLiteral("-lc {cmd}")});
+    preset->addItem(tr("Command Prompt (cmd.exe /C)"), QStringList{QStringLiteral("cmd.exe"), QStringLiteral("/C {cmd}")});
+    preset->addItem(tr("PowerShell"), QStringList{QStringLiteral("powershell.exe"), QStringLiteral("-NoProfile -NonInteractive -Command {cmd}")});
+    preset->addItem(tr("Git Bash"), QStringList{QStringLiteral("bash.exe"), QStringLiteral("-lc {cmd}")});
     preset->addItem(tr("Custom"), QStringList{QString(), QString()});
 
     auto *programEdit = new QLineEdit(terminalProgram(), widget);
     auto *argsEdit = new QLineEdit(terminalArgumentsTemplate(), widget);
     programEdit->setPlaceholderText(tr("cmd.exe"));
-    argsEdit->setPlaceholderText(tr("/K {cmd}"));
+    argsEdit->setPlaceholderText(tr("/C {cmd}"));
 
     auto *form = new QFormLayout;
     form->setContentsMargins(0, 0, 0, 0);

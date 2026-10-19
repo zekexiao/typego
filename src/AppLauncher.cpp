@@ -16,6 +16,8 @@
 #include <QSaveFile>
 #include <QStandardPaths>
 #include <utility>
+#include <QTimer>
+#include <QtConcurrent>
 
 #ifdef Q_OS_WIN
 #include <windows.h>
@@ -29,7 +31,21 @@ AppLauncher::AppLauncher(Settings *settings, QObject *parent)
     m_iconCacheDir = QDir::tempPath() + "/TypeGo/icons";
     QDir().mkpath(m_iconCacheDir);
 
-    rebuildApps();
+    addBuiltinApps();
+    connect(&m_scanWatcher, &QFutureWatcher<QList<AppItem>>::finished, this, [this]() {
+        m_scanning = false;
+        if (m_scanPending) {
+            m_scanPending = false;
+            rebuildApps();
+            return;
+        }
+        m_apps.clear();
+        addBuiltinApps();
+        m_apps.append(m_scanWatcher.future().takeResult());
+        m_scanReady = true;
+        emit appsChanged();
+    });
+    QTimer::singleShot(0, this, &AppLauncher::rebuildApps);
     if (m_settings) {
         connect(m_settings, &Settings::hideUninstallEntriesChanged, this, &AppLauncher::rebuildApps);
         connect(m_settings, &Settings::customScanDirsChanged, this, &AppLauncher::rebuildApps);
@@ -58,25 +74,28 @@ static AppItem makeAppItem(const QString &name, const QString &path, const QStri
 
 void AppLauncher::addBuiltinApps()
 {
-    QString winDir = qEnvironmentVariable("SystemRoot");
-    m_apps.append(makeAppItem(tr("Notepad"), "notepad", tr("Windows Notepad"), extractIcon(winDir + "\\System32\\notepad.exe")));
-    m_apps.append(makeAppItem(tr("Calculator"), "calc", tr("Windows Calculator"), extractIcon(winDir + "\\System32\\calc.exe")));
-    m_apps.append(makeAppItem(tr("Paint"), "mspaint", tr("Windows Paint"), extractIcon(winDir + "\\System32\\mspaint.exe")));
-    m_apps.append(makeAppItem(tr("Command Prompt"), "cmd", tr("CMD Command Line"), extractIcon(winDir + "\\System32\\cmd.exe")));
-    m_apps.append(makeAppItem(tr("File Explorer"), "explorer", tr("File Explorer"), extractIcon(winDir + "\\explorer.exe")));
-    m_apps.append(makeAppItem(tr("Task Manager"), "taskmgr", tr("Windows Task Manager"), extractIcon(winDir + "\\System32\\taskmgr.exe")));
-    m_apps.append(makeAppItem(tr("Settings"), "ms-settings:", tr("Windows Settings"), extractIcon(QStringLiteral("ms-settings:"))));
-    m_apps.append(makeAppItem(tr("Browser"), "https://www.bing.com", tr("Open Bing Search"), extractIcon(QStringLiteral("https://www.bing.com"))));
+    m_apps.append(makeAppItem(tr("Notepad"), "notepad", tr("Windows Notepad")));
+    m_apps.append(makeAppItem(tr("Calculator"), "calc", tr("Windows Calculator")));
+    m_apps.append(makeAppItem(tr("Paint"), "mspaint", tr("Windows Paint")));
+    m_apps.append(makeAppItem(tr("Command Prompt"), "cmd", tr("CMD Command Line")));
+    m_apps.append(makeAppItem(tr("File Explorer"), "explorer", tr("File Explorer")));
+    m_apps.append(makeAppItem(tr("Task Manager"), "taskmgr", tr("Windows Task Manager")));
+    m_apps.append(makeAppItem(tr("Settings"), "ms-settings:", tr("Windows Settings")));
+    m_apps.append(makeAppItem(tr("Browser"), "https://www.bing.com", tr("Open Bing Search")));
 }
 
 void AppLauncher::rebuildApps()
 {
-    m_apps.clear();
-    m_appPaths.clear();
-    addBuiltinApps();
-    scanStartMenu();
-    scanCustomDirs();
-    emit appsChanged();
+    if (m_scanning) {
+        m_scanPending = true;
+        return;
+    }
+    m_scanning = true;
+    // 在线程启动前读取设置，后台仅操作独立数据，不提取图标或访问界面对象。
+    m_scanWatcher.setFuture(QtConcurrent::run(&AppLauncher::scanApps,
+        m_settings ? m_settings->customScanDirs() : QStringList(),
+        m_settings && m_settings->customScanDirsRecursive(),
+        m_settings && m_settings->hideUninstallEntries()));
 }
 
 static QPixmap hIconToPixmap(HICON hIcon)
@@ -177,8 +196,10 @@ QString AppLauncher::extractIcon(const QString &filePath)
     return "";
 }
 
-void AppLauncher::scanStartMenu()
+QList<AppItem> AppLauncher::scanApps(const QStringList &customDirs, bool recursive, bool hideUninstall)
 {
+    QList<AppItem> apps;
+    QSet<QString> paths;
 #ifdef Q_OS_WIN
     QStringList dirs;
 
@@ -192,21 +213,17 @@ void AppLauncher::scanStartMenu()
     }
 
     for (const QString &dirPath : dirs) {
-        scanDirectory(dirPath, tr("Start Menu"), true, 0, 8);
+        scanDirectory(dirPath, tr("Start Menu"), true, 0, 8, hideUninstall, apps, paths);
     }
 #endif
-}
-
-void AppLauncher::scanCustomDirs()
-{
-    if (!m_settings) return;
-    const bool recursive = m_settings->customScanDirsRecursive();
-    for (const QString &dirPath : m_settings->customScanDirs()) {
-        scanDirectory(dirPath, tr("Custom Directory"), recursive, 0, 3);
+    for (const QString &dirPath : customDirs) {
+        scanDirectory(dirPath, tr("Custom Directory"), recursive, 0, 3, hideUninstall, apps, paths);
     }
+    return apps;
 }
 
-void AppLauncher::scanDirectory(const QString &dirPath, const QString &desc, bool recursive, int depth, int maxDepth)
+void AppLauncher::scanDirectory(const QString &dirPath, const QString &desc, bool recursive, int depth, int maxDepth,
+                                bool hideUninstall, QList<AppItem> &apps, QSet<QString> &paths)
 {
     QDir dir(dirPath);
     if (!dir.exists()) return;
@@ -217,29 +234,28 @@ void AppLauncher::scanDirectory(const QString &dirPath, const QString &desc, boo
     for (const QFileInfo &fi : entries) {
         const QString name = fi.completeBaseName();
         const QString filePath = fi.absoluteFilePath();
-        if (shouldHideEntry(name, filePath)) continue;
+        if (hideUninstall && shouldHideEntry(name, filePath)) continue;
 
         const QString pathKey = filePath.toLower();
-        if (m_appPaths.contains(pathKey)) continue;
-        m_appPaths.insert(pathKey);
+        if (paths.contains(pathKey)) continue;
+        paths.insert(pathKey);
 
-        m_apps.append(makeAppItem(name, filePath, desc, extractIcon(filePath)));
+        apps.append(makeAppItem(name, filePath, desc));
     }
 
     if (!recursive || depth >= maxDepth) return;
-    const QFileInfoList subdirs = dir.entryInfoList(QDir::Dirs | QDir::NoDotAndDotDot, QDir::Name);
+    const QFileInfoList subdirs = dir.entryInfoList(QDir::Dirs | QDir::NoDotAndDotDot | QDir::NoSymLinks, QDir::Name);
     for (const QFileInfo &subdir : subdirs) {
         scanDirectory(subdir.absoluteFilePath(),
                       desc + QStringLiteral(" / ") + subdir.fileName(),
                       true,
                       depth + 1,
-                      maxDepth);
+                      maxDepth, hideUninstall, apps, paths);
     }
 }
 
-bool AppLauncher::shouldHideEntry(const QString &name, const QString &path) const
+bool AppLauncher::shouldHideEntry(const QString &name, const QString &path)
 {
-    if (!m_settings || !m_settings->hideUninstallEntries()) return false;
     const QString text = (name + QStringLiteral(" ") + path).toLower();
     return text.contains(QStringLiteral("uninstall"))
         || text.contains(QStringLiteral("unins"))
@@ -302,6 +318,9 @@ bool AppLauncher::launch(const QString &path)
 #endif
     }
 
+    if (fi.exists() && fi.suffix().compare(QStringLiteral("exe"), Qt::CaseInsensitive) != 0) {
+        return QDesktopServices::openUrl(QUrl::fromLocalFile(fi.absoluteFilePath()));
+    }
     return QProcess::startDetached(path, QStringList());
 }
 

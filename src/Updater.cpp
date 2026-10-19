@@ -9,6 +9,12 @@
 #include <QDebug>
 #include <QFile>
 #include <QStandardPaths>
+#include <QTemporaryFile>
+
+#ifdef Q_OS_WIN
+#include <windows.h>
+#include <shellapi.h>
+#endif
 
 namespace {
 // 更新源固定为 GitHub 官方仓库的 latest release。
@@ -50,6 +56,18 @@ Updater::Updater(QObject *parent)
 {
 }
 
+Updater::~Updater()
+{
+    if (m_downloadReply) {
+        m_downloadReply->disconnect(this);
+        m_downloadReply->abort();
+    }
+    if (m_downloadFile) {
+        m_downloadFile->close();
+        m_downloadFile->remove();
+    }
+}
+
 QString Updater::currentVersion() const
 {
     // 统一使用应用版本（由 VERSION 文件注入），不要再硬编码，否则与发布版本串不等会反复提示更新。
@@ -62,6 +80,7 @@ void Updater::checkForUpdate()
     // GitHub API 要求 User-Agent，否则直接 403。
     request.setRawHeader("User-Agent", "TypeGo-Updater");
     request.setRawHeader("Accept", "application/vnd.github+json");
+    request.setTransferTimeout(15000);
     request.setAttribute(QNetworkRequest::RedirectPolicyAttribute,
                          QNetworkRequest::NoLessSafeRedirectPolicy);
 
@@ -116,16 +135,27 @@ void Updater::checkForUpdate()
 
 void Updater::downloadAndInstall(const QString &url)
 {
-    QString downloadPath = QDir(QStandardPaths::writableLocation(QStandardPaths::TempLocation))
-                               .filePath(QStringLiteral("TypeGo_update.exe"));
-
-    m_downloadFile = new QFile(downloadPath, this);
-    if (!m_downloadFile->open(QIODevice::WriteOnly)) {
-        emit downloadError(QStringLiteral("Failed to create download file"));
+    if (m_downloadReply) return;
+    const QUrl downloadUrl(url);
+    if (!downloadUrl.isValid() || downloadUrl.scheme() != QStringLiteral("https")) {
+        emit downloadError(tr("Invalid update download URL"));
         return;
     }
-
-    QNetworkRequest request(url);
+    auto *file = new QTemporaryFile(QDir(QStandardPaths::writableLocation(QStandardPaths::TempLocation))
+                                       .filePath(QStringLiteral("TypeGo_update_XXXXXX.exe")), this);
+    if (!file->open()) {
+        const QString error = file->errorString();
+        delete file;
+        emit downloadError(tr("Cannot create the update download: %1").arg(error));
+        return;
+    }
+    file->setAutoRemove(false);
+    m_downloadFile = file;
+    m_writeError.clear();
+    m_cancelled = false;
+    QNetworkRequest request(downloadUrl);
+    request.setTransferTimeout(30000);
+    request.setAttribute(QNetworkRequest::RedirectPolicyAttribute, QNetworkRequest::NoLessSafeRedirectPolicy);
     m_downloadReply = m_manager->get(request);
 
     connect(m_downloadReply, &QNetworkReply::downloadProgress,
@@ -134,12 +164,24 @@ void Updater::downloadAndInstall(const QString &url)
             this, &Updater::onDownloadReadyRead);
     connect(m_downloadReply, &QNetworkReply::finished,
             this, &Updater::onDownloadFinished);
+    emit downloadStarted();
+}
+
+void Updater::cancelDownload()
+{
+    if (!m_downloadReply) return;
+    m_cancelled = true;
+    m_downloadReply->abort();
 }
 
 void Updater::onDownloadReadyRead()
 {
     if (m_downloadFile && m_downloadReply) {
-        m_downloadFile->write(m_downloadReply->readAll());
+        const QByteArray data = m_downloadReply->readAll();
+        if (m_downloadFile->write(data) != data.size()) {
+            m_writeError = tr("Cannot save the update: %1").arg(m_downloadFile->errorString());
+            m_downloadReply->abort();
+        }
     }
 }
 
@@ -148,54 +190,59 @@ void Updater::onDownloadFinished()
     if (!m_downloadReply || !m_downloadFile)
         return;
 
-    if (m_downloadReply->error() != QNetworkReply::NoError) {
-        emit downloadError(m_downloadReply->errorString());
-        m_downloadFile->close();
-        m_downloadFile->remove();
-        m_downloadFile->deleteLater();
-        m_downloadFile = nullptr;
-        m_downloadReply->deleteLater();
-        m_downloadReply = nullptr;
+    if (m_cancelled || !m_writeError.isEmpty() || m_downloadReply->error() != QNetworkReply::NoError) {
+        finishDownload(m_writeError.isEmpty() ? m_downloadReply->errorString() : m_writeError, m_cancelled);
         return;
     }
-
-    m_downloadFile->write(m_downloadReply->readAll());
+    const QByteArray tail = m_downloadReply->readAll();
+    if (m_downloadFile->write(tail) != tail.size() || !m_downloadFile->flush()
+        || !m_downloadFile->seek(0) || m_downloadFile->read(2) != QByteArrayLiteral("MZ")) {
+        finishDownload(tr("The update download is incomplete or invalid. Please try again."));
+        return;
+    }
+    const QString downloadPath = QDir::toNativeSeparators(m_downloadFile->fileName());
     m_downloadFile->close();
 
-    QString downloadPath = m_downloadFile->fileName();
-    m_downloadFile->deleteLater();
+    // 安装包负责提权、替换文件和重启，只有成功交接后才退出当前程序。
+#ifdef Q_OS_WIN
+    const QString parameters = QStringLiteral(R"(/DIR="%1")")
+                                   .arg(QDir::toNativeSeparators(QCoreApplication::applicationDirPath()));
+    SHELLEXECUTEINFOW info = {};
+    info.cbSize = sizeof(info);
+    info.fMask = SEE_MASK_NOCLOSEPROCESS | SEE_MASK_NOASYNC;
+    info.lpVerb = L"open";
+    info.lpFile = reinterpret_cast<LPCWSTR>(downloadPath.utf16());
+    info.lpParameters = reinterpret_cast<LPCWSTR>(parameters.utf16());
+    info.nShow = SW_SHOWNORMAL;
+    if (!ShellExecuteExW(&info)) {
+        const DWORD error = GetLastError();
+        finishDownload(error == ERROR_CANCELLED ? QString()
+                       : tr("Cannot start the update installer (error %1).").arg(error), error == ERROR_CANCELLED);
+        return;
+    }
+    if (info.hProcess) CloseHandle(info.hProcess);
+#else
+    if (!QProcess::startDetached(downloadPath, QStringList())) {
+        finishDownload(tr("Cannot start the update installer."));
+        return;
+    }
+#endif
+    m_downloadReply->deleteLater();
+    m_downloadReply = nullptr;
+    delete m_downloadFile;
+    m_downloadFile = nullptr;
+    emit downloadFinished();
+    QCoreApplication::quit();
+}
+
+void Updater::finishDownload(const QString &error, bool cancelled)
+{
+    m_downloadFile->close();
+    m_downloadFile->remove();
+    delete m_downloadFile;
     m_downloadFile = nullptr;
     m_downloadReply->deleteLater();
     m_downloadReply = nullptr;
-
-    emit downloadFinished();
-
-    // Write updater bat and launch it
-    QString exePath = QCoreApplication::applicationFilePath();
-    QString batPath = QDir(QStandardPaths::writableLocation(QStandardPaths::TempLocation))
-                          .filePath(QStringLiteral("TypeGo_updater.bat"));
-
-    QFile bat(batPath);
-    if (bat.open(QIODevice::WriteOnly | QIODevice::Text)) {
-        QString script = QStringLiteral(
-            "@echo off\r\n"
-            "timeout /t 2 /nobreak >nul\r\n"
-            "copy /Y \"%1\" \"%2\" >nul\r\n"
-            "if %errorlevel% neq 0 (\r\n"
-            "  echo Failed to copy update file\r\n"
-            "  pause\r\n"
-            "  exit /b 1\r\n"
-            ")\r\n"
-            "del \"%1\" >nul\r\n"
-            "start \"\" \"%2\"\r\n"
-            "del \"%~f0\" >nul\r\n"
-        ).arg(downloadPath, exePath);
-        bat.write(script.toUtf8());
-        bat.close();
-
-        QProcess::startDetached(QStringLiteral("cmd"), QStringList{QStringLiteral("/c"), batPath});
-        QCoreApplication::quit();
-    } else {
-        emit downloadError(QStringLiteral("Failed to create updater script"));
-    }
+    if (cancelled) emit downloadFinished();
+    else emit downloadError(error);
 }

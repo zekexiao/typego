@@ -4,6 +4,8 @@
 #include "TaskService.h"
 
 #include <QAbstractItemView>
+#include <QApplication>
+#include <QHideEvent>
 #include <QCheckBox>
 #include <QComboBox>
 #include <QDate>
@@ -13,12 +15,15 @@
 #include <QLabel>
 #include <QLineEdit>
 #include <QMenu>
+#include <QMessageBox>
 #include <QMouseEvent>
 #include <QPushButton>
 #include <QSizePolicy>
 #include <QSignalBlocker>
+#include <QScopedValueRollback>
 #include <QTextEdit>
 #include <QTreeWidget>
+#include <QTimer>
 #include <QVBoxLayout>
 
 #include <algorithm>
@@ -49,10 +54,12 @@ TodoView::TodoView(TaskService *service, QWidget *parent)
     , m_subTaskButton(new QPushButton(tr("Add Subtask"), this))
     , m_deleteButton(new QPushButton(tr("Delete"), this))
     , m_toggleButton(new QPushButton(tr("Complete"), this))
+    , m_undoButton(new QPushButton(tr("Undo delete"), this))
     , m_detailPanel(new QWidget(this))
     , m_detailEditor(new QWidget(this))
     , m_detailActions(new QWidget(this))
     , m_emptyDetailLabel(new QLabel(tr("No task selected"), this))
+    , m_saveTimer(new QTimer(this))
 {
     setObjectName(QStringLiteral("todoView"));
 
@@ -107,7 +114,12 @@ TodoView::TodoView(TaskService *service, QWidget *parent)
     leftLayout->addLayout(inputLayout);
     leftLayout->addLayout(filterLayout);
     leftLayout->addWidget(m_tree, 1);
-    leftLayout->addWidget(m_summary);
+    auto *summaryLayout = new QHBoxLayout;
+    summaryLayout->addWidget(m_summary, 1);
+    m_undoButton->setEnabled(m_service->canUndoDelete());
+    m_undoButton->setToolTip(tr("Restore the most recently deleted task and its subtasks"));
+    summaryLayout->addWidget(m_undoButton);
+    leftLayout->addLayout(summaryLayout);
 
     m_detailTitle->setObjectName(QStringLiteral("pageTitle"));
     m_detailTitle->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
@@ -175,9 +187,14 @@ TodoView::TodoView(TaskService *service, QWidget *parent)
     connect(m_input, &QLineEdit::returnPressed, this, &TodoView::addTask);
     connect(m_search, &QLineEdit::textChanged, this, [this]() { rebuildTree(); });
     connect(m_filter, &QComboBox::currentIndexChanged, this, [this]() { rebuildTree(); });
-    connect(m_tree, &QTreeWidget::currentItemChanged, this, [this]() { updateDetails(); });
+    connect(m_tree, &QTreeWidget::currentItemChanged, this, [this]() {
+        if (m_rebuilding) return;
+        flushDetails();
+        updateDetails();
+    });
     connect(m_tree, &QTreeWidget::itemChanged, this, [this](QTreeWidgetItem *item, int column) {
         if (m_rebuilding || !item) return;
+        flushDetails();
         const QString id = item->data(0, TaskIdRole).toString();
         if (column == 0) {
             const bool completed = item->checkState(0) == Qt::Checked;
@@ -207,6 +224,32 @@ TodoView::TodoView(TaskService *service, QWidget *parent)
     connect(m_deleteButton, &QPushButton::clicked, this, &TodoView::removeSelectedTask);
     connect(m_toggleButton, &QPushButton::clicked, this, &TodoView::toggleSelectedComplete);
     connect(m_titleEdit, &QLineEdit::returnPressed, this, &TodoView::saveDetails);
+    m_saveTimer->setSingleShot(true);
+    m_saveTimer->setInterval(500);
+    auto markDirty = [this]() {
+        if (m_loadingDetails || m_editingTaskId.isEmpty()) return;
+        m_detailsDirty = true;
+        m_saveTimer->start();
+    };
+    connect(m_titleEdit, &QLineEdit::textEdited, this, markDirty);
+    connect(m_noteEdit, &QTextEdit::textChanged, this, markDirty);
+    connect(m_priorityCombo, &QComboBox::currentIndexChanged, this, markDirty);
+    connect(m_completedCheck, &QCheckBox::toggled, this, markDirty);
+    connect(m_saveTimer, &QTimer::timeout, this, [this]() {
+        flushDetails();
+        // 自动保存后更新树，保留编辑器的光标、选择和撤销历史。
+        if (m_treeNeedsRefresh && !m_detailsDirty) rebuildTree(true);
+    });
+    connect(qApp, &QCoreApplication::aboutToQuit, this, &TodoView::flushDetails);
+    connect(m_service, &TaskService::storageError, this, [this](const QString &message) {
+        QMessageBox::warning(this, tr("Tasks not saved"), message);
+    });
+    connect(m_undoButton, &QPushButton::clicked, this, [this]() {
+        flushDetails();
+        m_service->undoDelete();
+        m_undoButton->setEnabled(m_service->canUndoDelete());
+        rebuildTree();
+    });
     setDetailsEnabled(false);
     reload();
 }
@@ -215,6 +258,12 @@ void TodoView::reload()
 {
     rebuildTree();
     m_input->setFocus();
+}
+
+void TodoView::hideEvent(QHideEvent *event)
+{
+    flushDetails();
+    QWidget::hideEvent(event);
 }
 
 bool TodoView::eventFilter(QObject *watched, QEvent *event)
@@ -257,14 +306,19 @@ void TodoView::addSubTask()
 
 void TodoView::removeSelectedTask()
 {
+    flushDetails();
     const QString id = selectedTaskId();
     if (id.isEmpty()) return;
     m_service->deleteTask(id);
+    m_detailsDirty = false;
+    m_editingTaskId.clear();
+    m_undoButton->setEnabled(m_service->canUndoDelete());
     rebuildTree();
 }
 
 void TodoView::toggleSelectedComplete()
 {
+    flushDetails();
     const Task task = selectedTask();
     if (task.id.isEmpty()) return;
     m_service->setCompleted(task.id, !task.completed);
@@ -274,21 +328,38 @@ void TodoView::toggleSelectedComplete()
 void TodoView::saveDetails()
 {
     if (m_loadingDetails) return;
-    const QString id = selectedTaskId();
-    if (id.isEmpty()) return;
-
-    const Task current = selectedTask();
-    m_service->updateTitle(id, m_titleEdit->text());
-    m_service->updateNote(id, m_noteEdit->toPlainText());
-    m_service->updatePriority(id, m_priorityCombo->currentData().toInt());
-    if (current.completed != m_completedCheck->isChecked()) {
-        m_service->setCompleted(id, m_completedCheck->isChecked());
+    if (m_titleEdit->text().trimmed().isEmpty()) {
+        QMessageBox::warning(this, tr("Cannot save task"), tr("Task title cannot be empty."));
+        return;
     }
+    flushDetails();
     rebuildTree();
 }
 
-void TodoView::rebuildTree()
+void TodoView::flushDetails()
 {
+    m_saveTimer->stop();
+    if (m_loadingDetails || m_savingDetails || !m_detailsDirty || m_editingTaskId.isEmpty()) return;
+    QScopedValueRollback<bool> saving(m_savingDetails, true);
+    const Task current = m_service->repository()->find(m_editingTaskId);
+    if (current.id.isEmpty()) return;
+    const QString title = m_titleEdit->text().trimmed();
+    m_treeNeedsRefresh = m_treeNeedsRefresh || (!title.isEmpty() && title != current.title)
+        || m_priorityCombo->currentData().toInt() != current.priority
+        || m_completedCheck->isChecked() != current.completed;
+    // 标题暂时清空时仍保存备注，切换任务不会丢失其他编辑内容。
+    if (m_service->updateDetails(current.id, title.isEmpty() ? current.title : title,
+                                 m_noteEdit->toPlainText(), m_priorityCombo->currentData().toInt(),
+                                 m_completedCheck->isChecked())) {
+        m_detailsDirty = false;
+        if (selectedTaskId() == current.id && !title.isEmpty()) m_detailTitle->setText(title);
+    }
+}
+
+void TodoView::rebuildTree(bool preserveEditor)
+{
+    flushDetails();
+    m_treeNeedsRefresh = false;
     const QString currentId = selectedTaskId();
     m_rebuilding = true;
     m_tree->setUpdatesEnabled(false);
@@ -317,7 +388,6 @@ void TodoView::rebuildTree()
         m_tree->expandAll();
     }
     m_tree->setUpdatesEnabled(true);
-    m_rebuilding = false;
 
     if (!currentId.isEmpty()) {
         const QList<QTreeWidgetItem *> items = m_tree->findItems(QStringLiteral("*"), Qt::MatchWildcard | Qt::MatchRecursive, 0);
@@ -328,8 +398,9 @@ void TodoView::rebuildTree()
             }
         }
     }
+    m_rebuilding = false;
     updateSummary();
-    updateDetails();
+    if (!preserveEditor || selectedTaskId() != m_editingTaskId) updateDetails();
 }
 
 void TodoView::appendChildren(QTreeWidgetItem *parentItem, const QString &parentId, const ChildrenByParent &childrenByParent)
@@ -425,6 +496,8 @@ void TodoView::updateDetails()
 {
     const Task task = selectedTask();
     m_loadingDetails = true;
+    m_editingTaskId = task.id;
+    m_detailsDirty = false;
     if (task.id.isEmpty()) {
         m_detailTitle->setText(tr("Task details"));
         m_emptyDetailLabel->show();

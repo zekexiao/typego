@@ -36,6 +36,7 @@ public:
         return query(args);
     }
     virtual bool execute(const QVariantMap &action) = 0;
+    virtual void cancelQuery() {}
     virtual LaunchMode launchMode(const QString &args) const
     {
         Q_UNUSED(args)
@@ -52,4 +53,5 @@ public:
 
 signals:
     void viewCloseRequested();
+    void queryResultsChanged(const QString &args);
 };

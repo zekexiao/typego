@@ -1,6 +1,7 @@
 ﻿#pragma once
 
 #include "IPlugin.h"
+#include <QFutureWatcher>
 
 class QFileInfo;
 
@@ -15,9 +16,17 @@ public:
     QString description() const override { return tr("File search (Everything)"); }
     QVariantList query(const QString &args) override;
     bool execute(const QVariantMap &action) override;
+    void cancelQuery() override;
 
 private:
-    QString m_iconCacheDir;
-    QString extractFileIcon(const QString &filePath);
-    QString typeLabel(const QFileInfo &fileInfo, bool isFolder) const;
+    void startSearch();
+    static QVariantList searchFiles(const QString &args);
+    static QString typeLabel(const QFileInfo &fileInfo, bool isFolder);
+
+    QFutureWatcher<QVariantList> m_watcher;
+    QString m_requestedQuery;
+    QString m_runningQuery;
+    QVariantList m_results;
+    bool m_searchRunning = false;
+    bool m_resultsReady = false;
 };

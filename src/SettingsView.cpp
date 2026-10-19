@@ -1,6 +1,7 @@
 #include "SettingsView.h"
 
 #include "Settings.h"
+#include "GlobalHotkey.h"
 #include "plugins/IPlugin.h"
 #include "plugins/PluginManager.h"
 
@@ -18,6 +19,7 @@
 #include <QIcon>
 #include <QKeyEvent>
 #include <QLabel>
+#include <QMessageBox>
 #include <QListWidget>
 #include <QPainter>
 #include <QPushButton>
@@ -168,10 +170,11 @@ void SettingsSwitch::paintEvent(QPaintEvent *)
     }
 }
 
-SettingsView::SettingsView(Settings *settings, PluginManager *pluginManager, QWidget *parent)
+SettingsView::SettingsView(Settings *settings, PluginManager *pluginManager, GlobalHotkey *hotkeys, QWidget *parent)
     : QWidget(parent)
     , m_settings(settings)
     , m_pluginManager(pluginManager)
+    , m_hotkeys(hotkeys)
 {
     setObjectName(QStringLiteral("settingsView"));
 
@@ -505,6 +508,22 @@ SettingsView::SettingsView(Settings *settings, PluginManager *pluginManager, QWi
         emit closeRequested();
     });
     connect(buttons, &QDialogButtonBox::accepted, this, [this]() {
+        QHash<QString, QString> pluginShortcuts;
+        for (QKeySequenceEdit *edit : m_pluginHotkeyEdits) {
+            const QString command = edit->property("cmd").toString();
+            for (QCheckBox *check : m_pluginChecks) {
+                if (check->property("cmd").toString() == command && check->isChecked()) {
+                    pluginShortcuts.insert(command, edit->keySequence().toString(QKeySequence::PortableText));
+                    break;
+                }
+            }
+        }
+        QString error;
+        if (!m_hotkeys->applyShortcuts(m_globalHotkeyEdit->keySequence().toString(QKeySequence::PortableText),
+                                     pluginShortcuts, &error)) {
+            QMessageBox::warning(this, tr("Shortcut unavailable"), error);
+            return;
+        }
         m_settings->setGlobalHotkey(m_globalHotkeyEdit->keySequence().toString(QKeySequence::PortableText));
         m_settings->setSearchEngine(m_engineCombo->currentText());
         m_settings->setTheme(m_themeCombo->currentData().toString());

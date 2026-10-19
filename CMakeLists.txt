@@ -113,7 +113,7 @@ target_link_libraries(TypeGo PRIVATE
 )
 
 if(WIN32)
-    target_link_libraries(TypeGo PRIVATE dwmapi)
+    target_link_libraries(TypeGo PRIVATE dwmapi ole32)
 endif()
 
 set_target_properties(TypeGo PROPERTIES

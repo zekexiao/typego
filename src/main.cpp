@@ -9,6 +9,7 @@
 #include <QGuiApplication>
 #include <QIcon>
 #include <QMenu>
+#include <QMessageBox>
 #include <QProcess>
 #include <QScreen>
 #include <QSet>
@@ -17,6 +18,11 @@
 #include <QTimer>
 #include <QTranslator>
 #include <QLocale>
+#include <QScopeGuard>
+
+#ifdef Q_OS_WIN
+#include <windows.h>
+#endif
 
 #include "AppLauncher.h"
 #include "GlobalHotkey.h"
@@ -65,6 +71,13 @@ int main(int argc, char *argv[])
     // 版本号由 CMake 从根目录 VERSION 文件注入，避免多处硬编码不一致。
     app.setApplicationVersion(QStringLiteral(TYPEGO_VERSION));
     app.setQuitOnLastWindowClosed(false);
+#ifdef Q_OS_WIN
+    // 安装器通过此互斥量识别运行实例，防止升级时覆盖仍在使用的文件。
+    const HANDLE installationMutex = CreateMutexW(nullptr, FALSE, L"TypeGo.Installation");
+    const auto releaseInstallationMutex = qScopeGuard([installationMutex]() {
+        if (installationMutex) CloseHandle(installationMutex);
+    });
+#endif
     const bool startInBackground = app.arguments().contains(QStringLiteral("--background"));
 
     const QIcon appIcon = buildAppIcon();
@@ -115,7 +128,7 @@ int main(int argc, char *argv[])
     pluginManager.registerPlugin(new CalcPlugin(&pluginManager));
     pluginManager.registerPlugin(new ConvertPlugin(&pluginManager));
     pluginManager.registerPlugin(new DirectoryPlugin(&pluginManager));
-    auto *settingsPlugin = new SettingsPlugin(&settings, &pluginManager, &pluginManager);
+    auto *settingsPlugin = new SettingsPlugin(&settings, &pluginManager, &hotkey, &pluginManager);
     pluginManager.registerPlugin(settingsPlugin);
     pluginManager.setSettings(&settings);
     pluginManager.registerPlugin(new FilePlugin(&pluginManager));
@@ -159,14 +172,8 @@ int main(int argc, char *argv[])
         }
     });
 
-    auto reRegister = [&]() {
-        hotkey.registerHotkey(settings.globalHotkey());
-    };
-    QObject::connect(&settings, &Settings::globalHotkeyChanged, &hotkey, reRegister);
-    reRegister();
-
     auto registerPluginHotkeys = [&]() {
-        hotkey.clearPluginHotkeys();
+        QHash<QString, QString> pluginShortcuts;
         QSet<IPlugin *> registered;
         IPlugin *settingsPluginInstance = pluginManager.plugin(QStringLiteral("set"));
         for (const QString &command : pluginManager.commands()) {
@@ -174,11 +181,19 @@ int main(int argc, char *argv[])
             if (!plugin || plugin == settingsPluginInstance || registered.contains(plugin)) continue;
             registered.insert(plugin);
             if (!settings.isPluginEnabled(plugin->command())) continue;
-            hotkey.registerPluginHotkey(plugin->command(), settings.pluginHotkey(plugin->command()));
+            pluginShortcuts.insert(plugin->command(), settings.pluginHotkey(plugin->command()));
+        }
+        QString error;
+        if (!hotkey.applyShortcuts(settings.globalHotkey(), pluginShortcuts, &error)) {
+            // 启动时插件快捷键有冲突，仍尽量保留主窗口入口。
+            QString fallbackError;
+            hotkey.applyShortcuts(settings.globalHotkey(), {}, &fallbackError);
+            QTimer::singleShot(0, &window, [&window, error]() {
+                QMessageBox::warning(&window, QCoreApplication::translate("Main", "Shortcut unavailable"),
+                                     error + QCoreApplication::translate("Main", "\nOpen Settings from the tray icon to choose another shortcut."));
+            });
         }
     };
-    QObject::connect(&settings, &Settings::pluginHotkeyChanged, &hotkey, registerPluginHotkeys);
-    QObject::connect(&settings, &Settings::pluginEnabledChanged, &hotkey, registerPluginHotkeys);
     QObject::connect(&hotkey, &GlobalHotkey::commandActivated, &window, &MainWindow::activateCommand);
     registerPluginHotkeys();
 

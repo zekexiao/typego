@@ -23,6 +23,7 @@ class QStackedWidget;
 class QHBoxLayout;
 class QProgressDialog;
 class QResizeEvent;
+class QTimer;
 
 // 自绘圆形管理入口，确保悬浮背景不受按钮样式影响。
 class ManagementIcon final : public QWidget {
@@ -134,6 +135,8 @@ private:
     void updateResultsLayout();
     void scheduleResultsLayout();
     void applyTaskbarVisibility();
+    QVariantList queryFiles(const QString &query);
+    void launchPath(const QString &path);
     int resultsHeightForWindow(int windowHeight) const;
 
     AppLauncher *m_launcher;
@@ -155,6 +158,9 @@ private:
     QPushButton *m_pluginBackButton;
     QWidget *m_titleBackSlot = nullptr;
     QProgressDialog *m_downloadDialog = nullptr;
+    QTimer *m_searchDebounce;
+    QString m_lastSearchText;
+    QString m_fileSearchQuery;
 
     QVariantList m_results;
     bool m_commandMode = false;
