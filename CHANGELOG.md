@@ -1,5 +1,21 @@
 # TypeGo 更新日志
 
+## 1.2 - 2026-10-20
+
+### 中文
+
+- 优化更新安装交接，安装包接管提权与重启后才退出当前程序，升级更可靠
+- 修复输入刷新后回车或点击结果跳回首项的问题，现在始终执行当前选中结果
+- 应用后台搜索与图标加载性能优化，不可读取的路径缓存失败结果，避免重复排队
+- 待办读取失败时保留原始文件，不再用空数据覆盖已有任务；全局快捷键全部注册成功后才释放旧键
+
+### English
+
+- Improved update handoff: the app now exits only after the installer takes over elevation, file replacement, and restart
+- Fixed Enter/click resetting to the first result after the input refreshed; the selected result now runs as shown
+- Optimized background app search and icon loading; unreadable paths are cached to avoid repeated work on redraws
+- Todo data is preserved when a read fails instead of being overwritten with an empty store; global hotkeys are released only after all new bindings register
+
 ## 1.1 - 2026-06-15
 
 ### 中文
