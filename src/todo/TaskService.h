@@ -13,6 +13,8 @@ class TaskService : public QObject {
     Q_OBJECT
 public:
     explicit TaskService(QObject *parent = nullptr);
+    /// 指定存储文件路径的构造，供单元测试和临时数据场景使用，避免写用户 AppData。
+    explicit TaskService(const QString &storagePath, QObject *parent = nullptr);
     ~TaskService() override;
 
     TaskRepository *repository() const { return m_repo; }
@@ -47,6 +49,9 @@ signals:
     void storageError(const QString &message);
 
 private:
+    /// 用户数据目录下的默认存储路径。
+    static QString defaultStoragePath();
+
     void setCompletedRecursive(const QString &id, bool completed);
     void updateParentCompletion(const QString &parentId);
 

@@ -1,4 +1,5 @@
 #include "Updater.h"
+#include "utils/Version.h"
 #include <QNetworkRequest>
 #include <QJsonDocument>
 #include <QJsonArray>
@@ -19,35 +20,6 @@
 namespace {
 // 更新源固定为 GitHub 官方仓库的 latest release。
 constexpr auto kLatestReleaseUrl = "https://api.github.com/repos/zekexiao/typego/releases/latest";
-
-// 解析 "v1.2.3" / "1.2" 形式的版本号为可比较的整数段。
-QList<int> parseVersion(const QString &text)
-{
-    QString cleaned = text.trimmed();
-    if (cleaned.startsWith(QLatin1Char('v'), Qt::CaseInsensitive)) cleaned.remove(0, 1);
-    QList<int> parts;
-    const auto segments = cleaned.split(QLatin1Char('.'));
-    for (const QString &segment : segments) {
-        bool ok = false;
-        const int value = segment.toInt(&ok);
-        parts.append(ok ? value : 0);
-    }
-    return parts;
-}
-
-// 逐段比较语义化版本，remote 更新时返回 true。
-bool isNewerVersion(const QString &remote, const QString &local)
-{
-    const QList<int> a = parseVersion(remote);
-    const QList<int> b = parseVersion(local);
-    const int count = qMax(a.size(), b.size());
-    for (int i = 0; i < count; ++i) {
-        const int x = i < a.size() ? a.at(i) : 0;
-        const int y = i < b.size() ? b.at(i) : 0;
-        if (x != y) return x > y;
-    }
-    return false;
-}
 }
 
 Updater::Updater(QObject *parent)
@@ -103,7 +75,7 @@ void Updater::checkForUpdate()
         // 草稿/预发布版本不纳入自动更新提示。
         if (tagName.isEmpty() || obj.value(QStringLiteral("draft")).toBool()
             || obj.value(QStringLiteral("prerelease")).toBool()
-            || !isNewerVersion(tagName, currentVersion())) {
+            || !Version::isNewer(tagName, currentVersion())) {
             emit noUpdateAvailable();
             return;
         }

@@ -19,6 +19,9 @@ list(PREPEND CMAKE_PREFIX_PATH "C:/Qt/6.10.3/msvc2022_64")
 
 find_package(Qt6 REQUIRED COMPONENTS Core Gui Widgets Svg Network Concurrent LinguistTools)
 
+# 单元测试开关；关闭时不引入 Test 模块，保持发布构建的依赖不变。
+option(TYPEGO_BUILD_TESTS "Build TypeGo unit tests" ON)
+
 set(CMAKE_RC_FLAGS "-I ${CMAKE_SOURCE_DIR}")
 
 # Everything SDK
@@ -48,6 +51,29 @@ set(SPDLOG_BUILD_BENCH OFF CACHE BOOL "" FORCE)
 set(SPDLOG_INSTALL OFF CACHE BOOL "" FORCE)
 add_subdirectory(third_party/spdlog EXCLUDE_FROM_ALL)
 
+# 纯逻辑层：表达式计算、单位换算、拼音、待办数据与版本比较。
+# 独立成静态库让可执行程序和单元测试共用同一份实现，避免源码清单两处重复。
+add_library(typego_core STATIC
+    src/plugins/IPlugin.cpp
+    src/plugins/CalcPlugin.cpp
+    src/plugins/ConvertPlugin.cpp
+    src/todo/JsonTaskStorage.cpp
+    src/todo/Task.cpp
+    src/todo/TaskRepository.cpp
+    src/todo/TaskService.cpp
+    src/utils/PinyinConverter.cpp
+    src/utils/Version.cpp
+)
+target_include_directories(typego_core PUBLIC "${CMAKE_SOURCE_DIR}/src")
+target_compile_options(typego_core PRIVATE
+    $<$<CXX_COMPILER_ID:MSVC>:/utf-8>
+)
+target_link_libraries(typego_core PUBLIC
+    Qt6::Core
+    Qt6::Gui
+    Qt6::Widgets
+)
+
 qt_add_executable(TypeGo
     src/main.cpp
     src/MainWindow.cpp
@@ -57,21 +83,13 @@ qt_add_executable(TypeGo
     src/Settings.cpp
     src/Logger.cpp
     src/ThemeManager.cpp
-    src/utils/PinyinConverter.cpp
-    src/plugins/IPlugin.cpp
     src/plugins/PluginManager.cpp
     src/plugins/AppPlugin.cpp
-    src/plugins/CalcPlugin.cpp
-    src/plugins/ConvertPlugin.cpp
     src/plugins/DirectoryPlugin.cpp
     src/plugins/SettingsPlugin.cpp
     src/plugins/FilePlugin.cpp
     src/plugins/ShellPlugin.cpp
     src/plugins/TodoPlugin.cpp
-    src/todo/Task.cpp
-    src/todo/TaskRepository.cpp
-    src/todo/JsonTaskStorage.cpp
-    src/todo/TaskService.cpp
     src/todo/TodoView.cpp
     src/Updater.cpp
     resources.qrc
@@ -99,6 +117,7 @@ if(NOT CMAKE_MATCH_1 STREQUAL TYPEGO_VERSION)
 endif()
 
 target_link_libraries(TypeGo PRIVATE
+    typego_core
     Qt6::Core
     Qt6::Gui
     Qt6::Widgets
@@ -139,3 +158,8 @@ qt_add_translations(TypeGo
         i18n/TypeGo_zh_CN.ts
     LUPDATE_OPTIONS -no-obsolete
 )
+
+if(TYPEGO_BUILD_TESTS)
+    enable_testing()
+    add_subdirectory(tests)
+endif()

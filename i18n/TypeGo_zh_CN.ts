@@ -905,12 +905,12 @@ Update now?</source>
 <context>
     <name>TaskService</name>
     <message>
-        <location filename="../src/todo/TaskService.cpp" line="162"/>
+        <location filename="../src/todo/TaskService.cpp" line="170"/>
         <source>Existing task data could not be loaded. The original file has been kept; changes have not been saved.</source>
         <translation>无法读取已有的待办数据，原始文件已保留，当前更改尚未保存。</translation>
     </message>
     <message>
-        <location filename="../src/todo/TaskService.cpp" line="166"/>
+        <location filename="../src/todo/TaskService.cpp" line="174"/>
         <source>Cannot save tasks. Check available disk space and folder permissions, then save again before closing TypeGo.</source>
         <translation>无法保存待办。请检查磁盘空间和文件夹权限，并在退出 TypeGo 前重新保存。</translation>
     </message>
@@ -1097,32 +1097,32 @@ Update now?</source>
 <context>
     <name>Updater</name>
     <message>
-        <location filename="../src/Updater.cpp" line="141"/>
+        <location filename="../src/Updater.cpp" line="113"/>
         <source>Invalid update download URL</source>
         <translation>更新下载地址无效</translation>
     </message>
     <message>
-        <location filename="../src/Updater.cpp" line="149"/>
+        <location filename="../src/Updater.cpp" line="121"/>
         <source>Cannot create the update download: %1</source>
         <translation>无法创建更新下载文件：%1</translation>
     </message>
     <message>
-        <location filename="../src/Updater.cpp" line="182"/>
+        <location filename="../src/Updater.cpp" line="154"/>
         <source>Cannot save the update: %1</source>
         <translation>无法保存更新文件：%1</translation>
     </message>
     <message>
-        <location filename="../src/Updater.cpp" line="200"/>
+        <location filename="../src/Updater.cpp" line="172"/>
         <source>The update download is incomplete or invalid. Please try again.</source>
         <translation>下载的更新文件不完整或无效，请重试。</translation>
     </message>
     <message>
-        <location filename="../src/Updater.cpp" line="220"/>
+        <location filename="../src/Updater.cpp" line="192"/>
         <source>Cannot start the update installer (error %1).</source>
         <translation>无法启动更新安装程序（错误 %1）。</translation>
     </message>
     <message>
-        <location filename="../src/Updater.cpp" line="226"/>
+        <location filename="../src/Updater.cpp" line="198"/>
         <source>Cannot start the update installer.</source>
         <translation>无法启动更新安装程序。</translation>
     </message>

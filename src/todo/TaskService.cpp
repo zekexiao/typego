@@ -5,13 +5,21 @@
 #include <QDebug>
 
 TaskService::TaskService(QObject *parent)
+    : TaskService(defaultStoragePath(), parent)
+{
+}
+
+TaskService::TaskService(const QString &storagePath, QObject *parent)
     : QObject(parent)
     , m_repo(new TaskRepository(this))
+    , m_storage(std::make_unique<JsonTaskStorage>(storagePath))
 {
-    QString path = QStandardPaths::writableLocation(QStandardPaths::AppDataLocation);
-    path += "/todo.json";
-    m_storage = std::make_unique<JsonTaskStorage>(path);
     m_storageLoaded = m_storage->load(m_repo);
+}
+
+QString TaskService::defaultStoragePath()
+{
+    return QStandardPaths::writableLocation(QStandardPaths::AppDataLocation) + QStringLiteral("/todo.json");
 }
 
 TaskService::~TaskService() = default;
