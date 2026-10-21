@@ -39,7 +39,6 @@ private:
     QNetworkAccessManager *m_manager;
     QNetworkReply *m_downloadReply = nullptr;
     QFile *m_downloadFile = nullptr;
-    QString m_updateUrl;
     QString m_writeError;
     bool m_cancelled = false;
 };

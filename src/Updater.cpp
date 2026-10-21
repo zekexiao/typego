@@ -1,9 +1,6 @@
 #include "Updater.h"
-#include "utils/Version.h"
+#include "utils/ReleaseParser.h"
 #include <QNetworkRequest>
-#include <QJsonDocument>
-#include <QJsonArray>
-#include <QJsonObject>
 #include <QCoreApplication>
 #include <QDir>
 #include <QProcess>
@@ -64,44 +61,20 @@ void Updater::checkForUpdate()
             return;
         }
 
-        const QJsonDocument doc = QJsonDocument::fromJson(reply->readAll());
-        if (!doc.isObject()) {
-            emit checkError(QStringLiteral("Invalid GitHub release response"));
-            return;
-        }
-
-        const QJsonObject obj = doc.object();
-        const QString tagName = obj.value(QStringLiteral("tag_name")).toString();
-        // 草稿/预发布版本不纳入自动更新提示。
-        if (tagName.isEmpty() || obj.value(QStringLiteral("draft")).toBool()
-            || obj.value(QStringLiteral("prerelease")).toBool()
-            || !Version::isNewer(tagName, currentVersion())) {
+        const ReleaseParser::Result release = ReleaseParser::parseLatestRelease(reply->readAll(), currentVersion());
+        switch (release.outcome) {
+        case ReleaseParser::Outcome::UpToDate:
             emit noUpdateAvailable();
             return;
-        }
-
-        const QString version = tagName.startsWith(QLatin1Char('v'), Qt::CaseInsensitive)
-                                    ? tagName.mid(1) : tagName;
-        const QString changelog = obj.value(QStringLiteral("body")).toString();
-
-        // 在 release assets 中挑选 Windows 安装包（命名约定 TypeGo_x.y_x64.exe）。
-        QString url;
-        const auto assets = obj.value(QStringLiteral("assets")).toArray();
-        for (const auto &assetValue : assets) {
-            const QJsonObject asset = assetValue.toObject();
-            const QString name = asset.value(QStringLiteral("name")).toString();
-            if (name.endsWith(QStringLiteral(".exe"), Qt::CaseInsensitive)) {
-                url = asset.value(QStringLiteral("browser_download_url")).toString();
-                if (name.contains(QStringLiteral("x64"), Qt::CaseInsensitive)) break;
-            }
-        }
-        if (url.isEmpty()) {
-            emit checkError(QStringLiteral("No Windows installer found in release assets"));
+        case ReleaseParser::Outcome::InvalidResponse:
+        case ReleaseParser::Outcome::NoInstaller:
+            // 找不到安装包通常是发版命名不合规，提示错误而不是谎报「已是最新」。
+            emit checkError(release.message);
+            return;
+        case ReleaseParser::Outcome::UpdateReady:
+            emit updateAvailable(release.version, release.changelog, release.installerUrl, false);
             return;
         }
-
-        m_updateUrl = url;
-        emit updateAvailable(version, changelog, url, false);
     });
 }
 
