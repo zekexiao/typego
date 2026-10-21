@@ -1,11 +1,12 @@
 #include "ShellPlugin.h"
 
+#include "TerminalLauncher.h"
+
 #include <QApplication>
 #include <QCheckBox>
 #include <QClipboard>
 #include <QComboBox>
 #include <QFormLayout>
-#include <QFileInfo>
 #include <QHBoxLayout>
 #include <QLabel>
 #include <QLineEdit>
@@ -132,27 +133,18 @@ private:
         m_status->setText(QObject::tr("Running with %1").arg(terminalDisplayName(m_terminalProgram, m_terminalArgumentsTemplate)));
         m_runButton->setEnabled(false);
         // cmd.exe 使用 Windows 原始命令行；其他终端将整条命令作为独立参数。
+        // 两条路径的拼装规则集中在 TerminalLauncher，便于脱离窗口做单元测试。
+        const TerminalLauncher::Invocation invocation =
+            TerminalLauncher::build(m_terminalProgram, m_terminalArgumentsTemplate, m_command);
 #ifdef Q_OS_WIN
-        if (QFileInfo(m_terminalProgram).completeBaseName().compare(QStringLiteral("cmd"), Qt::CaseInsensitive) == 0) {
-            QString argsText = m_terminalArgumentsTemplate;
-            if (argsText.contains(QStringLiteral("{cmd}"))) argsText.replace(QStringLiteral("{cmd}"), m_command);
-            else argsText += QLatin1Char(' ') + m_command;
-            m_process->setNativeArguments(argsText);
-            m_process->start(m_terminalProgram, QStringList());
+        if (invocation.usesNativeArguments) {
+            m_process->setNativeArguments(invocation.nativeArguments);
+            m_process->start(invocation.program, QStringList());
             return;
         }
         m_process->setNativeArguments(QString());
 #endif
-        QStringList arguments = QProcess::splitCommand(m_terminalArgumentsTemplate);
-        bool hasPlaceholder = false;
-        for (QString &argument : arguments) {
-            if (argument.contains(QStringLiteral("{cmd}"))) {
-                argument.replace(QStringLiteral("{cmd}"), m_command);
-                hasPlaceholder = true;
-            }
-        }
-        if (!hasPlaceholder) arguments.append(m_command);
-        m_process->start(m_terminalProgram, arguments);
+        m_process->start(invocation.program, invocation.arguments);
     }
 
     QLabel *m_title;

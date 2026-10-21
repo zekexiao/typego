@@ -532,42 +532,42 @@ Update now?</source>
         <translation>长度换算</translation>
     </message>
     <message>
-        <location filename="../src/plugins/ShellPlugin.cpp" line="54"/>
+        <location filename="../src/plugins/ShellPlugin.cpp" line="55"/>
         <source>Run</source>
         <translation>运行</translation>
     </message>
     <message>
-        <location filename="../src/plugins/ShellPlugin.cpp" line="55"/>
+        <location filename="../src/plugins/ShellPlugin.cpp" line="56"/>
         <source>Copy</source>
         <translation>复制</translation>
     </message>
     <message>
-        <location filename="../src/plugins/ShellPlugin.cpp" line="95"/>
+        <location filename="../src/plugins/ShellPlugin.cpp" line="96"/>
         <source>Finished with exit code %1</source>
         <translation>已结束，退出码 %1</translation>
     </message>
     <message>
-        <location filename="../src/plugins/ShellPlugin.cpp" line="96"/>
+        <location filename="../src/plugins/ShellPlugin.cpp" line="97"/>
         <source>Process crashed</source>
         <translation>进程异常退出</translation>
     </message>
     <message>
-        <location filename="../src/plugins/ShellPlugin.cpp" line="100"/>
+        <location filename="../src/plugins/ShellPlugin.cpp" line="101"/>
         <source>Cannot run command: %1</source>
         <translation>无法运行命令：%1</translation>
     </message>
     <message>
-        <location filename="../src/plugins/ShellPlugin.cpp" line="116"/>
+        <location filename="../src/plugins/ShellPlugin.cpp" line="117"/>
         <source>Shell</source>
         <translation>命令行</translation>
     </message>
     <message>
-        <location filename="../src/plugins/ShellPlugin.cpp" line="119"/>
+        <location filename="../src/plugins/ShellPlugin.cpp" line="120"/>
         <source>Enter a command after shell or cmd</source>
         <translation>在 shell 或 cmd 后输入命令</translation>
     </message>
     <message>
-        <location filename="../src/plugins/ShellPlugin.cpp" line="132"/>
+        <location filename="../src/plugins/ShellPlugin.cpp" line="133"/>
         <source>Running with %1</source>
         <translation>正在用 %1 运行</translation>
     </message>
@@ -827,77 +827,77 @@ Update now?</source>
         <translation>运行 shell 命令</translation>
     </message>
     <message>
-        <location filename="../src/plugins/ShellPlugin.cpp" line="184"/>
+        <location filename="../src/plugins/ShellPlugin.cpp" line="176"/>
         <source>Enter a shell command</source>
         <translation>输入 shell 命令</translation>
     </message>
     <message>
-        <location filename="../src/plugins/ShellPlugin.cpp" line="184"/>
+        <location filename="../src/plugins/ShellPlugin.cpp" line="176"/>
         <source>Run &quot;%1&quot;</source>
         <translation>运行“%1”</translation>
     </message>
     <message>
-        <location filename="../src/plugins/ShellPlugin.cpp" line="185"/>
+        <location filename="../src/plugins/ShellPlugin.cpp" line="177"/>
         <source>Example: shell dir</source>
         <translation>示例：shell dir</translation>
     </message>
     <message>
-        <location filename="../src/plugins/ShellPlugin.cpp" line="185"/>
+        <location filename="../src/plugins/ShellPlugin.cpp" line="177"/>
         <source>Press Enter to open the command output view</source>
         <translation>按 Enter 打开命令输出视图</translation>
     </message>
     <message>
-        <location filename="../src/plugins/ShellPlugin.cpp" line="231"/>
+        <location filename="../src/plugins/ShellPlugin.cpp" line="223"/>
         <source>Shell command runner</source>
         <translation>Shell 命令执行器</translation>
     </message>
     <message>
-        <location filename="../src/plugins/ShellPlugin.cpp" line="233"/>
+        <location filename="../src/plugins/ShellPlugin.cpp" line="225"/>
         <source>Choose the terminal command used to run shell queries. Use {cmd} where the typed command should be inserted.</source>
         <translation>选择用于执行 shell 查询的终端命令，用 {cmd} 标记要插入命令的位置。</translation>
     </message>
     <message>
-        <location filename="../src/plugins/ShellPlugin.cpp" line="240"/>
+        <location filename="../src/plugins/ShellPlugin.cpp" line="232"/>
         <source>Command Prompt (cmd.exe /C)</source>
         <translation>命令提示符（cmd.exe /C）</translation>
     </message>
     <message>
-        <location filename="../src/plugins/ShellPlugin.cpp" line="248"/>
+        <location filename="../src/plugins/ShellPlugin.cpp" line="240"/>
         <source>/C {cmd}</source>
         <translation>/C {cmd}</translation>
     </message>
     <message>
-        <location filename="../src/plugins/ShellPlugin.cpp" line="241"/>
+        <location filename="../src/plugins/ShellPlugin.cpp" line="233"/>
         <source>PowerShell</source>
         <translation>PowerShell</translation>
     </message>
     <message>
-        <location filename="../src/plugins/ShellPlugin.cpp" line="242"/>
+        <location filename="../src/plugins/ShellPlugin.cpp" line="234"/>
         <source>Git Bash</source>
         <translation>Git Bash</translation>
     </message>
     <message>
-        <location filename="../src/plugins/ShellPlugin.cpp" line="243"/>
+        <location filename="../src/plugins/ShellPlugin.cpp" line="235"/>
         <source>Custom</source>
         <translation>自定义</translation>
     </message>
     <message>
-        <location filename="../src/plugins/ShellPlugin.cpp" line="247"/>
+        <location filename="../src/plugins/ShellPlugin.cpp" line="239"/>
         <source>cmd.exe</source>
         <translation>cmd.exe</translation>
     </message>
     <message>
-        <location filename="../src/plugins/ShellPlugin.cpp" line="254"/>
+        <location filename="../src/plugins/ShellPlugin.cpp" line="246"/>
         <source>Preset</source>
         <translation>预设</translation>
     </message>
     <message>
-        <location filename="../src/plugins/ShellPlugin.cpp" line="255"/>
+        <location filename="../src/plugins/ShellPlugin.cpp" line="247"/>
         <source>Program</source>
         <translation>程序</translation>
     </message>
     <message>
-        <location filename="../src/plugins/ShellPlugin.cpp" line="256"/>
+        <location filename="../src/plugins/ShellPlugin.cpp" line="248"/>
         <source>Arguments</source>
         <translation>参数</translation>
     </message>
@@ -1097,32 +1097,32 @@ Update now?</source>
 <context>
     <name>Updater</name>
     <message>
-        <location filename="../src/Updater.cpp" line="113"/>
+        <location filename="../src/Updater.cpp" line="86"/>
         <source>Invalid update download URL</source>
         <translation>更新下载地址无效</translation>
     </message>
     <message>
-        <location filename="../src/Updater.cpp" line="121"/>
+        <location filename="../src/Updater.cpp" line="94"/>
         <source>Cannot create the update download: %1</source>
         <translation>无法创建更新下载文件：%1</translation>
     </message>
     <message>
-        <location filename="../src/Updater.cpp" line="154"/>
+        <location filename="../src/Updater.cpp" line="127"/>
         <source>Cannot save the update: %1</source>
         <translation>无法保存更新文件：%1</translation>
     </message>
     <message>
-        <location filename="../src/Updater.cpp" line="172"/>
+        <location filename="../src/Updater.cpp" line="145"/>
         <source>The update download is incomplete or invalid. Please try again.</source>
         <translation>下载的更新文件不完整或无效，请重试。</translation>
     </message>
     <message>
-        <location filename="../src/Updater.cpp" line="192"/>
+        <location filename="../src/Updater.cpp" line="165"/>
         <source>Cannot start the update installer (error %1).</source>
         <translation>无法启动更新安装程序（错误 %1）。</translation>
     </message>
     <message>
-        <location filename="../src/Updater.cpp" line="198"/>
+        <location filename="../src/Updater.cpp" line="171"/>
         <source>Cannot start the update installer.</source>
         <translation>无法启动更新安装程序。</translation>
     </message>
