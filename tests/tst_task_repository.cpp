@@ -38,6 +38,7 @@ private slots:
     void indexOfUsesSiblingOrder();
     void saveLoadRoundTrip();
     void signalsReportMutations();
+    void removeRecursiveSignalsEveryNode();
 };
 
 void TstTaskRepository::addFindAndExists()
@@ -209,6 +210,32 @@ void TstTaskRepository::signalsReportMutations()
     QCOMPARE(removed.count(), 1);
     // QSignalSpy 的每一项是一次信号的全部参数，取第一个参数才是 id。
     QCOMPARE(added.takeFirst().first().toString(), QStringLiteral("s"));
+}
+
+void TstTaskRepository::removeRecursiveSignalsEveryNode()
+{
+    TaskRepository repo;
+    repo.add(makeTask(QStringLiteral("a")));
+    repo.add(makeTask(QStringLiteral("b"), QStringLiteral("a")));
+    repo.add(makeTask(QStringLiteral("c"), QStringLiteral("b")));
+
+    QSignalSpy removed(&repo, &TaskRepository::taskRemoved);
+    repo.removeRecursive(QStringLiteral("a"));
+
+    // 契约：每个被移除的节点各广播一次，由后代到根，与 remove() 的逐节点语义一致。
+    // 撤销删除时 TaskService 逐节点补发 taskAdded，两边数量必须对称。
+    QCOMPARE(removed.count(), 3);
+    QStringList order;
+    for (int i = 0; i < removed.count(); ++i) {
+        order.append(removed.at(i).first().toString());
+    }
+    const QStringList expected{QStringLiteral("c"), QStringLiteral("b"), QStringLiteral("a")};
+    QCOMPARE(order, expected);
+
+    // 删不存在的 id 不应广播。
+    QSignalSpy again(&repo, &TaskRepository::taskRemoved);
+    repo.removeRecursive(QStringLiteral("a"));
+    QCOMPARE(again.count(), 0);
 }
 
 QTEST_GUILESS_MAIN(TstTaskRepository)

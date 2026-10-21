@@ -98,8 +98,13 @@ void TaskRepository::removeRecursive(const QString &id)
     if (!m_tasks.contains(id)) return;
     QStringList desc;
     collectDescendants(id, desc);
-    for (const QString &d : desc) {
-        m_tasks.remove(d);
+    // 信号契约与 remove() 一致：每个实际被移除的节点都广播一次。
+    // 倒序遍历使广播顺序是由叶到根，界面将来改成增量删除时可以先删最深的节点，
+    // 不会因为父节点先消失而找不到子节点的行。
+    for (qsizetype i = desc.size() - 1; i >= 0; --i) {
+        const QString descendantId = desc.at(i);
+        m_tasks.remove(descendantId);
+        emit taskRemoved(descendantId);
     }
     m_tasks.remove(id);
     emit taskRemoved(id);
