@@ -12,9 +12,22 @@ static Qt::Key legacyHotkeyKey(int key)
 
 Settings::Settings(QObject *parent)
     : QObject(parent)
-    , m_settings("TypeGo", "TypeGo")
+    , m_settings(QStringLiteral("TypeGo"), QStringLiteral("TypeGo"))
 {
-    m_autoStart = m_settings.value("autoStart", false).toBool();
+    m_autoStart = m_settings.value(QStringLiteral("autoStart"), false).toBool();
+}
+
+Settings::Settings(const QString &iniFilePath, QObject *parent)
+    : QObject(parent)
+    , m_settings(iniFilePath, QSettings::IniFormat)
+{
+    // 隔离配置一律不碰注册表，测试里改自启开关不会影响本机 HKCU Run 键。
+    m_allowRegistrySync = false;
+    m_autoStart = m_settings.value(QStringLiteral("autoStart"), false).toBool();
+}
+
+void Settings::reconcileAutoStart()
+{
     syncAutoStartRegistry(m_autoStart);
 }
 
@@ -277,6 +290,7 @@ void Settings::setUiFontFamily(const QString &family)
 
 void Settings::syncAutoStartRegistry(bool enabled)
 {
+    if (!m_allowRegistrySync) return;
 #ifdef Q_OS_WIN
     QSettings reg("HKEY_CURRENT_USER\\Software\\Microsoft\\Windows\\CurrentVersion\\Run", QSettings::NativeFormat);
     if (enabled) {

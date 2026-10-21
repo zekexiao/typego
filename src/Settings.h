@@ -1,6 +1,7 @@
 #pragma once
 
 #include <QObject>
+#include <QPoint>
 #include <QSettings>
 
 // 统一读取、保存并通知应用设置变更。
@@ -24,6 +25,12 @@ class Settings : public QObject {
 
 public:
     explicit Settings(QObject *parent = nullptr);
+    /// 指定 ini 文件后端的构造，供单元测试和隔离配置使用：不读写注册表。
+    explicit Settings(const QString &iniFilePath, QObject *parent = nullptr);
+
+    /// 启动时把开机自启项与实际安装路径对齐。构造函数不再做这件事，
+    /// 避免「读一下配置」就产生写 HKCU Run 键的副作用。
+    void reconcileAutoStart();
 
     QString globalHotkey() const;
     void setGlobalHotkey(const QString &shortcut);
@@ -104,5 +111,7 @@ signals:
 private:
     QSettings m_settings;
     bool m_autoStart = false;
+    // 仅生产构造（注册表后端）允许同步 Run 键，隔离配置构造关闭，防止测试污染本机。
+    bool m_allowRegistrySync = true;
     void syncAutoStartRegistry(bool enabled);
 };

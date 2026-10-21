@@ -96,6 +96,8 @@ int main(int argc, char *argv[])
     }
 
     Settings settings;
+    // 自启项与实际安装路径对齐，原来由 Settings 构造函数负责，现在显式触发。
+    settings.reconcileAutoStart();
     applyConfiguredFont(app, settings, defaultAppFont);
     AppLauncher launcher(&settings);
     ThemeManager themeManager;

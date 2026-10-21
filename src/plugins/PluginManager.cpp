@@ -1,5 +1,6 @@
 ﻿#include "PluginManager.h"
 #include "../Settings.h"
+#include "PluginAction.h"
 #include <QDebug>
 #include <QProcess>
 #include <QDesktopServices>
@@ -64,39 +65,31 @@ QVariantList PluginManager::queryCommand(const QString &cmd, const QString &args
 
 bool PluginManager::executeAction(const QVariantMap &action)
 {
-    if (action.isEmpty()) return false;
-
-    QString type = action.value("type").toString();
-    if (type.isEmpty()) return false;
+    // 分类交给无副作用的 PluginAction::parse，这里只负责执行，
+    // 这样动作约定可以在没有 GUI、没有进程权限的测试进程里验证。
+    const PluginAction::Request request = PluginAction::parse(action);
+    if (!request.valid) return false;
 
     // action 指定插件时优先交给对应插件执行。
-    QString pluginCmd = action.value("plugin").toString().toLower();
-    if (!pluginCmd.isEmpty()) {
-        IPlugin *plugin = m_plugins.value(pluginCmd, nullptr);
-        if (plugin) {
-            return plugin->execute(action);
-        }
+    if (!request.pluginCommand.isEmpty()) {
+        IPlugin *plugin = m_plugins.value(request.pluginCommand, nullptr);
+        if (plugin) return plugin->execute(action);
     }
 
-    // 通用动作类型。
-    if (type == "launch") {
-        QString path = action.value("data").toString();
-        if (!path.isEmpty()) {
-            return QProcess::startDetached(path, QStringList());
-        }
-    } else if (type == "openUrl") {
-        QString url = action.value("data").toString();
-        if (!url.isEmpty()) {
-            return QDesktopServices::openUrl(QUrl(url));
-        }
-    } else if (type == "copy") {
-        QString text = action.value("data").toString();
-        if (!text.isEmpty()) {
-            QGuiApplication::clipboard()->setText(text);
-            return true;
-        }
+    switch (request.builtin) {
+    case PluginAction::Kind::Launch:
+        return QProcess::startDetached(request.payload, QStringList());
+    case PluginAction::Kind::OpenUrl:
+        return QDesktopServices::openUrl(QUrl(request.payload));
+    case PluginAction::Kind::Copy: {
+        QClipboard *clipboard = QGuiApplication::clipboard();
+        if (!clipboard) return false;
+        clipboard->setText(request.payload);
+        return true;
     }
-
+    case PluginAction::Kind::Invalid:
+        break;
+    }
     return false;
 }
 

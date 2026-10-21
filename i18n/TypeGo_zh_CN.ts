@@ -313,44 +313,44 @@
 <context>
     <name>Main</name>
     <message>
-        <location filename="../src/main.cpp" line="192"/>
+        <location filename="../src/main.cpp" line="194"/>
         <source>Shortcut unavailable</source>
         <translation>快捷键不可用</translation>
     </message>
     <message>
-        <location filename="../src/main.cpp" line="193"/>
+        <location filename="../src/main.cpp" line="195"/>
         <source>
 Open Settings from the tray icon to choose another shortcut.</source>
         <translation>
 请从托盘图标打开设置，选择其他快捷键。</translation>
     </message>
     <message>
-        <location filename="../src/main.cpp" line="205"/>
+        <location filename="../src/main.cpp" line="207"/>
         <source>Show</source>
         <translation>显示</translation>
     </message>
     <message>
-        <location filename="../src/main.cpp" line="206"/>
+        <location filename="../src/main.cpp" line="208"/>
         <source>Settings</source>
         <translation>设置</translation>
     </message>
     <message>
-        <location filename="../src/main.cpp" line="207"/>
+        <location filename="../src/main.cpp" line="209"/>
         <source>Pin File...</source>
         <translation>固定文件…</translation>
     </message>
     <message>
-        <location filename="../src/main.cpp" line="208"/>
+        <location filename="../src/main.cpp" line="210"/>
         <source>Restart</source>
         <translation>重启</translation>
     </message>
     <message>
-        <location filename="../src/main.cpp" line="209"/>
+        <location filename="../src/main.cpp" line="211"/>
         <source>Quit</source>
         <translation>退出</translation>
     </message>
     <message>
-        <location filename="../src/main.cpp" line="218"/>
+        <location filename="../src/main.cpp" line="220"/>
         <source>Pin File</source>
         <translation>固定文件</translation>
     </message>
@@ -489,12 +489,12 @@ Update now?</source>
 <context>
     <name>PluginManager</name>
     <message>
-        <location filename="../src/plugins/PluginManager.cpp" line="53"/>
+        <location filename="../src/plugins/PluginManager.cpp" line="54"/>
         <source>Plugin disabled</source>
         <translation>插件已禁用</translation>
     </message>
     <message>
-        <location filename="../src/plugins/PluginManager.cpp" line="54"/>
+        <location filename="../src/plugins/PluginManager.cpp" line="55"/>
         <source> plugin has been disabled in settings</source>
         <translation> 插件已在设置中关闭</translation>
     </message>
