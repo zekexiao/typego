@@ -7,17 +7,16 @@
 #include <QSet>
 #include <QFutureWatcher>
 
+#include "utils/AppMatcher.h"
+
 class Settings;
 
 struct AppItem {
     QString name;
     QString path;
     QString desc;
-    QString lowerName;
-    QString lowerDesc;
     QString iconPath;
-    QString pinyin;
-    QString pinyinAcronym;
+    AppMatcher::Entry match;   // 扫描期构造好的匹配键，搜索时只读
 };
 
 struct PinItem {

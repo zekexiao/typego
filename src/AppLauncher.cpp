@@ -1,6 +1,5 @@
 #include "AppLauncher.h"
 #include "Settings.h"
-#include "utils/PinyinConverter.h"
 #include <QProcess>
 #include <QDesktopServices>
 #include <QUrl>
@@ -17,7 +16,9 @@
 #include <QStandardPaths>
 #include <utility>
 #include <QTimer>
+#include <QVector>
 #include <QtConcurrent>
+#include <algorithm>
 
 #ifdef Q_OS_WIN
 #include <windows.h>
@@ -64,11 +65,8 @@ static AppItem makeAppItem(const QString &name, const QString &path, const QStri
     item.name = name;
     item.path = path;
     item.desc = desc;
-    item.lowerName = name.toLower();
-    item.lowerDesc = desc.toLower();
     item.iconPath = iconPath;
-    item.pinyin = PinyinConverter::instance().toPinyin(name);
-    item.pinyinAcronym = PinyinConverter::instance().toAcronym(name);
+    item.match = AppMatcher::buildEntry(name, path, desc);
     return item;
 }
 
@@ -266,26 +264,39 @@ bool AppLauncher::shouldHideEntry(const QString &name, const QString &path)
 
 QVariantList AppLauncher::search(const QString &query)
 {
-    QVariantList results;
-    results.reserve(m_apps.size());
-    QString q = query.trimmed().toLower();
+    const QString q = query.trimmed().toLower();
 
-    for (const auto &app : m_apps) {
-        bool match = q.isEmpty();
-        if (!match) {
-            if (app.lowerName.contains(q)) match = true;
-            else if (app.lowerDesc.contains(q)) match = true;
-            else if (app.pinyin.contains(q)) match = true;
-            else if (app.pinyinAcronym.contains(q)) match = true;
+    // 命中集合带着分数一起排序，分数与条目必须同生命周期，不能拆成两个并行数组。
+    struct Hit {
+        const AppItem *item;
+        int score;
+    };
+    QVector<Hit> hits;
+    hits.reserve(m_apps.size());
+
+    if (q.isEmpty()) {
+        // 空输入保持索引原序（内置项在前，其后按扫描目录顺序）；
+        // 是否截断、要不要改成字母序属于待定的界面语义，这里不擅自改变。
+        for (const AppItem &app : m_apps) hits.append(Hit{&app, 0});
+    } else {
+        for (const AppItem &app : m_apps) {
+            const AppMatcher::Match match = AppMatcher::evaluate(app.match, q);
+            if (match.matched) hits.append(Hit{&app, match.score});
         }
-        if (match) {
-            QVariantMap m;
-            m["name"] = app.name;
-            m["path"] = app.path;
-            m["desc"] = app.desc;
-            m["icon"] = app.iconPath;
-            results.append(m);
-        }
+        std::sort(hits.begin(), hits.end(), [](const Hit &a, const Hit &b) {
+            return AppMatcher::ranksBefore(a.item->match, a.score, b.item->match, b.score);
+        });
+    }
+
+    QVariantList results;
+    results.reserve(hits.size());
+    for (const Hit &hit : hits) {
+        QVariantMap m;
+        m[QStringLiteral("name")] = hit.item->name;
+        m[QStringLiteral("path")] = hit.item->path;
+        m[QStringLiteral("desc")] = hit.item->desc;
+        m[QStringLiteral("icon")] = hit.item->iconPath;
+        results.append(m);
     }
     return results;
 }
