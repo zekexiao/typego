@@ -4,13 +4,17 @@
 
 ### 中文
 
+- 应用搜索升级为打分匹配：拼写与拼音匹配更准，同档结果按使用频次靠前
 - 设置「关于」页新增手动检查更新按钮，随时确认是否有新版本
 - 网络请求默认跟随系统代理设置，代理环境下也能正常检查与下载更新
+- 设置页新增清空应用使用记录入口，滚动内容底部增加留白
 
 ### English
 
+- App search now uses scored matching with more accurate fuzzy and pinyin results, ranking frequently used apps first among ties
 - Added a manual "Check for Updates" button on the Settings > About page
 - Network requests now follow the system proxy settings, so update checks and downloads work behind a proxy
+- Added an option to clear app usage history in Settings, and bottom padding for scrolled settings content
 
 ## 1.2 - 2026-10-20
 
