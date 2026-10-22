@@ -1,5 +1,17 @@
 # TypeGo 更新日志
 
+## 1.3 - 2026-10-22
+
+### 中文
+
+- 设置「关于」页新增手动检查更新按钮，随时确认是否有新版本
+- 网络请求默认跟随系统代理设置，代理环境下也能正常检查与下载更新
+
+### English
+
+- Added a manual "Check for Updates" button on the Settings > About page
+- Network requests now follow the system proxy settings, so update checks and downloads work behind a proxy
+
 ## 1.2 - 2026-10-20
 
 ### 中文
