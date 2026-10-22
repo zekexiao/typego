@@ -3,6 +3,7 @@
 #include "AppLauncher.h"
 #include "Settings.h"
 #include "GlobalHotkey.h"
+#include "Updater.h"
 #include "plugins/IPlugin.h"
 #include "plugins/PluginManager.h"
 
@@ -172,12 +173,13 @@ void SettingsSwitch::paintEvent(QPaintEvent *)
 }
 
 SettingsView::SettingsView(Settings *settings, PluginManager *pluginManager, GlobalHotkey *hotkeys,
-                           AppLauncher *launcher, QWidget *parent)
+                           AppLauncher *launcher, Updater *updater, QWidget *parent)
     : QWidget(parent)
     , m_settings(settings)
     , m_pluginManager(pluginManager)
     , m_hotkeys(hotkeys)
     , m_launcher(launcher)
+    , m_updater(updater)
 {
     setObjectName(QStringLiteral("settingsView"));
 
@@ -495,6 +497,38 @@ SettingsView::SettingsView(Settings *settings, PluginManager *pluginManager, Glo
     aboutTextLayout->addStretch();
     aboutCardLayout->addLayout(aboutTextLayout, 1);
     aboutLayout->addWidget(aboutCard);
+    // 手动检查更新：发现新版本时走 MainWindow 的更新弹窗，这里只反馈「无更新/失败」。
+    m_checkUpdateButton = new QPushButton(tr("Check for Updates"));
+    m_checkUpdateButton->setCursor(Qt::PointingHandCursor);
+    m_checkUpdateButton->setEnabled(m_updater != nullptr);
+    aboutLayout->addWidget(m_checkUpdateButton, 0, Qt::AlignLeft);
+    if (m_updater) {
+        connect(m_checkUpdateButton, &QPushButton::clicked, this, [this]() {
+            m_manualCheckPending = true;
+            m_checkUpdateButton->setEnabled(false);
+            m_updater->checkForUpdate();
+        });
+        auto finishManualCheck = [this]() {
+            m_checkUpdateButton->setEnabled(true);
+            const bool manual = m_manualCheckPending;
+            m_manualCheckPending = false;
+            return manual;
+        };
+        connect(m_updater, &Updater::updateAvailable, this, [finishManualCheck](const QString &, const QString &, const QString &, bool) mutable {
+            finishManualCheck();
+        });
+        connect(m_updater, &Updater::noUpdateAvailable, this, [this, finishManualCheck]() mutable {
+            if (finishManualCheck()) {
+                QMessageBox::information(this, tr("Check for Updates"),
+                                         tr("TypeGo %1 is up to date.").arg(QCoreApplication::applicationVersion()));
+            }
+        });
+        connect(m_updater, &Updater::checkError, this, [this, finishManualCheck](const QString &message) mutable {
+            if (finishManualCheck()) {
+                QMessageBox::warning(this, tr("Check for Updates"), tr("Update check failed: %1").arg(message));
+            }
+        });
+    }
     aboutLayout->addStretch();
 
     connect(enableAllButton, &QPushButton::clicked, this, [this]() {

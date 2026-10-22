@@ -575,17 +575,17 @@ Update now?</source>
 <context>
     <name>SettingsPlugin</name>
     <message>
-        <location filename="../src/plugins/SettingsPlugin.cpp" line="20"/>
+        <location filename="../src/plugins/SettingsPlugin.cpp" line="21"/>
         <source>Settings</source>
         <translation>设置</translation>
     </message>
     <message>
-        <location filename="../src/plugins/SettingsPlugin.cpp" line="21"/>
+        <location filename="../src/plugins/SettingsPlugin.cpp" line="22"/>
         <source>Modify global hotkey, window style and other settings</source>
         <translation>修改全局热键、窗口样式等配置</translation>
     </message>
     <message>
-        <location filename="../src/plugins/SettingsPlugin.h" line="23"/>
+        <location filename="../src/plugins/SettingsPlugin.h" line="24"/>
         <source>Open Settings</source>
         <translation>打开设置</translation>
     </message>
@@ -593,255 +593,272 @@ Update now?</source>
 <context>
     <name>SettingsView</name>
     <message>
-        <location filename="../src/SettingsView.cpp" line="198"/>
-        <location filename="../src/SettingsView.cpp" line="268"/>
-        <location filename="../src/SettingsView.cpp" line="357"/>
+        <location filename="../src/SettingsView.cpp" line="200"/>
+        <location filename="../src/SettingsView.cpp" line="270"/>
+        <location filename="../src/SettingsView.cpp" line="359"/>
         <source>Settings</source>
         <translation>设置</translation>
     </message>
     <message>
-        <location filename="../src/SettingsView.cpp" line="199"/>
-        <location filename="../src/SettingsView.cpp" line="300"/>
+        <location filename="../src/SettingsView.cpp" line="201"/>
+        <location filename="../src/SettingsView.cpp" line="302"/>
         <source>Plugins</source>
         <translation>插件</translation>
     </message>
     <message>
-        <location filename="../src/SettingsView.cpp" line="282"/>
+        <location filename="../src/SettingsView.cpp" line="284"/>
         <source>Start on boot</source>
         <translation>跟随系统启动</translation>
     </message>
     <message>
-        <location filename="../src/SettingsView.cpp" line="443"/>
+        <location filename="../src/SettingsView.cpp" line="445"/>
         <source>System default</source>
         <translation>系统默认</translation>
     </message>
     <message>
-        <location filename="../src/SettingsView.cpp" line="451"/>
+        <location filename="../src/SettingsView.cpp" line="453"/>
         <source>Window</source>
         <translation>窗口</translation>
     </message>
     <message>
-        <location filename="../src/SettingsView.cpp" line="454"/>
+        <location filename="../src/SettingsView.cpp" line="456"/>
         <source>Show float icon</source>
         <translation>显示浮动图标</translation>
     </message>
     <message>
-        <location filename="../src/SettingsView.cpp" line="457"/>
+        <location filename="../src/SettingsView.cpp" line="459"/>
         <source>Auto hide on focus loss</source>
         <translation>失去焦点时隐藏</translation>
     </message>
     <message>
-        <location filename="../src/SettingsView.cpp" line="461"/>
+        <location filename="../src/SettingsView.cpp" line="463"/>
         <source>Results</source>
         <translation>结果列表</translation>
     </message>
     <message>
-        <location filename="../src/SettingsView.cpp" line="464"/>
+        <location filename="../src/SettingsView.cpp" line="466"/>
         <source>Require double-click to launch apps</source>
         <translation>进入应用需双击</translation>
     </message>
     <message>
-        <location filename="../src/SettingsView.cpp" line="467"/>
+        <location filename="../src/SettingsView.cpp" line="469"/>
         <source>Show all apps when search is empty</source>
         <translation>默认显示所有的应用</translation>
     </message>
     <message>
-        <location filename="../src/SettingsView.cpp" line="460"/>
+        <location filename="../src/SettingsView.cpp" line="462"/>
         <source>Show main window in taskbar</source>
         <translation>在任务栏显示主窗口</translation>
     </message>
     <message>
-        <location filename="../src/SettingsView.cpp" line="388"/>
+        <location filename="../src/SettingsView.cpp" line="390"/>
         <source>Hide uninstall entries</source>
         <translation>隐藏卸载项</translation>
     </message>
     <message>
-        <location filename="../src/SettingsView.cpp" line="405"/>
+        <location filename="../src/SettingsView.cpp" line="407"/>
         <source>Add Directory</source>
         <translation>添加目录</translation>
     </message>
     <message>
-        <location filename="../src/SettingsView.cpp" line="418"/>
+        <location filename="../src/SettingsView.cpp" line="420"/>
         <source>Add Scan Directory</source>
         <translation>添加扫描目录</translation>
     </message>
     <message>
-        <location filename="../src/SettingsView.cpp" line="272"/>
+        <location filename="../src/SettingsView.cpp" line="274"/>
         <source>Global Hotkey</source>
         <translation>全局唤醒快捷键</translation>
     </message>
     <message>
-        <location filename="../src/SettingsView.cpp" line="285"/>
+        <location filename="../src/SettingsView.cpp" line="287"/>
         <source>Start hidden on boot</source>
         <translation>开机时隐藏启动</translation>
     </message>
     <message>
-        <location filename="../src/SettingsView.cpp" line="437"/>
+        <location filename="../src/SettingsView.cpp" line="439"/>
         <source>Theme</source>
         <translation>主题</translation>
     </message>
     <message>
-        <location filename="../src/SettingsView.cpp" line="432"/>
+        <location filename="../src/SettingsView.cpp" line="434"/>
         <source>System</source>
         <translation>跟随系统</translation>
     </message>
     <message>
-        <location filename="../src/SettingsView.cpp" line="433"/>
+        <location filename="../src/SettingsView.cpp" line="435"/>
         <source>Light</source>
         <translation>浅色</translation>
     </message>
     <message>
-        <location filename="../src/SettingsView.cpp" line="434"/>
+        <location filename="../src/SettingsView.cpp" line="436"/>
         <source>Dark</source>
         <translation>深色</translation>
     </message>
     <message>
-        <location filename="../src/SettingsView.cpp" line="385"/>
+        <location filename="../src/SettingsView.cpp" line="387"/>
         <source>Start Menu</source>
         <translation>开始菜单</translation>
     </message>
     <message>
-        <location filename="../src/SettingsView.cpp" line="389"/>
+        <location filename="../src/SettingsView.cpp" line="391"/>
         <source>Custom Directories</source>
         <translation>自定义目录</translation>
     </message>
     <message>
-        <location filename="../src/SettingsView.cpp" line="406"/>
+        <location filename="../src/SettingsView.cpp" line="408"/>
         <source>Remove</source>
         <translation>移除</translation>
     </message>
     <message>
-        <location filename="../src/SettingsView.cpp" line="303"/>
+        <location filename="../src/SettingsView.cpp" line="305"/>
         <source>Auto enter on empty args</source>
         <translation>自动进入不需要参数的命令</translation>
     </message>
     <message>
-        <location filename="../src/SettingsView.cpp" line="200"/>
-        <location filename="../src/SettingsView.cpp" line="384"/>
+        <location filename="../src/SettingsView.cpp" line="202"/>
+        <location filename="../src/SettingsView.cpp" line="386"/>
         <source>Scan Folders</source>
         <translation>扫描目录</translation>
     </message>
     <message>
-        <location filename="../src/SettingsView.cpp" line="201"/>
-        <location filename="../src/SettingsView.cpp" line="429"/>
+        <location filename="../src/SettingsView.cpp" line="203"/>
+        <location filename="../src/SettingsView.cpp" line="431"/>
         <source>Interface</source>
         <translation>界面</translation>
     </message>
     <message>
-        <location filename="../src/SettingsView.cpp" line="202"/>
-        <location filename="../src/SettingsView.cpp" line="470"/>
+        <location filename="../src/SettingsView.cpp" line="204"/>
+        <location filename="../src/SettingsView.cpp" line="472"/>
         <source>About</source>
         <translation>关于</translation>
     </message>
     <message>
-        <location filename="../src/SettingsView.cpp" line="278"/>
+        <location filename="../src/SettingsView.cpp" line="280"/>
         <source>Search</source>
         <translation>搜索</translation>
     </message>
     <message>
-        <location filename="../src/SettingsView.cpp" line="279"/>
+        <location filename="../src/SettingsView.cpp" line="281"/>
         <source>Startup</source>
         <translation>启动</translation>
     </message>
     <message>
-        <location filename="../src/SettingsView.cpp" line="286"/>
+        <location filename="../src/SettingsView.cpp" line="288"/>
         <source>Privacy</source>
         <translation>隐私</translation>
     </message>
     <message>
-        <location filename="../src/SettingsView.cpp" line="288"/>
+        <location filename="../src/SettingsView.cpp" line="290"/>
         <source>Clear</source>
         <translation>清空</translation>
     </message>
     <message>
-        <location filename="../src/SettingsView.cpp" line="289"/>
+        <location filename="../src/SettingsView.cpp" line="291"/>
         <source>App usage history used for search ranking</source>
         <translation>用于搜索排序的应用使用记录</translation>
     </message>
     <message>
-        <location filename="../src/SettingsView.cpp" line="292"/>
+        <location filename="../src/SettingsView.cpp" line="294"/>
         <source>Clear usage history</source>
         <translation>清空使用记录</translation>
     </message>
     <message>
-        <location filename="../src/SettingsView.cpp" line="293"/>
+        <location filename="../src/SettingsView.cpp" line="295"/>
         <source>Clear the record of how often each app is launched? Search results will no longer be ranked by usage frequency.</source>
         <translation>清空各应用的启动次数记录？搜索结果将不再按使用频次排序。</translation>
     </message>
     <message>
-        <location filename="../src/SettingsView.cpp" line="307"/>
+        <location filename="../src/SettingsView.cpp" line="309"/>
         <source>Enable all</source>
         <translation>全部启用</translation>
     </message>
     <message>
-        <location filename="../src/SettingsView.cpp" line="308"/>
+        <location filename="../src/SettingsView.cpp" line="310"/>
         <source>Disable all</source>
         <translation>全部关闭</translation>
     </message>
     <message>
-        <location filename="../src/SettingsView.cpp" line="342"/>
+        <location filename="../src/SettingsView.cpp" line="344"/>
         <source>Enabled</source>
         <translation>启用</translation>
     </message>
     <message>
-        <location filename="../src/SettingsView.cpp" line="348"/>
+        <location filename="../src/SettingsView.cpp" line="350"/>
         <source>Global plugin hotkey</source>
         <translation>全局插件快捷键</translation>
     </message>
     <message>
-        <location filename="../src/SettingsView.cpp" line="351"/>
+        <location filename="../src/SettingsView.cpp" line="353"/>
         <source>Hotkey</source>
         <translation>快捷键</translation>
     </message>
     <message>
-        <location filename="../src/SettingsView.cpp" line="363"/>
+        <location filename="../src/SettingsView.cpp" line="365"/>
         <source>%1 Settings</source>
         <translation>%1 设置</translation>
     </message>
     <message>
-        <location filename="../src/SettingsView.cpp" line="372"/>
+        <location filename="../src/SettingsView.cpp" line="374"/>
         <source>Close</source>
         <translation>关闭</translation>
     </message>
     <message>
-        <location filename="../src/SettingsView.cpp" line="392"/>
+        <location filename="../src/SettingsView.cpp" line="394"/>
         <source>Search subdirectories up to 3 levels</source>
         <translation>向下扫描最多 3 层子目录</translation>
     </message>
     <message>
-        <location filename="../src/SettingsView.cpp" line="440"/>
+        <location filename="../src/SettingsView.cpp" line="442"/>
         <source>Enable frosted glass</source>
         <translation>启用磨砂玻璃</translation>
     </message>
     <message>
-        <location filename="../src/SettingsView.cpp" line="450"/>
+        <location filename="../src/SettingsView.cpp" line="452"/>
         <source>Font</source>
         <translation>字体</translation>
     </message>
     <message>
-        <location filename="../src/SettingsView.cpp" line="488"/>
+        <location filename="../src/SettingsView.cpp" line="490"/>
         <source>Version %1</source>
         <translation>版本 %1</translation>
     </message>
     <message>
-        <location filename="../src/SettingsView.cpp" line="491"/>
+        <location filename="../src/SettingsView.cpp" line="493"/>
         <source>Windows application launcher and command plugin host.</source>
         <translation>Windows 应用启动器与命令插件宿主。</translation>
     </message>
     <message>
-        <location filename="../src/SettingsView.cpp" line="514"/>
+        <location filename="../src/SettingsView.cpp" line="548"/>
         <source>Save</source>
         <translation>保存</translation>
     </message>
     <message>
-        <location filename="../src/SettingsView.cpp" line="515"/>
+        <location filename="../src/SettingsView.cpp" line="549"/>
         <source>Cancel</source>
         <translation>取消</translation>
     </message>
     <message>
-        <location filename="../src/SettingsView.cpp" line="540"/>
+        <location filename="../src/SettingsView.cpp" line="574"/>
         <source>Shortcut unavailable</source>
         <translation>快捷键不可用</translation>
+    </message>
+    <message>
+        <location filename="../src/SettingsView.cpp" line="501"/>
+        <location filename="../src/SettingsView.cpp" line="522"/>
+        <location filename="../src/SettingsView.cpp" line="528"/>
+        <source>Check for Updates</source>
+        <translation>检查更新</translation>
+    </message>
+    <message>
+        <location filename="../src/SettingsView.cpp" line="523"/>
+        <source>TypeGo %1 is up to date.</source>
+        <translation>TypeGo %1 已是最新版本。</translation>
+    </message>
+    <message>
+        <location filename="../src/SettingsView.cpp" line="528"/>
+        <source>Update check failed: %1</source>
+        <translation>检查更新失败：%1</translation>
     </message>
 </context>
 <context>

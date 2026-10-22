@@ -130,7 +130,7 @@ int main(int argc, char *argv[])
     pluginManager.registerPlugin(new CalcPlugin(&pluginManager));
     pluginManager.registerPlugin(new ConvertPlugin(&pluginManager));
     pluginManager.registerPlugin(new DirectoryPlugin(&pluginManager));
-    auto *settingsPlugin = new SettingsPlugin(&settings, &pluginManager, &hotkey, &launcher, &pluginManager);
+    auto *settingsPlugin = new SettingsPlugin(&settings, &pluginManager, &hotkey, &launcher, &updater, &pluginManager);
     pluginManager.registerPlugin(settingsPlugin);
     pluginManager.setSettings(&settings);
     pluginManager.registerPlugin(new FilePlugin(&pluginManager));

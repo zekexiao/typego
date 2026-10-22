@@ -10,9 +10,11 @@ class PluginManager;
 class Settings;
 class QComboBox;
 class QListWidget;
+class QPushButton;
 class QStackedWidget;
 class GlobalHotkey;
 class AppLauncher;
+class Updater;
 
 class HotkeyEdit final : public QKeySequenceEdit {
     Q_OBJECT
@@ -51,7 +53,7 @@ class SettingsView : public QWidget {
     Q_OBJECT
 public:
     SettingsView(Settings *settings, PluginManager *pluginManager, GlobalHotkey *hotkeys,
-                 AppLauncher *launcher, QWidget *parent = nullptr);
+                 AppLauncher *launcher, Updater *updater, QWidget *parent = nullptr);
     void reload();
     void showSection(const QString &command);
 
@@ -66,6 +68,10 @@ private:
     PluginManager *m_pluginManager;
     GlobalHotkey *m_hotkeys;
     AppLauncher *m_launcher;
+    Updater *m_updater;
+    QPushButton *m_checkUpdateButton = nullptr;
+    // 仅手动点击「检查更新」才提示「已是最新/检查失败」，启动静默检查不打扰用户。
+    bool m_manualCheckPending = false;
     QListWidget *m_navigation;
     QStackedWidget *m_pages;
     HotkeyEdit *m_globalHotkeyEdit;
