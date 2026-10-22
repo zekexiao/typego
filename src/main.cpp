@@ -10,6 +10,7 @@
 #include <QIcon>
 #include <QMenu>
 #include <QMessageBox>
+#include <QNetworkProxyFactory>
 #include <QProcess>
 #include <QScreen>
 #include <QSet>
@@ -71,6 +72,8 @@ int main(int argc, char *argv[])
     // 版本号由 CMake 从根目录 VERSION 文件注入，避免多处硬编码不一致。
     app.setApplicationVersion(QStringLiteral(TYPEGO_VERSION));
     app.setQuitOnLastWindowClosed(false);
+    // 让更新检查等网络请求跟随系统代理设置（如用户开启了代理），不设置则默认直连。
+    QNetworkProxyFactory::setUseSystemConfiguration(true);
 #ifdef Q_OS_WIN
     // 安装器通过此互斥量识别运行实例，防止升级时覆盖仍在使用的文件。
     const HANDLE installationMutex = CreateMutexW(nullptr, FALSE, L"TypeGo.Installation");
