@@ -215,7 +215,8 @@ SettingsView::SettingsView(Settings *settings, PluginManager *pluginManager, Glo
         auto *body = new QWidget(scroll);
         body->setObjectName(QStringLiteral("settingsPage"));
         auto *layout = new QVBoxLayout(body);
-        layout->setContentsMargins(0, 2, 8, 0);
+        // 底部留出一段 padding，滚到底时内容与底部按钮之间不至于贴着
+        layout->setContentsMargins(0, 2, 8, 16);
         layout->setSpacing(10);
         auto *heading = new QLabel(title);
         heading->setObjectName(QStringLiteral("pageTitle"));
