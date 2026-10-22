@@ -57,6 +57,11 @@ private slots:
     void rankingPutsStrongerMatchesFirst();
     void tiesBreakOnNameLengthThenLexicalThenPath();
     void comparatorIsStrictWeakOrder();
+    void usageCountRanksWithinSameTier();
+    void usageCountNeverCrossesTiers();
+    void lastUsedBreaksCountTies();
+    void usageTiesFallBackToTextTieBreakers();
+    void emptyQueryUsageOrdering();
 };
 
 void TstAppMatcher::buildEntryDerivesAllSearchKeys()
@@ -240,6 +245,64 @@ void TstAppMatcher::comparatorIsStrictWeakOrder()
     const QStringList first = rank(fixtures, QStringLiteral("code"));
     const QStringList second = rank(fixtures, QStringLiteral("code"));
     QCOMPARE(first, second);
+}
+
+void TstAppMatcher::usageCountRanksWithinSameTier()
+{
+    // 同为名称前缀档，次数多的排前面。
+    const AppMatcher::Entry calculator = AppMatcher::buildEntry(QStringLiteral("Calculator"), QStringLiteral("C:/s/calc.lnk"), QString());
+    const AppMatcher::Entry camera = AppMatcher::buildEntry(QStringLiteral("Camera"), QStringLiteral("C:/s/cam.lnk"), QString());
+    QVERIFY(AppMatcher::ranksBefore(calculator, {AppMatcher::NamePrefix, 30, 100},
+                                    camera, {AppMatcher::NamePrefix, 2, 200}));
+    QVERIFY(!AppMatcher::ranksBefore(camera, {AppMatcher::NamePrefix, 2, 200},
+                                     calculator, {AppMatcher::NamePrefix, 30, 100}));
+}
+
+void TstAppMatcher::usageCountNeverCrossesTiers()
+{
+    // 频次永远不能跨越匹配档位：再高频的弱匹配也排在低频的强匹配之后。
+    const AppMatcher::Entry code = AppMatcher::buildEntry(QStringLiteral("Code"), QStringLiteral("C:/s/code.lnk"), QString());
+    const AppMatcher::Entry vscode = AppMatcher::buildEntry(QStringLiteral("Visual Studio Code"), QStringLiteral("C:/s/vsc.lnk"), QString());
+
+    // NamePrefix + 9999 次 仍排在 ExactName + 0 次 之后
+    QVERIFY(AppMatcher::ranksBefore(code, {AppMatcher::ExactName, 0, 0},
+                                    vscode, {AppMatcher::NamePrefix, 9999, 9999}));
+    // TokenPrefix + 9999 次 仍排在 NamePrefix + 0 次 之后
+    QVERIFY(AppMatcher::ranksBefore(code, {AppMatcher::NamePrefix, 0, 0},
+                                    vscode, {AppMatcher::TokenPrefix, 9999, 9999}));
+    QVERIFY(!AppMatcher::ranksBefore(vscode, {AppMatcher::TokenPrefix, 9999, 9999},
+                                     code, {AppMatcher::NamePrefix, 0, 0}));
+}
+
+void TstAppMatcher::lastUsedBreaksCountTies()
+{
+    const AppMatcher::Entry a = AppMatcher::buildEntry(QStringLiteral("Alpha"), QStringLiteral("C:/s/a.lnk"), QString());
+    const AppMatcher::Entry b = AppMatcher::buildEntry(QStringLiteral("Beta"), QStringLiteral("C:/s/b.lnk"), QString());
+    // 同档同次数，最近使用的在前。
+    QVERIFY(AppMatcher::ranksBefore(a, {AppMatcher::NamePrefix, 5, 200},
+                                    b, {AppMatcher::NamePrefix, 5, 100}));
+    QVERIFY(!AppMatcher::ranksBefore(b, {AppMatcher::NamePrefix, 5, 100},
+                                     a, {AppMatcher::NamePrefix, 5, 200}));
+}
+
+void TstAppMatcher::usageTiesFallBackToTextTieBreakers()
+{
+    // 次数与最近使用都相同，回落到名称长度/名称/路径决胜。
+    const AppMatcher::Entry shorter = AppMatcher::buildEntry(QStringLiteral("ab"), QStringLiteral("C:/s/z.lnk"), QString());
+    const AppMatcher::Entry longer = AppMatcher::buildEntry(QStringLiteral("ab-longer"), QStringLiteral("C:/s/a.lnk"), QString());
+    const AppMatcher::RankKey key{AppMatcher::NamePrefix, 7, 100};
+    QVERIFY(AppMatcher::ranksBefore(shorter, key, longer, key));
+    QVERIFY(!AppMatcher::ranksBefore(longer, key, shorter, key));
+}
+
+void TstAppMatcher::emptyQueryUsageOrdering()
+{
+    // 空查询：次数降序 → 最近使用降序；未使用项（0/0）彼此相等，stable_sort 保持原序。
+    QVERIFY(AppMatcher::usageRanksBefore({0, 10, 100}, {0, 2, 200}));
+    QVERIFY(AppMatcher::usageRanksBefore({0, 2, 200}, {0, 2, 100}));
+    QVERIFY(AppMatcher::usageRanksBefore({0, 1, 1}, {0, 0, 0}));
+    QVERIFY(!AppMatcher::usageRanksBefore({0, 0, 0}, {0, 1, 1}));
+    QVERIFY(!AppMatcher::usageRanksBefore({0, 0, 0}, {0, 0, 0}));
 }
 
 QTEST_GUILESS_MAIN(TstAppMatcher)

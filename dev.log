@@ -1,0 +1,15 @@
+
+> typego-website@1.0.0 dev C:\Sources\TypeGo\website
+> astro dev "--host"
+
+[vite] connected.
+[2m17:54:13[22m [34m[types][39m Generated [2m1ms[22m
+[2m17:54:13[22m [34m[vite][39m Re-optimizing dependencies because vite config has changed
+[42m[1m astro [22m[49m [32mv6.4.2[39m [2mready in[22m 872 [2mms[22m
+[2m┃[22m Local    [36mhttp://localhost:5200/[39m
+[2m┃[22m Network  [36mhttp://192.168.144.1:5200/[39m
+           [36mhttp://192.168.31.72:5200/[39m
+           [36mhttp://192.168.65.1:5200/[39m
+           [36mhttp://192.168.161.1:5200/[39m
+           [36mhttp://172.22.160.1:5200/[39m
+[2m17:54:13[22m [32mwatching for file changes...[39m

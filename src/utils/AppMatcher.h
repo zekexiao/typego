@@ -37,6 +37,15 @@ struct Match {
     int score = 0;
 };
 
+// 排序键：score 是文本匹配档位，count/lastUsed 来自使用频次记录。
+// 比较是字典序：档位优先，同档内频次权重无限大、跨档权重为零，
+// 保证高频应用只能在同档内靠前，永远不能越过文本相关性档位。
+struct RankKey {
+    int score = 0;
+    quint32 count = 0;     // 成功启动次数
+    qint64 lastUsed = 0;   // 最近使用时间（UTC 毫秒）
+};
+
 /// 由原始名称、路径、描述构造匹配键。
 Entry buildEntry(const QString &name, const QString &path, const QString &desc);
 
@@ -44,8 +53,15 @@ Entry buildEntry(const QString &name, const QString &path, const QString &desc);
 /// 空查询视为匹配且分数为 0，调用方应在空查询时跳过排序以保持索引顺序。
 Match evaluate(const Entry &entry, const QString &query);
 
-/// 同分决胜：分数高者先，其次名称短者先，再按名称与路径字典序。
+/// 字典序比较：档位降序 → 次数降序 → 最近使用降序 → 名称长度升序 → 名称升序 → 路径升序。
 /// 必须构成严格弱序，否则排序结果会随输入抖动。
+bool ranksBefore(const Entry &a, const RankKey &ka, const Entry &b, const RankKey &kb);
+
+/// 旧接口：等价于 RankKey{score, 0, 0}，即完全不看使用频次的纯文本排序。
 bool ranksBefore(const Entry &a, int scoreA, const Entry &b, int scoreB);
+
+/// 空查询的使用频次比较：次数降序 → 最近使用降序。
+/// 与 std::stable_sort 配合时，未使用过的条目保持索引原序。
+bool usageRanksBefore(const RankKey &ka, const RankKey &kb);
 
 } // namespace AppMatcher

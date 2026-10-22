@@ -28,6 +28,7 @@
 AppLauncher::AppLauncher(Settings *settings, QObject *parent)
     : QObject(parent)
     , m_settings(settings)
+    , m_usage(usageFilePath())
 {
     m_iconCacheDir = QDir::tempPath() + "/TypeGo/icons";
     QDir().mkpath(m_iconCacheDir);
@@ -266,25 +267,34 @@ QVariantList AppLauncher::search(const QString &query)
 {
     const QString q = query.trimmed().toLower();
 
-    // 命中集合带着分数一起排序，分数与条目必须同生命周期，不能拆成两个并行数组。
+    // 命中集合带着排序键一起排，键与条目必须同生命周期，不能拆成两个并行数组。
+    // 比较器会被调用 O(n log n) 次，频次在填充时一次查好，不在比较器里查哈希表。
     struct Hit {
         const AppItem *item;
-        int score;
+        AppMatcher::RankKey key;
     };
     QVector<Hit> hits;
     hits.reserve(m_apps.size());
 
     if (q.isEmpty()) {
-        // 空输入保持索引原序（内置项在前，其后按扫描目录顺序）；
-        // 是否截断、要不要改成字母序属于待定的界面语义，这里不擅自改变。
-        for (const AppItem &app : m_apps) hits.append(Hit{&app, 0});
+        // 空输入按使用频次稳定排序：常用在前，未使用过的条目保持索引原序
+        //（内置项在前，其后按扫描目录顺序），不引入名称字典序。
+        for (const AppItem &app : m_apps) {
+            const AppUsageStore::Usage usage = m_usage.find(app.match.lowerPath);
+            hits.append(Hit{&app, {0, usage.count, usage.lastUsed}});
+        }
+        std::stable_sort(hits.begin(), hits.end(), [](const Hit &a, const Hit &b) {
+            return AppMatcher::usageRanksBefore(a.key, b.key);
+        });
     } else {
         for (const AppItem &app : m_apps) {
             const AppMatcher::Match match = AppMatcher::evaluate(app.match, q);
-            if (match.matched) hits.append(Hit{&app, match.score});
+            if (!match.matched) continue;
+            const AppUsageStore::Usage usage = m_usage.find(app.match.lowerPath);
+            hits.append(Hit{&app, {match.score, usage.count, usage.lastUsed}});
         }
         std::sort(hits.begin(), hits.end(), [](const Hit &a, const Hit &b) {
-            return AppMatcher::ranksBefore(a.item->match, a.score, b.item->match, b.score);
+            return AppMatcher::ranksBefore(a.item->match, a.key, b.item->match, b.key);
         });
     }
 
@@ -307,32 +317,41 @@ bool AppLauncher::launch(const QString &path)
 
     qDebug() << "Launching:" << path;
 
-    if (path.startsWith("http://") || path.startsWith("https://")) {
-        return QDesktopServices::openUrl(QUrl(path));
-    }
+    // 各启动分支收敛成一个 ok，函数末尾统一记频次，避免每个分支重复调用。
+    bool ok = false;
 
-    if (path.startsWith("ms-settings:")) {
-        return QDesktopServices::openUrl(QUrl(path));
-    }
-
-    QFileInfo fi(path);
-    if (fi.isDir()) {
-        return QDesktopServices::openUrl(QUrl::fromLocalFile(path));
-    }
-
-    if (fi.suffix().toLower() == "lnk") {
+    if (path.startsWith("http://") || path.startsWith("https://")
+        || path.startsWith("ms-settings:")) {
+        ok = QDesktopServices::openUrl(QUrl(path));
+    } else {
+        const QFileInfo fi(path);
+        if (fi.isDir()) {
+            ok = QDesktopServices::openUrl(QUrl::fromLocalFile(path));
+        } else if (fi.suffix().toLower() == "lnk") {
 #ifdef Q_OS_WIN
-        HINSTANCE result = ShellExecuteW(nullptr, L"open", (LPCWSTR)path.utf16(), nullptr, nullptr, SW_SHOWNORMAL);
-        return (INT_PTR)result > 32;
+            HINSTANCE result = ShellExecuteW(nullptr, L"open", (LPCWSTR)path.utf16(), nullptr, nullptr, SW_SHOWNORMAL);
+            ok = (INT_PTR)result > 32;
 #else
-        return QDesktopServices::openUrl(QUrl::fromLocalFile(path));
+            ok = QDesktopServices::openUrl(QUrl::fromLocalFile(path));
 #endif
+        } else if (fi.exists() && fi.suffix().compare(QStringLiteral("exe"), Qt::CaseInsensitive) != 0) {
+            ok = QDesktopServices::openUrl(QUrl::fromLocalFile(fi.absoluteFilePath()));
+        } else {
+            // startDetached 只保证进程已排队，不保证应用最终启动成功；沿用现有语义，不额外探测。
+            ok = QProcess::startDetached(path, QStringList());
+        }
     }
 
-    if (fi.exists() && fi.suffix().compare(QStringLiteral("exe"), Qt::CaseInsensitive) != 0) {
-        return QDesktopServices::openUrl(QUrl::fromLocalFile(fi.absoluteFilePath()));
-    }
-    return QProcess::startDetached(path, QStringList());
+    // 只有系统接受了启动请求才计数；记录只改内存，2 秒防抖落盘，不阻塞启动。
+    if (ok) m_usage.record(path);
+    return ok;
+}
+
+QString AppLauncher::usageFilePath()
+{
+    QString dir = QStandardPaths::writableLocation(QStandardPaths::AppDataLocation);
+    QDir().mkpath(dir);
+    return dir + "/app_usage.json";
 }
 
 QString AppLauncher::pinFilePath() const

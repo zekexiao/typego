@@ -94,13 +94,27 @@ Match evaluate(const Entry &entry, const QString &query)
     return match;
 }
 
-bool ranksBefore(const Entry &a, int scoreA, const Entry &b, int scoreB)
+bool ranksBefore(const Entry &a, const RankKey &ka, const Entry &b, const RankKey &kb)
 {
-    if (scoreA != scoreB) return scoreA > scoreB;
-    // 同分时短名优先，再按名称与路径字典序，保证同一份输入每次结果一致。
+    // 字典序比较：档位优先，频次只在同档内生效，永远不能跨档。
+    if (ka.score != kb.score) return ka.score > kb.score;
+    if (ka.count != kb.count) return ka.count > kb.count;
+    if (ka.lastUsed != kb.lastUsed) return ka.lastUsed > kb.lastUsed;
+    // 频次相同时沿用确定性决胜：短名优先，再按名称与路径字典序。
     if (a.lowerName.size() != b.lowerName.size()) return a.lowerName.size() < b.lowerName.size();
     if (a.lowerName != b.lowerName) return a.lowerName < b.lowerName;
     return a.lowerPath < b.lowerPath;
+}
+
+bool usageRanksBefore(const RankKey &ka, const RankKey &kb)
+{
+    if (ka.count != kb.count) return ka.count > kb.count;
+    return ka.lastUsed > kb.lastUsed;
+}
+
+bool ranksBefore(const Entry &a, int scoreA, const Entry &b, int scoreB)
+{
+    return ranksBefore(a, RankKey{scoreA, 0, 0}, b, RankKey{scoreB, 0, 0});
 }
 
 } // namespace AppMatcher

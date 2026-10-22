@@ -4,89 +4,89 @@
 <context>
     <name>AppLauncher</name>
     <message>
-        <location filename="../src/AppLauncher.cpp" line="75"/>
+        <location filename="../src/AppLauncher.cpp" line="76"/>
         <source>Notepad</source>
         <translation>记事本</translation>
     </message>
     <message>
-        <location filename="../src/AppLauncher.cpp" line="75"/>
+        <location filename="../src/AppLauncher.cpp" line="76"/>
         <source>Windows Notepad</source>
         <translation>Windows 记事本</translation>
     </message>
     <message>
-        <location filename="../src/AppLauncher.cpp" line="57"/>
-        <location filename="../src/AppLauncher.cpp" line="76"/>
+        <location filename="../src/AppLauncher.cpp" line="58"/>
+        <location filename="../src/AppLauncher.cpp" line="77"/>
         <source>Calculator</source>
         <translation>计算器</translation>
     </message>
     <message>
-        <location filename="../src/AppLauncher.cpp" line="76"/>
+        <location filename="../src/AppLauncher.cpp" line="77"/>
         <source>Windows Calculator</source>
         <translation>Windows 计算器</translation>
     </message>
     <message>
-        <location filename="../src/AppLauncher.cpp" line="77"/>
+        <location filename="../src/AppLauncher.cpp" line="78"/>
         <source>Paint</source>
         <translation>画图</translation>
     </message>
     <message>
-        <location filename="../src/AppLauncher.cpp" line="77"/>
+        <location filename="../src/AppLauncher.cpp" line="78"/>
         <source>Windows Paint</source>
         <translation>Windows 画图</translation>
     </message>
     <message>
-        <location filename="../src/AppLauncher.cpp" line="78"/>
+        <location filename="../src/AppLauncher.cpp" line="79"/>
         <source>Command Prompt</source>
         <translation>命令提示符</translation>
     </message>
     <message>
-        <location filename="../src/AppLauncher.cpp" line="78"/>
+        <location filename="../src/AppLauncher.cpp" line="79"/>
         <source>CMD Command Line</source>
         <translation>CMD 命令行</translation>
     </message>
     <message>
-        <location filename="../src/AppLauncher.cpp" line="79"/>
+        <location filename="../src/AppLauncher.cpp" line="80"/>
         <source>File Explorer</source>
         <translation>文件资源管理器</translation>
     </message>
     <message>
-        <location filename="../src/AppLauncher.cpp" line="218"/>
+        <location filename="../src/AppLauncher.cpp" line="219"/>
         <source>Custom Directory</source>
         <translation>自定义目录</translation>
     </message>
     <message>
-        <location filename="../src/AppLauncher.cpp" line="58"/>
-        <location filename="../src/AppLauncher.cpp" line="80"/>
+        <location filename="../src/AppLauncher.cpp" line="59"/>
+        <location filename="../src/AppLauncher.cpp" line="81"/>
         <source>Task Manager</source>
         <translation>任务管理器</translation>
     </message>
     <message>
-        <location filename="../src/AppLauncher.cpp" line="80"/>
+        <location filename="../src/AppLauncher.cpp" line="81"/>
         <source>Windows Task Manager</source>
         <translation>Windows 任务管理器</translation>
     </message>
     <message>
-        <location filename="../src/AppLauncher.cpp" line="81"/>
+        <location filename="../src/AppLauncher.cpp" line="82"/>
         <source>Settings</source>
         <translation>设置</translation>
     </message>
     <message>
-        <location filename="../src/AppLauncher.cpp" line="81"/>
+        <location filename="../src/AppLauncher.cpp" line="82"/>
         <source>Windows Settings</source>
         <translation>Windows 设置</translation>
     </message>
     <message>
-        <location filename="../src/AppLauncher.cpp" line="82"/>
+        <location filename="../src/AppLauncher.cpp" line="83"/>
         <source>Browser</source>
         <translation>浏览器</translation>
     </message>
     <message>
-        <location filename="../src/AppLauncher.cpp" line="82"/>
+        <location filename="../src/AppLauncher.cpp" line="83"/>
         <source>Open Bing Search</source>
         <translation>打开必应搜索</translation>
     </message>
     <message>
-        <location filename="../src/AppLauncher.cpp" line="214"/>
+        <location filename="../src/AppLauncher.cpp" line="215"/>
         <source>Start Menu</source>
         <translation>开始菜单</translation>
     </message>

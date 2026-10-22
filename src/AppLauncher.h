@@ -8,6 +8,7 @@
 #include <QFutureWatcher>
 
 #include "utils/AppMatcher.h"
+#include "utils/AppUsageStore.h"
 
 class Settings;
 
@@ -57,6 +58,8 @@ private:
     bool loadPins();
     void savePins() const;
     QString pinFilePath() const;
+    // 频次文件与 pins.json 同目录（AppDataLocation）。
+    static QString usageFilePath();
 
     QList<AppItem> m_apps;
     QFutureWatcher<QList<AppItem>> m_scanWatcher;
@@ -66,4 +69,6 @@ private:
     QString m_iconCacheDir;
     QList<PinItem> m_pins;
     Settings *m_settings = nullptr;
+    // 使用频次记录：只在 launch() 成功后写入内存，2 秒防抖落盘，析构时兜底保存。
+    AppUsageStore m_usage;
 };

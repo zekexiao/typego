@@ -67,6 +67,7 @@ add_library(typego_core STATIC
     src/todo/TaskRepository.cpp
     src/todo/TaskService.cpp
     src/utils/AppMatcher.cpp
+    src/utils/AppUsageStore.cpp
     src/utils/PinyinConverter.cpp
     src/utils/ReleaseParser.cpp
     src/utils/Version.cpp
