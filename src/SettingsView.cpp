@@ -1,5 +1,6 @@
 #include "SettingsView.h"
 
+#include "AppLauncher.h"
 #include "Settings.h"
 #include "GlobalHotkey.h"
 #include "plugins/IPlugin.h"
@@ -170,11 +171,13 @@ void SettingsSwitch::paintEvent(QPaintEvent *)
     }
 }
 
-SettingsView::SettingsView(Settings *settings, PluginManager *pluginManager, GlobalHotkey *hotkeys, QWidget *parent)
+SettingsView::SettingsView(Settings *settings, PluginManager *pluginManager, GlobalHotkey *hotkeys,
+                           AppLauncher *launcher, QWidget *parent)
     : QWidget(parent)
     , m_settings(settings)
     , m_pluginManager(pluginManager)
     , m_hotkeys(hotkeys)
+    , m_launcher(launcher)
 {
     setObjectName(QStringLiteral("settingsView"));
 
@@ -279,6 +282,18 @@ SettingsView::SettingsView(Settings *settings, PluginManager *pluginManager, Glo
     addDivider(startupGroup);
     m_startHiddenOnBootCheck = new SettingsSwitch;
     addRow(startupGroup, tr("Start hidden on boot"), m_startHiddenOnBootCheck);
+    addSection(settingsLayout, tr("Privacy"));
+    auto *privacyGroup = addGroup(settingsLayout);
+    auto *clearUsageButton = new QPushButton(tr("Clear"));
+    addRow(privacyGroup, tr("App usage history used for search ranking"), clearUsageButton);
+    connect(clearUsageButton, &QPushButton::clicked, this, [this]() {
+        // 清空是破坏性操作且立即生效，不走保存按钮，先弹确认。
+        if (QMessageBox::question(this, tr("Clear usage history"),
+                tr("Clear the record of how often each app is launched? Search results will no longer be ranked by usage frequency."))
+            == QMessageBox::Yes && m_launcher) {
+            m_launcher->clearUsageHistory();
+        }
+    });
     settingsLayout->addStretch();
 
     auto *pluginLayout = createPage(tr("Plugins"));

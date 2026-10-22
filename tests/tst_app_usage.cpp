@@ -18,6 +18,7 @@ private slots:
     void expiredEntriesDroppedOnLoad();
     void evictionKeepsMostUsed();
     void lastUsedNeverRegresses();
+    void clearEmptiesMemoryAndFile();
 };
 
 namespace {
@@ -216,6 +217,22 @@ void TestAppUsage::lastUsedNeverRegresses()
 
     QCOMPARE(store.find("calc").lastUsed, 5000);
     QCOMPARE(store.find("calc").count, 2u);
+}
+
+void TestAppUsage::clearEmptiesMemoryAndFile()
+{
+    QTemporaryDir dir;
+    const QString path = dir.filePath("app_usage.json");
+    {
+        AppUsageStore store(path, &fakeNow);
+        store.record("calc");
+        store.saveNow();
+        store.clear();
+        QCOMPARE(store.find("calc").count, 0u);
+    }
+    // 落盘后的文件也是空的，重启后不会读回旧数据。
+    AppUsageStore reloaded(path, &fakeNow);
+    QCOMPARE(reloaded.find("calc").count, 0u);
 }
 
 QTEST_GUILESS_MAIN(TestAppUsage)

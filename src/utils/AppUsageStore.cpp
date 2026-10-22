@@ -101,6 +101,13 @@ void AppUsageStore::evictOverflow()
     for (int i = MaxEntries; i < keys.size(); ++i) m_entries.remove(keys.at(i));
 }
 
+void AppUsageStore::clear()
+{
+    m_entries.clear();
+    m_dirty = true;
+    saveNow();
+}
+
 void AppUsageStore::saveNow()
 {
     m_saveTimer.stop();

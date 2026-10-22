@@ -347,6 +347,13 @@ bool AppLauncher::launch(const QString &path)
     return ok;
 }
 
+void AppLauncher::clearUsageHistory()
+{
+    m_usage.clear();
+    // 复用 appsChanged 通知界面重查，当前结果列表立即失去频次加成。
+    emit appsChanged();
+}
+
 QString AppLauncher::usageFilePath()
 {
     QString dir = QStandardPaths::writableLocation(QStandardPaths::AppDataLocation);

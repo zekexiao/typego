@@ -12,6 +12,7 @@ class QComboBox;
 class QListWidget;
 class QStackedWidget;
 class GlobalHotkey;
+class AppLauncher;
 
 class HotkeyEdit final : public QKeySequenceEdit {
     Q_OBJECT
@@ -49,7 +50,8 @@ private:
 class SettingsView : public QWidget {
     Q_OBJECT
 public:
-    SettingsView(Settings *settings, PluginManager *pluginManager, GlobalHotkey *hotkeys, QWidget *parent = nullptr);
+    SettingsView(Settings *settings, PluginManager *pluginManager, GlobalHotkey *hotkeys,
+                 AppLauncher *launcher, QWidget *parent = nullptr);
     void reload();
     void showSection(const QString &command);
 
@@ -63,6 +65,7 @@ private:
     Settings *m_settings;
     PluginManager *m_pluginManager;
     GlobalHotkey *m_hotkeys;
+    AppLauncher *m_launcher;
     QListWidget *m_navigation;
     QStackedWidget *m_pages;
     HotkeyEdit *m_globalHotkeyEdit;

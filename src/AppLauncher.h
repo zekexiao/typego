@@ -43,6 +43,9 @@ public:
     Q_INVOKABLE bool unpinApp(const QString &path);
     Q_INVOKABLE bool isPinned(const QString &path) const;
 
+    // 清空应用使用频次记录并让当前结果列表立即按清空后的状态重排。
+    void clearUsageHistory();
+
 signals:
     void pinsChanged();
     void appsChanged();

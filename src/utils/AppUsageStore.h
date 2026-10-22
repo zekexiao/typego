@@ -42,6 +42,10 @@ public:
     // 再用 QSaveFile 原子写入；失败只记日志，内存数据保持有效，下次仍会重试。
     void saveNow();
 
+    // 清空全部使用记录并立即落盘（写入空的合法文件）。
+    // 用于设置页的「清空应用使用记录」入口。
+    void clear();
+
 private:
     void load();
     // 淘汰超出上限的条目：保留 (count, lastUsed) 降序、路径升序的前 MaxEntries 条。
