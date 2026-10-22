@@ -1,5 +1,4 @@
 ---
-import { Download, CircleCheckBig } from "@lucide/astro";
 import Layout from "../layouts/Layout.astro";
 import { copy, site, type Language } from "../config";
 import { releases } from "../data/releases";
@@ -8,14 +7,18 @@ const { lang } = Astro.props as { lang: Language }; const zh = lang === "zh"; co
 const label = zh ? "当前版本" : "Latest";
 ---
 <Layout lang={lang} title={zh ? "下载与更新日志" : "Download & Changelog"} description={zh ? "下载 TypeGo 并查看更新日志。" : "Download TypeGo and view the changelog."}>
-  <section class="download-hero section"><img src="/assets/icon.png" alt="TypeGo" /><div><span>TypeGo {site.version}</span><h1>{zh ? "下载 TypeGo" : "Download TypeGo"}</h1><p>{zh ? "适用于 Windows 10 和 Windows 11 的 64 位版本。" : "64-bit release for Windows 10 and Windows 11."}</p><a class="button primary" href={site.downloadUrl}><Download size={17}/>{t.download}</a><small>{zh ? "下载安装即表示你同意软件许可条款。" : "By installing, you agree to the software license terms."}</small></div></section>
-  <section id="changelog" class="changelog section">
-    <div class="section-title"><span>{zh ? "更新日志" : "Changelog"}</span><h2>{zh ? "版本历史" : "Version history"}</h2></div>
-    {releases.map((r, i) => (
-      <article class="release">
-        <header class="release-head"><h3>TypeGo {r.version}</h3>{i === 0 && <em>{label}</em>}{r.tag && <span class="release-tag">{r.tag[lang]}</span>}<time datetime={r.date}>{r.date}</time></header>
-        <div class="change-card">{r.notes[lang].map(x => <p><CircleCheckBig size={17}/>{x}</p>)}</div>
-      </article>
-    ))}
-  </section>
+  <h1>{zh ? "下载 TypeGo" : "Download TypeGo"} {site.version}</h1>
+  <p>{zh ? "适用于 Windows 10 和 Windows 11 的 64 位版本。" : "64-bit release for Windows 10 and Windows 11."}</p>
+  <p><a href={site.downloadUrl}>{t.download}</a></p>
+  <p><small>{zh ? "下载安装即表示你同意软件许可条款。" : "By installing, you agree to the software license terms."}</small></p>
+
+  <h2 id="changelog">{zh ? "版本历史" : "Version history"}</h2>
+  {releases.map((r, i) => (
+    <section>
+      <h3>TypeGo {r.version}{i === 0 && <>（{label}）</>}{r.tag && <> — {r.tag[lang]}</>} <small><time datetime={r.date}>{r.date}</time></small></h3>
+      <ul>
+        {r.notes[lang].map(x => <li>{x}</li>)}
+      </ul>
+    </section>
+  ))}
 </Layout>

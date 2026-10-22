@@ -1,4 +1,3 @@
-import tailwindcss from "@tailwindcss/vite";
 import { defineConfig } from "astro/config";
 import sitemap from "@astrojs/sitemap";
 import { fileURLToPath } from "url";
@@ -15,7 +14,6 @@ export default defineConfig({
   base: '/',
   envPrefix: 'PUBLIC_',
   vite: {
-    plugins: [tailwindcss()],
     resolve: {
       alias: {
         '@': path.resolve(__dirname, './src')
