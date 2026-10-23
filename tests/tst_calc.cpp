@@ -163,13 +163,13 @@ void TstCalc::resultIsCopiedToActionData()
 void TstCalc::executeRejectsUselessActions()
 {
     CalcPlugin plugin;
-    QVariantMap none;
-    none.insert(QStringLiteral("type"), QStringLiteral("none"));
-    QVERIFY(!plugin.execute(none));
-    QVariantMap emptyCopy;
-    emptyCopy.insert(QStringLiteral("type"), QStringLiteral("copy"));
-    // copy 但内容为空时不能动剪贴板（此处未创建 GUI，能返回 false 即为正确路径）。
-    QVERIFY(!plugin.execute(emptyCopy));
+    PluginInvocation none;
+    none.action.insert(QStringLiteral("type"), QStringLiteral("none"));
+    QCOMPARE(plugin.execute(none).status, PluginExecutionResult::Status::Failed);
+    PluginInvocation emptyCopy;
+    emptyCopy.action.insert(QStringLiteral("type"), QStringLiteral("copy"));
+    // copy 但内容为空时不能动剪贴板（此处未创建 GUI，能返回 Failed 即为正确路径）。
+    QCOMPARE(plugin.execute(emptyCopy).status, PluginExecutionResult::Status::Failed);
 }
 
 QTEST_GUILESS_MAIN(TstCalc)
