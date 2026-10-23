@@ -26,6 +26,36 @@ typego_add_test(tst_pinyin tst_pinyin.cpp)
 typego_add_test(tst_calc tst_calc.cpp)
 typego_add_test(tst_convert tst_convert.cpp)
 typego_add_test(tst_plugin_manager tst_plugin_manager.cpp)
+typego_add_test(tst_plugin_runtime tst_plugin_runtime.cpp)
+
+# 独立客户工程仅 find_package 安装后的 SDK，不接入宿主源码或 core 目标。
+include(ExternalProject)
+ExternalProject_Add(plugin_sdk_example
+    SOURCE_DIR "${CMAKE_SOURCE_DIR}/examples/plugin-demo"
+    BINARY_DIR "${CMAKE_BINARY_DIR}/sdk-example"
+    CMAKE_GENERATOR Ninja
+    CMAKE_ARGS
+        "-DTypeGoPluginSDK_DIR=${CMAKE_BINARY_DIR}/plugin-sdk/lib/cmake/TypeGoPluginSDK"
+        "-DQt6_DIR=${Qt6_DIR}"
+        "-DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER}"
+        "-DCMAKE_MAKE_PROGRAM=${CMAKE_MAKE_PROGRAM}"
+        "-DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}"
+    INSTALL_COMMAND ""
+    BUILD_ALWAYS TRUE
+    BUILD_BYPRODUCTS "${CMAKE_BINARY_DIR}/sdk-example/plugin.dll"
+    DEPENDS plugin_sdk_package)
+typego_add_test(tst_plugin_sdk tst_plugin_sdk.cpp)
+typego_add_plugin(plugin_contract
+    METADATA "${CMAKE_CURRENT_SOURCE_DIR}/fixtures/plugin-contract.json"
+    SOURCES fixtures/ContractPlugin.cpp)
+set_target_properties(plugin_contract PROPERTIES
+    LIBRARY_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/contract"
+    RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/contract")
+add_dependencies(tst_plugin_sdk plugin_contract)
+add_dependencies(tst_plugin_sdk plugin_sdk_example)
+target_compile_definitions(tst_plugin_sdk PRIVATE
+    TYPEGO_EXAMPLE_PLUGIN="${CMAKE_BINARY_DIR}/sdk-example/plugin.dll"
+    TYPEGO_CONTRACT_PLUGIN="$<TARGET_FILE:plugin_contract>")
 typego_add_test(tst_settings tst_settings.cpp)
 typego_add_test(tst_release_parser tst_release_parser.cpp)
 typego_add_test(tst_app_matcher tst_app_matcher.cpp)

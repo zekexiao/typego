@@ -5,6 +5,7 @@
 #include "ThemeManager.h"
 #include "Updater.h"
 #include "plugins/PluginManager.h"
+#include "plugins/PluginWindowHost.h"
 
 #include <QWKWidgets/widgetwindowagent.h>
 
@@ -764,6 +765,13 @@ MainWindow::MainWindow(AppLauncher *launcher, PluginManager *pluginManager, Sett
     m_pluginStack = new QStackedWidget;
     pluginPageLayout->addWidget(m_pluginStack, 1);
     m_stack->addWidget(m_pluginPage);
+    m_windowHost = new PluginWindowHost(m_pluginManager, m_pluginStack, this);
+    connect(m_windowHost, &PluginWindowHost::embeddedOpened, this, &MainWindow::showEmbedded);
+    connect(m_windowHost, &PluginWindowHost::embeddedClosed, this, &MainWindow::showResults);
+    connect(m_windowHost, &PluginWindowHost::operationFailed, this, [this]() {
+        QMessageBox::warning(this, tr("Action failed"), tr("The application could not be closed. Save your changes and try again."));
+    });
+    connect(m_pluginManager, &PluginManager::actionFinished, this, &MainWindow::applyExecutionResult);
     contentLayout->addWidget(m_stack, 1);
 
     auto *debounce = new QTimer(this);
@@ -772,15 +780,25 @@ MainWindow::MainWindow(AppLauncher *launcher, PluginManager *pluginManager, Sett
     debounce->setSingleShot(true);
     connect(m_searchEdit->editor(), &QLineEdit::textChanged, debounce, qOverload<>(&QTimer::start));
     connect(debounce, &QTimer::timeout, this, &MainWindow::performSearch);
-    if (IPlugin *filePlugin = m_pluginManager->plugin(QStringLiteral("file"))) {
-        connect(m_searchEdit->editor(), &QLineEdit::textChanged, filePlugin, &IPlugin::cancelQuery);
-        connect(filePlugin, &IPlugin::queryResultsChanged, this, [this](const QString &query) {
-            if (query != m_fileSearchQuery || m_searchEdit->text() != m_lastSearchText
-                || m_stack->currentWidget() != m_resultsList) return;
-            setResults(queryFiles(query));
-            scheduleResultsLayout();
-        });
-    }
+    connect(m_searchEdit->editor(), &QLineEdit::textChanged, m_pluginManager, &PluginManager::cancelQuery);
+    connect(m_pluginManager, &PluginManager::queryFinished, this, [this](const PluginQueryResult &result) {
+        if (result.id != m_activeQueryId || m_searchEdit->text() != m_lastSearchText
+            || m_stack->currentWidget() != m_resultsList) return;
+        const QVariantMap selected = currentItemData();
+        setResults(result.items);
+        // 按结果身份保留选择，异步更新不应把用户拉回第一项。
+        const QVariant stableId = selected.value(QStringLiteral("id"));
+        for (int index = 0; index < m_results.size(); ++index) {
+            const QVariantMap item = m_results.at(index).toMap();
+            if ((stableId.isValid() && item.value(QStringLiteral("id")) == stableId)
+                || (!stableId.isValid() && item == selected)) {
+                while (index >= m_resultsModel->rowCount() && m_resultsModel->hasMore()) m_resultsModel->fetchNextBatch();
+                m_resultsList->setCurrentIndex(m_resultsModel->index(index, 0));
+                break;
+            }
+        }
+        scheduleResultsLayout();
+    });
     connect(m_searchEdit->editor(), &QLineEdit::returnPressed, this, &MainWindow::launchCurrent);
     connect(m_resultsList, &QListView::clicked, this, [this](const QModelIndex &index) {
         if (m_settings->appLaunchRequiresDoubleClick() || m_commandMode) return;
@@ -816,10 +834,12 @@ MainWindow::MainWindow(AppLauncher *launcher, PluginManager *pluginManager, Sett
     });
     m_resultsList->setContextMenuPolicy(Qt::CustomContextMenu);
 
-    new QShortcut(QKeySequence(Qt::Key_Down), this, [this]() { moveSelection(1); });
-    new QShortcut(QKeySequence(Qt::Key_Up), this, [this]() { moveSelection(-1); });
-    new QShortcut(QKeySequence(QStringLiteral("Ctrl+N")), this, [this]() { moveSelection(1); });
-    new QShortcut(QKeySequence(QStringLiteral("Ctrl+P")), this, [this]() { moveSelection(-1); });
+    m_resultShortcuts = {
+        new QShortcut(QKeySequence(Qt::Key_Down), this, [this]() { moveSelection(1); }),
+        new QShortcut(QKeySequence(Qt::Key_Up), this, [this]() { moveSelection(-1); }),
+        new QShortcut(QKeySequence(QStringLiteral("Ctrl+N")), this, [this]() { moveSelection(1); }),
+        new QShortcut(QKeySequence(QStringLiteral("Ctrl+P")), this, [this]() { moveSelection(-1); })
+    };
     new QShortcut(QKeySequence(Qt::Key_Escape), this, [this]() { handleEscape(); });
 
     connect(m_launcher, &AppLauncher::pinsChanged, this, &MainWindow::rebuildPinnedApps);
@@ -862,6 +882,18 @@ MainWindow::MainWindow(AppLauncher *launcher, PluginManager *pluginManager, Sett
     performSearch();
 }
 
+MainWindow::~MainWindow()
+{
+    delete m_windowHost;
+}
+
+void MainWindow::requestHide()
+{
+    m_windowHost->prepareToHide([guard = QPointer<MainWindow>(this)](bool accepted) {
+        if (guard && accepted) guard->hide();
+    });
+}
+
 void MainWindow::showAndActivate()
 {
     show();
@@ -873,7 +905,7 @@ void MainWindow::showAndActivate()
 void MainWindow::closeEvent(QCloseEvent *event)
 {
     event->ignore();
-    hide();
+    requestHide();
 }
 
 bool MainWindow::event(QEvent *event)
@@ -883,7 +915,7 @@ bool MainWindow::event(QEvent *event)
             if (QApplication::activeModalWidget() || QApplication::activePopupWidget()) return;
             QWidget *active = QApplication::activeWindow();
             if (active && isAncestorOf(active)) return;
-            if (!isActiveWindow() && m_settings->autoHideOnFocusLoss()) hide();
+            if (!isActiveWindow() && m_settings->autoHideOnFocusLoss()) requestHide();
         });
     }
     return QWidget::event(event);
@@ -925,6 +957,7 @@ bool MainWindow::eventFilter(QObject *watched, QEvent *event)
 void MainWindow::resizeEvent(QResizeEvent *event)
 {
     QWidget::resizeEvent(event);
+    if (m_stack->currentWidget() == m_pluginPage) return;
     if (!event->spontaneous() || m_stack->currentWidget() != m_resultsList
         || !m_stack->isVisible() || m_resultsModel->rowCount() == 0) return;
 
@@ -935,7 +968,7 @@ void MainWindow::resizeEvent(QResizeEvent *event)
 void MainWindow::performSearch()
 {
     m_searchDebounce->stop();
-    m_fileSearchQuery.clear();
+    m_activeQueryId = 0;
     const bool viewingPlugin = m_stack->currentWidget() == m_pluginPage;
 
     const QString text = m_searchEdit->text();
@@ -956,8 +989,9 @@ void MainWindow::performSearch()
             openPluginView(m_currentCmd, args);
             return;
         }
-        results = m_currentCmd == QStringLiteral("file") && m_settings->isPluginEnabled(QStringLiteral("file")) ? queryFiles(args)
-            : m_pluginManager->queryCommand(m_currentCmd, args, IPlugin::QueryContext::Auto);
+        const PluginQueryResult reply = m_pluginManager->startQuery(m_currentCmd, args);
+        m_activeQueryId = reply.id;
+        results = reply.items;
     } else if (!trimmed.isEmpty() || m_settings->showAllAppsWhenSearchEmpty()) {
         results = m_launcher->search(text);
     }
@@ -1026,6 +1060,12 @@ void MainWindow::launchCurrent()
         QString command;
         QString args;
         commandParts(&command, &args);
+        if (const PluginCommand *descriptor = m_pluginManager->commandDescriptor(command);
+            descriptor && descriptor->directActivation) {
+            applyExecutionResult(m_pluginManager->invocation(command, args),
+                m_pluginManager->invoke(command, args, PluginInvocation::Source::Search));
+            return;
+        }
         const IPlugin::LaunchMode mode = m_pluginManager->launchModeForCommand(command, args);
         if (mode != IPlugin::LaunchMode::List && openPluginView(command, args)) return;
         // 输入已刷新，直接执行当前选中结果，避免重查后意外跳回首项。
@@ -1043,8 +1083,9 @@ void MainWindow::launchCurrent()
         return;
     }
     if (!action.isEmpty() && action.value(QStringLiteral("type")).toString() != QStringLiteral("none")) {
-        if (m_pluginManager->executeAction(action)) hide();
-        else QMessageBox::warning(this, tr("Action failed"), tr("The selected item could not be opened or executed."));
+        PluginInvocation call = m_pluginManager->invocation(action.value(QStringLiteral("plugin")).toString());
+        call.action = action;
+        applyExecutionResult(call, m_pluginManager->executeActionResult(action));
         return;
     }
     const QString path = item.value(QStringLiteral("path")).toString();
@@ -1055,13 +1096,14 @@ void MainWindow::launchCurrent()
 
 QVariantList MainWindow::queryFiles(const QString &query)
 {
-    m_fileSearchQuery = query.trimmed();
-    return m_pluginManager->queryCommand(QStringLiteral("file"), m_fileSearchQuery);
+    const PluginQueryResult reply = m_pluginManager->startQuery(QStringLiteral("file"), query.trimmed());
+    m_activeQueryId = reply.id;
+    return reply.items;
 }
 
 void MainWindow::launchPath(const QString &path)
 {
-    if (m_launcher->launch(path)) hide();
+    if (m_launcher->launch(path)) requestHide();
     else QMessageBox::warning(this, tr("Cannot open item"),
                               tr("Cannot open %1. Check that the file exists and an application is installed to open it.").arg(path));
 }
@@ -1079,7 +1121,7 @@ void MainWindow::handleEscape()
         m_searchEdit->setText(QString());
         return;
     }
-    hide();
+    requestHide();
 }
 
 void MainWindow::moveSelection(int delta)
@@ -1239,22 +1281,16 @@ bool MainWindow::openPluginView(const QString &command)
 
 bool MainWindow::openPluginView(const QString &command, const QString &args)
 {
-    IPlugin *plugin = m_pluginManager->plugin(command);
-    QWidget *view = m_pluginManager->viewForCommand(command, args);
-    if (!view) return false;
-    m_searchDebounce->stop();
-    m_fileSearchQuery.clear();
+    return m_windowHost->open(m_pluginManager->invocation(command, args));
+}
 
-    if (plugin) {
-        connect(plugin, &IPlugin::viewCloseRequested, this, &MainWindow::openResults, Qt::UniqueConnection);
-    }
-    if (m_pluginStack->indexOf(view) < 0) {
-        m_pluginStack->addWidget(view);
-    }
-    m_pluginStack->setCurrentWidget(view);
+void MainWindow::showEmbedded(const QString &command)
+{
+    m_searchDebounce->stop();
+    m_activeQueryId = 0;
+    m_pluginManager->cancelQuery();
     m_stack->setCurrentWidget(m_pluginPage);
     // 插件模式由插件视图占用可用空间，不继承结果列表的固定高度。
-    m_stack->setVisible(true);
     m_stack->setVisible(true);
     m_stack->setMinimumHeight(0);
     m_stack->setMaximumHeight(QWIDGETSIZE_MAX);
@@ -1264,22 +1300,35 @@ bool MainWindow::openPluginView(const QString &command, const QString &args)
     m_pluginBackButton->show();
     if (height() != DefaultWindowHeight) resize(width(), DefaultWindowHeight);
     m_openPluginCmd = command;
-    return true;
+    for (QShortcut *shortcut : m_resultShortcuts) shortcut->setEnabled(false);
 }
 
 void MainWindow::activateCommand(const QString &command)
 {
+    if (!m_pluginManager->isEnabled(command)) return;
+    const PluginCommand *descriptor = m_pluginManager->commandDescriptor(command);
+    if (descriptor->directActivation || descriptor->presentation != PluginPresentation::Embedded) {
+        applyExecutionResult(m_pluginManager->invocation(command, {}, PluginInvocation::Source::Hotkey),
+                             m_pluginManager->invoke(command, {}, PluginInvocation::Source::Hotkey));
+        return;
+    }
     showAndActivate();
+    if (m_pluginManager->supportsAutoEnter(command)
+        && m_pluginManager->launchModeForCommand(command, QString()) == IPlugin::LaunchMode::FullView) {
+        m_windowHost->open(m_pluginManager->invocation(command, {}, PluginInvocation::Source::Hotkey));
+        return;
+    }
     m_searchEdit->setText(command + QStringLiteral(" "));
     performSearch();
-    IPlugin *plugin = m_pluginManager->plugin(command);
-    if (plugin && plugin->supportsAutoEnter()
-        && m_pluginManager->launchModeForCommand(command, QString()) == IPlugin::LaunchMode::FullView) {
-        openPluginView(command, QString());
-    }
 }
 
 void MainWindow::openResults()
+{
+    if (m_windowHost->embeddedCommand().isEmpty()) showResults();
+    else m_windowHost->closeEmbedded(PluginLeaveReason::Navigate);
+}
+
+void MainWindow::showResults()
 {
     const bool wasPluginPage = m_stack->currentWidget() == m_pluginPage;
     m_stack->setCurrentWidget(m_resultsList);
@@ -1289,12 +1338,14 @@ void MainWindow::openResults()
     m_stack->updateGeometry();
     m_openPluginCmd.clear();
     m_pluginBackButton->hide();
+    for (QShortcut *shortcut : m_resultShortcuts) shortcut->setEnabled(true);
     m_searchEdit->show();
     if (wasPluginPage) {
         m_searchEdit->setText(QString());
         m_searchDebounce->stop();
         m_lastSearchText.clear();
-        m_fileSearchQuery.clear();
+        m_activeQueryId = 0;
+        m_pluginManager->cancelQuery();
         m_commandMode = false;
         m_currentCmd.clear();
         setResults(m_settings->showAllAppsWhenSearchEmpty() ? m_launcher->search(QString()) : QVariantList());
@@ -1303,6 +1354,22 @@ void MainWindow::openResults()
     m_pinnedPanel->setVisible(m_launcher->hasPinnedApps()
                               && m_searchEdit->text().isEmpty() && !m_commandMode);
     scheduleResultsLayout();
+}
+
+void MainWindow::applyExecutionResult(const PluginInvocation &call, const PluginExecutionResult &result)
+{
+    if (result.status == PluginExecutionResult::Status::Pending) return;
+    if (result.status == PluginExecutionResult::Status::Failed) {
+        QMessageBox::warning(this, tr("Action failed"), result.error.isEmpty()
+            ? tr("The selected item could not be opened or executed.") : result.error);
+        return;
+    }
+    if (result.hostAction == PluginExecutionResult::HostAction::Hide) requestHide();
+    else if (result.hostAction == PluginExecutionResult::HostAction::OpenView) {
+        if (!m_windowHost->open(call)) {
+            QMessageBox::warning(this, tr("Action failed"), tr("The selected item could not be opened or executed."));
+        }
+    }
 }
 
 void MainWindow::updateCommandBar()
@@ -1316,7 +1383,7 @@ void MainWindow::updateCommandBar()
     m_commandLabel->show();
 }
 
-FloatIcon::FloatIcon(Settings *settings, ThemeManager *themeManager, QWidget *mainWindow, QWidget *parent)
+FloatIcon::FloatIcon(Settings *settings, ThemeManager *themeManager, MainWindow *mainWindow, QWidget *parent)
     : QWidget(parent)
     , m_settings(settings)
     , m_themeManager(themeManager)
@@ -1453,7 +1520,7 @@ void FloatIcon::mouseReleaseEvent(QMouseEvent *event)
         QAction *selected = menu.exec(event->globalPosition().toPoint());
         if (selected == showAction && m_mainWindow) {
             if (m_mainWindow->isVisible()) {
-                m_mainWindow->hide();
+                m_mainWindow->requestHide();
             } else if (auto *main = qobject_cast<MainWindow *>(m_mainWindow)) {
                 main->showAndActivate();
             }
@@ -1466,7 +1533,7 @@ void FloatIcon::mouseReleaseEvent(QMouseEvent *event)
     m_settings->setFloatIconPos(pos());
     if (!m_dragging && m_mainWindow) {
         if (m_mainWindow->isVisible()) {
-            m_mainWindow->hide();
+            m_mainWindow->requestHide();
         } else if (auto *main = qobject_cast<MainWindow *>(m_mainWindow)) {
             main->showAndActivate();
         }

@@ -19,9 +19,10 @@ public:
     LaunchMode launchMode(const QString &args) const override;
     bool supportsAutoEnter() const override { return true; }
     QWidget *viewUrl() override;
+    PluginLeaveDecision prepareToLeave(PluginLeaveReason reason, quint64 token) override;
 
 private:
-    TaskService *m_service;
+    TaskService *m_service = nullptr;
     TodoView *m_view = nullptr;
 };
 

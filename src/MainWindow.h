@@ -8,6 +8,7 @@
 #include <QWidget>
 #include <QVariantList>
 #include <QVariantMap>
+#include "plugins/PluginTypes.h"
 
 class AppLauncher;
 class PluginManager;
@@ -24,6 +25,8 @@ class QHBoxLayout;
 class QProgressDialog;
 class QResizeEvent;
 class QTimer;
+class QShortcut;
+class PluginWindowHost;
 
 // 自绘圆形管理入口，确保悬浮背景不受按钮样式影响。
 class ManagementIcon final : public QWidget {
@@ -103,12 +106,14 @@ public:
                Updater *updater,
                ThemeManager *themeManager,
                QWidget *parent = nullptr);
+    ~MainWindow() override;
 
 public slots:
     bool openPluginView(const QString &command);
     bool openPluginView(const QString &command, const QString &args);
     void activateCommand(const QString &command);
     void showAndActivate();
+    void requestHide();
 
 protected:
     void closeEvent(QCloseEvent *event) override;
@@ -131,6 +136,9 @@ private:
     QVariantMap currentItemData() const;
     void rebuildPinnedApps();
     void openResults();
+    void showResults();
+    void showEmbedded(const QString &command);
+    void applyExecutionResult(const PluginInvocation &invocation, const PluginExecutionResult &result);
     void updateCommandBar();
     void updateResultsLayout();
     void scheduleResultsLayout();
@@ -155,12 +163,14 @@ private:
     QStackedWidget *m_stack;
     QWidget *m_pluginPage;
     QStackedWidget *m_pluginStack;
+    PluginWindowHost *m_windowHost = nullptr;
+    QList<QShortcut *> m_resultShortcuts;
     QPushButton *m_pluginBackButton;
     QWidget *m_titleBackSlot = nullptr;
     QProgressDialog *m_downloadDialog = nullptr;
     QTimer *m_searchDebounce;
     QString m_lastSearchText;
-    QString m_fileSearchQuery;
+    quint64 m_activeQueryId = 0;
 
     QVariantList m_results;
     bool m_commandMode = false;
@@ -178,7 +188,7 @@ private:
 class FloatIcon : public QWidget {
     Q_OBJECT
 public:
-    FloatIcon(Settings *settings, ThemeManager *themeManager, QWidget *mainWindow, QWidget *parent = nullptr);
+    FloatIcon(Settings *settings, ThemeManager *themeManager, MainWindow *mainWindow, QWidget *parent = nullptr);
 
 protected:
     void paintEvent(QPaintEvent *event) override;
@@ -192,7 +202,7 @@ private:
 
     Settings *m_settings;
     ThemeManager *m_themeManager;
-    QWidget *m_mainWindow;
+    MainWindow *m_mainWindow;
     QPixmap m_icon;
     QPixmap m_iconCache;
     qreal m_iconCacheDpr = 0.0;

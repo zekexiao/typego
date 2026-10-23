@@ -22,7 +22,7 @@ Request parse(const QVariantMap &action)
     if (request.type.isEmpty()) return request;   // valid 保持 false
 
     request.valid = true;
-    request.pluginCommand = action.value(QStringLiteral("plugin")).toString().toLower();
+    request.pluginCommand = action.value(QStringLiteral("plugin")).toString().trimmed().toLower();
     request.payload = action.value(QStringLiteral("data")).toString();
     request.builtin = kindFromType(request.type);
     // 内置动作没有 data 就没有意义，降级为 Invalid。

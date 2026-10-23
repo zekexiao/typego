@@ -89,6 +89,9 @@ private slots:
     void parseClassifiesActionTypes();
     void executeActionDelegatesBeforeBuiltin();
     void emptyPayloadActionsAreRejected();
+    void metadataDoesNotCreatePlugins();
+    void disabledPluginBlocksEveryEntry();
+    void conflictingRegistrationIsAtomic();
 
 private:
     QTemporaryDir m_dir;
@@ -273,6 +276,85 @@ void TstPluginManager::emptyPayloadActionsAreRejected()
     QVERIFY(!manager.executeAction(actionOf(QStringLiteral("launch"))));
     QVERIFY(!manager.executeAction(actionOf(QStringLiteral("copy"))));
     QVERIFY(!manager.executeAction(actionOf(QStringLiteral("openUrl"))));
+}
+
+void TstPluginManager::metadataDoesNotCreatePlugins()
+{
+    PluginManager manager;
+    Settings settings(m_dir.filePath(QStringLiteral("lazy.ini")));
+    settings.setPluginAutoEnter(true);
+    manager.setSettings(&settings);
+    int created = 0;
+    PluginDescriptor descriptor;
+    descriptor.id = QStringLiteral("notes");
+    descriptor.description = QStringLiteral("Notes");
+    descriptor.commands = {{QStringLiteral("open"), QStringLiteral("note"), {QStringLiteral("n")},
+                            IPlugin::LaunchMode::FullView, false, true},
+                           {QStringLiteral("new"), QStringLiteral("note-new"), {}}};
+    QVERIFY(manager.registerPlugin(descriptor, [&created](QObject *parent) {
+        ++created;
+        return new RecordingPlugin(QStringLiteral("note"), parent);
+    }));
+    QCOMPARE(manager.pluginIds(), QStringList{QStringLiteral("notes")});
+    QCOMPARE(manager.pluginIdForCommand(QStringLiteral(" N ")), QStringLiteral("notes"));
+    QCOMPARE(manager.commandDescription(QStringLiteral("note-new")), QStringLiteral("Notes"));
+    QCOMPARE(manager.launchModeForCommand(QStringLiteral("n"), {}), IPlugin::LaunchMode::FullView);
+    QVERIFY(manager.autoEnterForCommand(QStringLiteral("n")));
+    QVERIFY(manager.descriptor(QStringLiteral("notes")));
+    QVERIFY(!manager.isInstantiated(QStringLiteral("notes")));
+    QCOMPARE(created, 0);
+    manager.queryCommand(QStringLiteral("n"), QStringLiteral("test"));
+    IPlugin *instance = manager.plugin(QStringLiteral("note-new"));
+    QCOMPARE(instance, manager.plugin(QStringLiteral("note")));
+    QCOMPARE(instance->parent(), &manager);
+    QCOMPARE(created, 1);
+}
+
+void TstPluginManager::disabledPluginBlocksEveryEntry()
+{
+    PluginManager manager;
+    Settings settings(m_dir.filePath(QStringLiteral("all-entries.ini")));
+    manager.setSettings(&settings);
+    int created = 0;
+    PluginDescriptor descriptor;
+    descriptor.id = QStringLiteral("notes");
+    descriptor.commands = {{QStringLiteral("open"), QStringLiteral("note"), {QStringLiteral("n")}}};
+    QVERIFY(manager.registerPlugin(descriptor, [&created](QObject *parent) {
+        ++created;
+        return new RecordingPlugin(QStringLiteral("note"), parent);
+    }));
+    settings.setPluginEnabled(QStringLiteral("notes"), false);
+    QCOMPARE(manager.queryCommand(QStringLiteral("n"), {}).size(), 1);
+    QVERIFY(!manager.plugin(QStringLiteral("note")));
+    QVERIFY(!manager.viewForCommand(QStringLiteral("n")));
+    QVERIFY(!manager.settingsWidgetForCommand(QStringLiteral("note")));
+    QVERIFY(!manager.executeAction(actionOf(QStringLiteral("copy"), QStringLiteral("payload"), QStringLiteral("n"))));
+    QVERIFY(!manager.executeAction(actionOf(QStringLiteral("copy"), QStringLiteral("payload"), QStringLiteral("ghost"))));
+    QCOMPARE(created, 0);
+    settings.setPluginEnabled(QStringLiteral("notes"), true);
+    auto *instance = static_cast<RecordingPlugin *>(manager.plugin(QStringLiteral("note")));
+    settings.setPluginEnabled(QStringLiteral("notes"), false);
+    QVERIFY(!manager.executeAction(actionOf(QStringLiteral("none"), {}, QStringLiteral("n"))));
+    QVERIFY(!manager.viewForCommand(QStringLiteral("n")));
+    QCOMPARE(instance->executeCount, 0);
+    QVERIFY(instance->activatedCommand.isEmpty());
+}
+
+void TstPluginManager::conflictingRegistrationIsAtomic()
+{
+    PluginManager manager;
+    PluginDescriptor first;
+    first.id = QStringLiteral("one");
+    first.commands = {{QStringLiteral("open"), QStringLiteral("a"), {}}};
+    auto factory = [](QObject *parent) { return new RecordingPlugin(QStringLiteral("a"), parent); };
+    QVERIFY(manager.registerPlugin(first, factory));
+    PluginDescriptor second;
+    second.id = QStringLiteral("two");
+    second.commands = {{QStringLiteral("open"), QStringLiteral("b"), {QStringLiteral("A")}}};
+    QVERIFY(!manager.registerPlugin(second, factory));
+    QVERIFY(!manager.hasCommand(QStringLiteral("b")));
+    QVERIFY(!manager.descriptor(QStringLiteral("two")));
+    QCOMPARE(manager.pluginIds().size(), 1);
 }
 
 QTEST_GUILESS_MAIN(TstPluginManager)

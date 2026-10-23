@@ -266,6 +266,12 @@ void TodoView::hideEvent(QHideEvent *event)
     QWidget::hideEvent(event);
 }
 
+bool TodoView::savePendingChanges()
+{
+    flushDetails();
+    return !m_detailsDirty && !m_savingDetails;
+}
+
 bool TodoView::eventFilter(QObject *watched, QEvent *event)
 {
     if (watched == m_tree->viewport() && event->type() == QEvent::MouseButtonPress) {

@@ -1,0 +1,11 @@
+{
+  "id": "org.typego.example",
+  "version": "1.0.0",
+  "description": "SDK example: search, background work and saved editor",
+  "requires": ["widgets", "async", "config"],
+  "commands": [
+    {"id": "search", "keyword": "sdk-demo", "aliases": ["sdk-example"]},
+    {"id": "job", "keyword": "sdk-job", "directActivation": true},
+    {"id": "editor", "keyword": "sdk-editor", "mode": "view", "presentation": "window"}
+  ]
+}

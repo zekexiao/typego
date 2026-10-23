@@ -14,19 +14,17 @@ public:
 
     QString command() const override { return QStringLiteral("file"); }
     QString description() const override { return tr("File search (Everything)"); }
-    QVariantList query(const QString &args) override;
+    PluginQueryResult query(const PluginQueryRequest &request) override;
     bool execute(const QVariantMap &action) override;
     void cancelQuery() override;
 
 private:
     void startSearch();
-    static QVariantList searchFiles(const QString &args);
+    static QVariantList searchFiles(const QString &args, int limit);
     static QString typeLabel(const QFileInfo &fileInfo, bool isFolder);
 
     QFutureWatcher<QVariantList> m_watcher;
-    QString m_requestedQuery;
-    QString m_runningQuery;
-    QVariantList m_results;
+    PluginQueryRequest m_requestedQuery;
+    PluginQueryRequest m_runningQuery;
     bool m_searchRunning = false;
-    bool m_resultsReady = false;
 };

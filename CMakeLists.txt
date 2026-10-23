@@ -19,6 +19,16 @@ list(PREPEND CMAKE_PREFIX_PATH "C:/Qt/6.10.3/msvc2022_64")
 
 find_package(Qt6 REQUIRED COMPONENTS Core Gui Widgets Svg Network Concurrent LinguistTools)
 
+add_subdirectory(sdk)
+# 生成可直接交给客户的 SDK；示例从安装目录独立查找接口。
+add_custom_target(plugin_sdk_package ALL
+    COMMAND ${CMAKE_COMMAND} --install "${CMAKE_BINARY_DIR}/sdk"
+        --prefix "${CMAKE_BINARY_DIR}/plugin-sdk" --config $<CONFIG>
+    COMMAND ${CMAKE_COMMAND} -E tar cf "${CMAKE_BINARY_DIR}/TypeGoPluginSDK-1.0.0-windows-x64.zip"
+        --format=zip plugin-sdk
+    WORKING_DIRECTORY "${CMAKE_BINARY_DIR}"
+    VERBATIM)
+
 # 单元测试开关；关闭时不引入 Test 模块，保持发布构建的依赖不变。
 option(TYPEGO_BUILD_TESTS "Build TypeGo unit tests" ON)
 
@@ -61,6 +71,8 @@ add_library(typego_core STATIC
     src/plugins/ConvertPlugin.cpp
     src/plugins/PluginAction.cpp
     src/plugins/PluginManager.cpp
+    src/plugins/PluginManifest.cpp
+    src/plugins/ExternalPluginRegistry.cpp
     src/plugins/TerminalLauncher.cpp
     src/todo/JsonTaskStorage.cpp
     src/todo/Task.cpp
@@ -77,6 +89,7 @@ target_compile_options(typego_core PRIVATE
     $<$<CXX_COMPILER_ID:MSVC>:/utf-8>
 )
 target_link_libraries(typego_core PUBLIC
+    TypeGoPlugin::SDK
     Qt6::Core
     Qt6::Gui
     Qt6::Widgets
@@ -91,6 +104,8 @@ qt_add_executable(TypeGo
     src/Logger.cpp
     src/ThemeManager.cpp
     src/plugins/AppPlugin.cpp
+    src/plugins/BuiltinPlugins.cpp
+    src/plugins/PluginWindowHost.cpp
     src/plugins/DirectoryPlugin.cpp
     src/plugins/SettingsPlugin.cpp
     src/plugins/FilePlugin.cpp

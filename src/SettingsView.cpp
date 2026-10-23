@@ -31,6 +31,8 @@
 #include <QStackedWidget>
 #include <QCoreApplication>
 #include <QWheelEvent>
+#include <QPointer>
+#include <memory>
 
 #ifdef Q_OS_WIN
 #include <windows.h>
@@ -313,16 +315,14 @@ SettingsView::SettingsView(Settings *settings, PluginManager *pluginManager, Glo
     pluginActions->addWidget(disableAllButton);
     pluginLayout->addLayout(pluginActions);
     auto *pluginListLayout = addGroup(pluginLayout);
-    QStringList commands = m_pluginManager->commands();
-    commands.sort(Qt::CaseInsensitive);
-    QSet<IPlugin *> listedPlugins;
-    IPlugin *settingsPlugin = m_pluginManager->plugin(QStringLiteral("set"));
-    for (const QString &registeredCommand : commands) {
-        IPlugin *plugin = m_pluginManager->plugin(registeredCommand);
-        if (!plugin || plugin == settingsPlugin || listedPlugins.contains(plugin)) continue;
-        listedPlugins.insert(plugin);
-        const QString cmd = plugin->command();
-        if (listedPlugins.size() > 1) addDivider(pluginListLayout);
+    QStringList ids = m_pluginManager->pluginIds();
+    ids.sort(Qt::CaseInsensitive);
+    bool firstPlugin = true;
+    for (const QString &cmd : ids) {
+        const PluginDescriptor *descriptor = m_pluginManager->descriptor(cmd);
+        if (!descriptor->configurable) continue;
+        if (!firstPlugin) addDivider(pluginListLayout);
+        firstPlugin = false;
         auto *row = new QWidget;
         row->setObjectName(QStringLiteral("pluginRow"));
         row->setMinimumHeight(68);
@@ -333,7 +333,7 @@ SettingsView::SettingsView(Settings *settings, PluginManager *pluginManager, Glo
         textLayout->setSpacing(2);
         auto *commandLabel = new QLabel(cmd);
         commandLabel->setObjectName(QStringLiteral("pluginCommand"));
-        auto *descriptionLabel = new QLabel(m_pluginManager->commandDescription(cmd));
+        auto *descriptionLabel = new QLabel(descriptor->description);
         descriptionLabel->setObjectName(QStringLiteral("muted"));
         descriptionLabel->setWordWrap(true);
         textLayout->addWidget(commandLabel);
@@ -343,33 +343,40 @@ SettingsView::SettingsView(Settings *settings, PluginManager *pluginManager, Glo
         check->setProperty("cmd", cmd);
         check->setAccessibleName(cmd + QStringLiteral(" — ") + tr("Enabled"));
         m_pluginChecks.append(check);
-        auto *hotkeyGroup = new QHBoxLayout;
-        hotkeyGroup->setSpacing(6);
-        auto *hotkeyEdit = new HotkeyEdit;
-        hotkeyEdit->setProperty("cmd", cmd);
-        hotkeyEdit->setToolTip(tr("Global plugin hotkey"));
-        hotkeyEdit->setFixedWidth(136);
-        m_pluginHotkeyEdits.append(hotkeyEdit);
-        auto *hotkeyLabel = new QLabel(tr("Hotkey"));
-        hotkeyLabel->setObjectName(QStringLiteral("muted"));
-        hotkeyGroup->addWidget(hotkeyLabel);
-        hotkeyGroup->addWidget(hotkeyEdit);
-        rowLayout->addLayout(hotkeyGroup);
-        if (plugin->hasSettingsWidget()) {
+        auto *hotkeyCommands = new QVBoxLayout;
+        for (const PluginCommand &command : descriptor->commands) {
+            auto *hotkeyGroup = new QHBoxLayout;
+            hotkeyGroup->setSpacing(6);
+            auto *hotkeyEdit = new HotkeyEdit;
+            hotkeyEdit->setProperty("cmd", command.keyword);
+            hotkeyEdit->setProperty("pluginId", cmd);
+            hotkeyEdit->setToolTip(tr("Global plugin hotkey"));
+            hotkeyEdit->setFixedWidth(136);
+            m_pluginHotkeyEdits.append(hotkeyEdit);
+            auto *hotkeyLabel = new QLabel(descriptor->commands.size() == 1 ? tr("Hotkey") : command.keyword);
+            hotkeyLabel->setObjectName(QStringLiteral("muted"));
+            hotkeyGroup->addWidget(hotkeyLabel);
+            hotkeyGroup->addWidget(hotkeyEdit);
+            hotkeyCommands->addLayout(hotkeyGroup);
+        }
+        rowLayout->addLayout(hotkeyCommands);
+        if (descriptor->hasSettings) {
             auto *settingsButton = new QPushButton(tr("Settings"));
             settingsButton->setObjectName(QStringLiteral("pluginSettingsButton"));
             settingsButton->setProperty("cmd", cmd);
             rowLayout->addWidget(settingsButton);
-            connect(settingsButton, &QPushButton::clicked, this, [this, plugin, cmd]() {
-                auto *dialog = new QDialog(this);
+            const QString settingsCommand = descriptor->commands.first().keyword;
+            connect(settingsButton, &QPushButton::clicked, this, [this, cmd, settingsCommand]() {
+                QWidget *settingsWidget = m_pluginManager->settingsWidgetForCommand(settingsCommand);
+                if (!settingsWidget) return;
+                QDialog settingsDialog(this);
+                auto *dialog = &settingsDialog;
                 dialog->setWindowTitle(tr("%1 Settings").arg(cmd));
                 auto *dialogLayout = new QVBoxLayout(dialog);
                 dialogLayout->setContentsMargins(16, 16, 16, 16);
                 dialogLayout->setSpacing(12);
 
-                if (QWidget *settingsWidget = plugin->settingsWidget()) {
-                    dialogLayout->addWidget(settingsWidget);
-                }
+                dialogLayout->addWidget(settingsWidget);
                 auto *buttons = new QDialogButtonBox(QDialogButtonBox::Close, dialog);
                 buttons->button(QDialogButtonBox::Close)->setText(tr("Close"));
                 connect(buttons, &QDialogButtonBox::rejected, dialog, &QDialog::reject);
@@ -557,12 +564,12 @@ SettingsView::SettingsView(Settings *settings, PluginManager *pluginManager, Glo
         reload();
         emit closeRequested();
     });
-    connect(buttons, &QDialogButtonBox::accepted, this, [this]() {
+    connect(buttons, &QDialogButtonBox::accepted, this, [this, buttons]() {
         QHash<QString, QString> pluginShortcuts;
         for (QKeySequenceEdit *edit : m_pluginHotkeyEdits) {
             const QString command = edit->property("cmd").toString();
             for (QCheckBox *check : m_pluginChecks) {
-                if (check->property("cmd").toString() == command && check->isChecked()) {
+                if (check->property("cmd") == edit->property("pluginId") && check->isChecked()) {
                     pluginShortcuts.insert(command, edit->keySequence().toString(QKeySequence::PortableText));
                     break;
                 }
@@ -594,12 +601,42 @@ SettingsView::SettingsView(Settings *settings, PluginManager *pluginManager, Glo
         }
         m_settings->setCustomScanDirs(scanDirs);
         m_settings->setPluginAutoEnter(m_pluginAutoEnterCheck->isChecked());
-        for (QCheckBox *check : m_pluginChecks) {
-            m_settings->setPluginEnabled(check->property("cmd").toString(), check->isChecked());
-        }
         for (QKeySequenceEdit *edit : m_pluginHotkeyEdits) {
             m_settings->setPluginHotkey(edit->property("cmd").toString(),
                                         edit->keySequence().toString(QKeySequence::PortableText));
+        }
+        // 保存可能异步完成，等待期间禁止重复提交；拒绝禁用时恢复实际状态与快捷键。
+        buttons->setEnabled(false);
+        m_pages->setEnabled(false);
+        struct Pending { int remaining; bool accepted = true; };
+        auto pending = std::make_shared<Pending>(Pending{int(m_pluginChecks.size())});
+        for (QCheckBox *check : m_pluginChecks) {
+            const QString id = check->property("cmd").toString();
+            m_pluginManager->setPluginEnabled(id, check->isChecked(),
+                [guard = QPointer<SettingsView>(this), controls = QPointer<QDialogButtonBox>(buttons),
+                 pending, id](bool accepted) {
+                if (!guard) return;
+                pending->accepted = pending->accepted && accepted;
+                for (QCheckBox *item : guard->m_pluginChecks) {
+                    if (item->property("cmd").toString() == id) item->setChecked(guard->m_settings->isPluginEnabled(id));
+                }
+                if (--pending->remaining) return;
+                QHash<QString, QString> shortcuts;
+                for (QKeySequenceEdit *edit : guard->m_pluginHotkeyEdits) {
+                    if (guard->m_settings->isPluginEnabled(edit->property("pluginId").toString())) {
+                        const QString keyword = edit->property("cmd").toString();
+                        shortcuts.insert(keyword, guard->m_settings->pluginHotkey(keyword));
+                    }
+                }
+                QString error;
+                if (!guard->m_hotkeys->applyShortcuts(guard->m_settings->globalHotkey(), shortcuts, &error)) {
+                    QMessageBox::warning(guard, tr("Shortcut unavailable"), error);
+                }
+                guard->m_pages->setEnabled(true);
+                if (controls) controls->setEnabled(true);
+                if (!pending->accepted) QMessageBox::warning(guard, tr("Action failed"),
+                    tr("The application could not be closed. Save your changes and try again."));
+            });
         }
     });
 

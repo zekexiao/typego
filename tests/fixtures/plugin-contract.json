@@ -1,0 +1,6 @@
+{
+  "id": "org.typego.contract",
+  "version": "1.0.0",
+  "description": "Public protocol fixture",
+  "commands": [{"id": "main", "keyword": "contract"}]
+}

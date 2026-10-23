@@ -19,13 +19,11 @@ FilePlugin::FilePlugin(QObject *parent)
 {
     connect(&m_watcher, &QFutureWatcher<QVariantList>::finished, this, [this]() {
         m_searchRunning = false;
-        if (m_runningQuery != m_requestedQuery) {
-            if (!m_requestedQuery.isEmpty()) startSearch();
+        if (m_runningQuery.id != m_requestedQuery.id) {
+            if (m_requestedQuery.id) startSearch();
             return;
         }
-        m_results = m_watcher.result();
-        m_resultsReady = true;
-        emit queryResultsChanged(m_requestedQuery);
+        emit queryFinished(PluginQueryResult{m_runningQuery.id, m_watcher.result()});
     });
 }
 
@@ -33,27 +31,23 @@ FilePlugin::~FilePlugin() = default;
 
 void FilePlugin::cancelQuery()
 {
-    m_requestedQuery.clear();
-    m_resultsReady = false;
-    m_results.clear();
+    m_requestedQuery = {};
 }
 
-QVariantList FilePlugin::query(const QString &args)
+PluginQueryResult FilePlugin::query(const PluginQueryRequest &request)
 {
-    const QString query = args.trimmed();
-    if (query != m_requestedQuery) {
-        m_requestedQuery = query;
-        m_resultsReady = false;
-        m_results.clear();
+    const QString query = request.invocation.arguments.trimmed();
+    m_requestedQuery = request;
+    if (query.isEmpty()) {
+        m_requestedQuery = {};
+        return {request.id, searchFiles(query, request.limit)};
     }
-    if (query.isEmpty()) return searchFiles(query);
-    if (m_resultsReady) return m_results;
     if (!m_searchRunning) startSearch();
     QVariantMap item;
     item["title"] = tr("Searching files...");
     item["subtitle"] = query;
     item["action"] = QVariantMap{{"type", "none"}};
-    return {item};
+    return {request.id, {item}, true};
 }
 
 void FilePlugin::startSearch()
@@ -61,7 +55,8 @@ void FilePlugin::startSearch()
     // SDK 使用全局查询状态，始终只运行一个查询，并仅保留最新待查词。
     m_searchRunning = true;
     m_runningQuery = m_requestedQuery;
-    m_watcher.setFuture(QtConcurrent::run(&FilePlugin::searchFiles, m_runningQuery));
+    m_watcher.setFuture(QtConcurrent::run(&FilePlugin::searchFiles,
+        m_runningQuery.invocation.arguments.trimmed(), m_runningQuery.limit));
 }
 
 QString FilePlugin::typeLabel(const QFileInfo &fileInfo, bool isFolder)
@@ -74,7 +69,7 @@ QString FilePlugin::typeLabel(const QFileInfo &fileInfo, bool isFolder)
     return tr("File");
 }
 
-QVariantList FilePlugin::searchFiles(const QString &args)
+QVariantList FilePlugin::searchFiles(const QString &args, int limit)
 {
     QVariantList results;
 
@@ -93,7 +88,7 @@ QVariantList FilePlugin::searchFiles(const QString &args)
     }
 
     Everything_SetSearchW((LPCWSTR)args.utf16());
-    Everything_SetMax(200);
+    Everything_SetMax(static_cast<DWORD>(limit));
     Everything_SetRequestFlags(EVERYTHING_REQUEST_FULL_PATH_AND_FILE_NAME);
 
     if (!Everything_QueryW(TRUE)) {

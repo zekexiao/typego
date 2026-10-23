@@ -16,6 +16,8 @@
 #include <QSet>
 #include <QStyleHints>
 #include <QSystemTrayIcon>
+#include <QStandardPaths>
+#include <QDir>
 #include <QTimer>
 #include <QTranslator>
 #include <QLocale>
@@ -32,15 +34,9 @@
 #include "Settings.h"
 #include "ThemeManager.h"
 #include "Updater.h"
-#include "plugins/AppPlugin.h"
-#include "plugins/CalcPlugin.h"
-#include "plugins/ConvertPlugin.h"
-#include "plugins/DirectoryPlugin.h"
-#include "plugins/FilePlugin.h"
+#include "plugins/BuiltinPlugins.h"
+#include "plugins/ExternalPluginRegistry.h"
 #include "plugins/PluginManager.h"
-#include "plugins/SettingsPlugin.h"
-#include "plugins/ShellPlugin.h"
-#include "plugins/TodoPlugin.h"
 
 static QIcon buildAppIcon()
 {
@@ -129,20 +125,29 @@ int main(int argc, char *argv[])
 
     PluginManager pluginManager;
     Updater updater;
-    pluginManager.registerPlugin(new AppPlugin(&launcher, &pluginManager));
-    pluginManager.registerPlugin(new CalcPlugin(&pluginManager));
-    pluginManager.registerPlugin(new ConvertPlugin(&pluginManager));
-    pluginManager.registerPlugin(new DirectoryPlugin(&pluginManager));
-    auto *settingsPlugin = new SettingsPlugin(&settings, &pluginManager, &hotkey, &launcher, &updater, &pluginManager);
-    pluginManager.registerPlugin(settingsPlugin);
     pluginManager.setSettings(&settings);
-    pluginManager.registerPlugin(new FilePlugin(&pluginManager));
-    pluginManager.registerPlugin(new ShellPlugin(&pluginManager));
-    auto *todoPlugin = new TodoPlugin(&pluginManager);
-    pluginManager.registerPlugin(todoPlugin);
+    registerBuiltinPlugins(pluginManager, settings, hotkey, launcher, updater);
+    // 扫描只读取 DLL 元数据；客户代码在首次使用时才加载。
+    const QString localData = QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation);
+    ExternalPluginRegistry externalPlugins(pluginManager, {
+        localData + QStringLiteral("/plugins"), localData + QStringLiteral("/plugin-data"),
+        QStandardPaths::writableLocation(QStandardPaths::CacheLocation) + QStringLiteral("/plugins"),
+        QDir::tempPath() + QStringLiteral("/TypeGo/plugins")});
+    externalPlugins.discover();
 
     MainWindow window(&launcher, &pluginManager, &settings, &updater, &themeManager);
     window.setWindowIcon(appIcon);
+    if (!externalPlugins.diagnostics().isEmpty()) {
+        QStringList errors;
+        for (const auto &diagnostic : externalPlugins.diagnostics())
+            errors.append(QStringLiteral("%1\n[%2] %3").arg(diagnostic.path)
+                .arg(static_cast<int>(diagnostic.error.code)).arg(diagnostic.error.message));
+        QTimer::singleShot(0, &window, [&window, detail = errors.join(QStringLiteral("\n\n"))]() {
+            QMessageBox::warning(&window, QCoreApplication::translate("Main", "Plugin unavailable"),
+                QCoreApplication::translate("Main", "Some plugins could not be registered. Check the package and SDK compatibility, then restart TypeGo.")
+                    + QStringLiteral("\n\n") + detail);
+        });
+    }
 
     // 启动数秒后在后台静默检测 GitHub 更新，避免拖慢首屏、与托盘初始化抢占网络。
     // 仅发现新版本时才弹出提示；失败与无更新都不打扰用户。
@@ -171,7 +176,7 @@ int main(int argc, char *argv[])
 
     QObject::connect(&hotkey, &GlobalHotkey::activated, &window, [&]() {
         if (window.isVisible()) {
-            window.hide();
+            window.requestHide();
         } else {
             window.showAndActivate();
         }
@@ -179,14 +184,12 @@ int main(int argc, char *argv[])
 
     auto registerPluginHotkeys = [&]() {
         QHash<QString, QString> pluginShortcuts;
-        QSet<IPlugin *> registered;
-        IPlugin *settingsPluginInstance = pluginManager.plugin(QStringLiteral("set"));
-        for (const QString &command : pluginManager.commands()) {
-            IPlugin *plugin = pluginManager.plugin(command);
-            if (!plugin || plugin == settingsPluginInstance || registered.contains(plugin)) continue;
-            registered.insert(plugin);
-            if (!settings.isPluginEnabled(plugin->command())) continue;
-            pluginShortcuts.insert(plugin->command(), settings.pluginHotkey(plugin->command()));
+        for (const QString &id : pluginManager.pluginIds()) {
+            const PluginDescriptor *descriptor = pluginManager.descriptor(id);
+            if (!descriptor->configurable || !settings.isPluginEnabled(id)) continue;
+            for (const PluginCommand &command : descriptor->commands) {
+                pluginShortcuts.insert(command.keyword, settings.pluginHotkey(command.keyword));
+            }
         }
         QString error;
         if (!hotkey.applyShortcuts(settings.globalHotkey(), pluginShortcuts, &error)) {
@@ -217,7 +220,7 @@ int main(int argc, char *argv[])
     QObject::connect(showAction, &QAction::triggered, &window, &MainWindow::showAndActivate);
     QObject::connect(settingsAction, &QAction::triggered, &window, [&]() {
         window.showAndActivate();
-        window.openPluginView(settingsPlugin->command());
+        window.openPluginView(QStringLiteral("set"));
     });
     QObject::connect(pinFileAction, &QAction::triggered, &window, [&]() {
         const QString path = QFileDialog::getOpenFileName(&window, QCoreApplication::translate("Main", "Pin File"));
@@ -225,14 +228,25 @@ int main(int argc, char *argv[])
         const QFileInfo info(path);
         launcher.pinApp(path, info.fileName(), QString());
     });
-    QObject::connect(restartAction, &QAction::triggered, &app, [&app]() {
-        QProcess::startDetached(QCoreApplication::applicationFilePath(), QStringList());
-        app.quit();
+    auto requestExit = [&](bool restart) {
+        pluginManager.requestShutdown([&app, &window, restart](bool accepted) {
+            if (!accepted) {
+                window.showAndActivate();
+                QMessageBox::warning(&window, QCoreApplication::translate("Main", "Cannot exit"),
+                    QCoreApplication::translate("Main", "Save your changes and try again."));
+                return;
+            }
+            if (restart) QProcess::startDetached(QCoreApplication::applicationFilePath(), QStringList());
+            app.quit();
+        });
+    };
+    QObject::connect(restartAction, &QAction::triggered, &app, [&]() {
+        requestExit(true);
     });
-    QObject::connect(quitAction, &QAction::triggered, &app, &SingleApplication::quit);
+    QObject::connect(quitAction, &QAction::triggered, &app, [&]() { requestExit(false); });
     QObject::connect(&trayIcon, &QSystemTrayIcon::activated, &window, [&](QSystemTrayIcon::ActivationReason reason) {
         if (reason != QSystemTrayIcon::Trigger) return;
-        window.isVisible() ? window.hide() : window.showAndActivate();
+        window.isVisible() ? window.requestHide() : window.showAndActivate();
     });
     trayIcon.show();
 

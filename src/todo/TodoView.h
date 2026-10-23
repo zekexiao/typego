@@ -24,6 +24,7 @@ public:
     explicit TodoView(TaskService *service, QWidget *parent = nullptr);
 
     void reload();
+    bool savePendingChanges();
 
 signals:
     void closeRequested();
