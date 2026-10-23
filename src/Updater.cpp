@@ -15,8 +15,9 @@
 #endif
 
 namespace {
-// 更新源固定为 GitHub 官方仓库的 latest release。
-constexpr auto kLatestReleaseUrl = "https://api.github.com/repos/zekexiao/typego/releases/latest";
+// 更新源用 releases.atom 订阅源而不是 api.github.com：匿名 API 每 IP 每小时 60 次限流，
+// 共享出口 IP 的用户会 403；atom 是普通页面接口，不限流，且同样跟随系统代理。
+constexpr auto kReleasesFeedUrl = "https://github.com/zekexiao/typego/releases.atom";
 }
 
 Updater::Updater(QObject *parent)
@@ -45,10 +46,8 @@ QString Updater::currentVersion() const
 
 void Updater::checkForUpdate()
 {
-    QNetworkRequest request{QUrl(QString::fromLatin1(kLatestReleaseUrl))};
-    // GitHub API 要求 User-Agent，否则直接 403。
+    QNetworkRequest request{QUrl(QString::fromLatin1(kReleasesFeedUrl))};
     request.setRawHeader("User-Agent", "TypeGo-Updater");
-    request.setRawHeader("Accept", "application/vnd.github+json");
     request.setTransferTimeout(15000);
     request.setAttribute(QNetworkRequest::RedirectPolicyAttribute,
                          QNetworkRequest::NoLessSafeRedirectPolicy);
@@ -61,14 +60,12 @@ void Updater::checkForUpdate()
             return;
         }
 
-        const ReleaseParser::Result release = ReleaseParser::parseLatestRelease(reply->readAll(), currentVersion());
+        const ReleaseParser::Result release = ReleaseParser::parseAtomFeed(reply->readAll(), currentVersion());
         switch (release.outcome) {
         case ReleaseParser::Outcome::UpToDate:
             emit noUpdateAvailable();
             return;
         case ReleaseParser::Outcome::InvalidResponse:
-        case ReleaseParser::Outcome::NoInstaller:
-            // 找不到安装包通常是发版命名不合规，提示错误而不是谎报「已是最新」。
             emit checkError(release.message);
             return;
         case ReleaseParser::Outcome::UpdateReady:

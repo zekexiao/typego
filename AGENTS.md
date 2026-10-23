@@ -59,7 +59,7 @@
 5. **更新网页信息**：官网版本与下载链接由 `website/src/data/releases.ts` 自动从 `CHANGELOG.md` + `VERSION` 派生，无需手改；确认 CHANGELOG 条目内容即可，网站构建时会校验两者一致。
 6. **发布网页**：根目录执行 `npm run site:deploy`（wrangler pages，项目名 `typego`）。
 
-注意：客户端更新检测走 GitHub 匿名 API（60 次/小时/IP），超限会静默失败、下次启动重试，属预期行为。
+注意：客户端更新检测走 `releases.atom` 页面接口（匿名 API 有 60 次/小时/IP 限流，共享出口 IP 会 403），安装包地址按 tag + 命名约定推导。
 
 ## 工具
 

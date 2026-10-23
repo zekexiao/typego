@@ -2,62 +2,67 @@
 
 #include "utils/Version.h"
 
-#include <QJsonArray>
-#include <QJsonDocument>
-#include <QJsonObject>
+#include <QXmlStreamReader>
 
 namespace ReleaseParser {
 
 namespace {
 
-// 在 release assets 中挑选 Windows 安装包，命名约定是 TypeGo_<版本>_x64.exe。
-// 优先第一个名字含 x64 的 .exe；没有 x64 标记时取第一个 .exe。
-QString selectInstallerUrl(const QJsonArray &assets)
+// 仓库地址与安装包命名约定与 AGENTS.md 发版工作流一致：
+// dist\TypeGo_<版本>_x64.exe 上传到同名 tag 的 Release。
+constexpr auto kInstallerUrlTemplate = "https://github.com/zekexiao/typego/releases/download/%1/TypeGo_%2_x64.exe";
+
+QString stripV(const QString &tag)
 {
-    QString firstExe;
-    for (const QJsonValue &assetValue : assets) {
-        const QJsonObject asset = assetValue.toObject();
-        const QString name = asset.value(QStringLiteral("name")).toString();
-        if (!name.endsWith(QStringLiteral(".exe"), Qt::CaseInsensitive)) continue;
-        const QString url = asset.value(QStringLiteral("browser_download_url")).toString();
-        if (name.contains(QStringLiteral("x64"), Qt::CaseInsensitive)) return url;
-        if (firstExe.isEmpty()) firstExe = url;
-    }
-    return firstExe;
+    return tag.startsWith(QLatin1Char('v'), Qt::CaseInsensitive) ? tag.mid(1) : tag;
 }
 
 } // namespace
 
-Result parseLatestRelease(const QByteArray &payload, const QString &currentVersion)
+Result parseAtomFeed(const QByteArray &payload, const QString &currentVersion)
 {
     Result result;
 
-    const QJsonDocument doc = QJsonDocument::fromJson(payload);
-    if (!doc.isObject()) {
+    // 只取第一个 <entry>（即最新 release），收集 <id> 末尾的 tag 与 <content> 正文。
+    QXmlStreamReader xml(payload);
+    QString entryId;
+    QString content;
+    bool inEntry = false;
+    bool entryDone = false;
+    while (!xml.atEnd() && !entryDone) {
+        if (xml.readNext() != QXmlStreamReader::StartElement) continue;
+        const QStringView name = xml.name();
+        if (name == QLatin1String("entry")) {
+            inEntry = true;
+        } else if (inEntry && name == QLatin1String("id") && entryId.isEmpty()) {
+            entryId = xml.readElementText();
+        } else if (inEntry && name == QLatin1String("content")) {
+            content = xml.readElementText();
+            entryDone = true;
+        }
+    }
+    if (xml.hasError()) {
         result.outcome = Outcome::InvalidResponse;
-        result.message = QStringLiteral("Invalid GitHub release response");
+        result.message = QStringLiteral("Invalid GitHub releases feed");
         return result;
     }
-
-    const QJsonObject obj = doc.object();
-    const QString tagName = obj.value(QStringLiteral("tag_name")).toString();
-    // 草稿、预发布以及不比当前版本新的标签都不提示更新，与旧实现一致。
-    if (tagName.isEmpty() || obj.value(QStringLiteral("draft")).toBool()
-        || obj.value(QStringLiteral("prerelease")).toBool()
-        || !Version::isNewer(tagName, currentVersion)) {
+    if (entryId.isEmpty()) {
+        // 订阅源合法但没有任何 release，等同没有更新。
         result.outcome = Outcome::UpToDate;
         return result;
     }
 
-    result.version = tagName.startsWith(QLatin1Char('v'), Qt::CaseInsensitive) ? tagName.mid(1) : tagName;
-    result.changelog = obj.value(QStringLiteral("body")).toString();
-    result.installerUrl = selectInstallerUrl(obj.value(QStringLiteral("assets")).toArray());
-    if (result.installerUrl.isEmpty()) {
-        result.outcome = Outcome::NoInstaller;
-        result.message = QStringLiteral("No Windows installer found in release assets");
+    // id 形如 tag:github.com,2008:Repository/<id>/<tag>，取最后一段作为标签。
+    const QString tag = entryId.section(QLatin1Char('/'), -1).trimmed();
+    const QString version = stripV(tag);
+    if (version.isEmpty() || !Version::isNewer(tag, currentVersion)) {
+        result.outcome = Outcome::UpToDate;
         return result;
     }
 
+    result.version = version;
+    result.changelog = content.trimmed();
+    result.installerUrl = QString::fromLatin1(kInstallerUrlTemplate).arg(tag, version);
     result.outcome = Outcome::UpdateReady;
     return result;
 }

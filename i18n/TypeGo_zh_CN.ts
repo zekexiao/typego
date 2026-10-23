@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <!DOCTYPE TS>
 <TS version="2.1" language="zh_CN">
 <context>
@@ -1199,32 +1199,32 @@ Update now?</source>
 <context>
     <name>Updater</name>
     <message>
-        <location filename="../src/Updater.cpp" line="86"/>
+        <location filename="../src/Updater.cpp" line="83"/>
         <source>Invalid update download URL</source>
         <translation>更新下载地址无效</translation>
     </message>
     <message>
-        <location filename="../src/Updater.cpp" line="94"/>
+        <location filename="../src/Updater.cpp" line="91"/>
         <source>Cannot create the update download: %1</source>
         <translation>无法创建更新下载文件：%1</translation>
     </message>
     <message>
-        <location filename="../src/Updater.cpp" line="127"/>
+        <location filename="../src/Updater.cpp" line="124"/>
         <source>Cannot save the update: %1</source>
         <translation>无法保存更新文件：%1</translation>
     </message>
     <message>
-        <location filename="../src/Updater.cpp" line="145"/>
+        <location filename="../src/Updater.cpp" line="142"/>
         <source>The update download is incomplete or invalid. Please try again.</source>
         <translation>下载的更新文件不完整或无效，请重试。</translation>
     </message>
     <message>
-        <location filename="../src/Updater.cpp" line="165"/>
+        <location filename="../src/Updater.cpp" line="162"/>
         <source>Cannot start the update installer (error %1).</source>
         <translation>无法启动更新安装程序（错误 %1）。</translation>
     </message>
     <message>
-        <location filename="../src/Updater.cpp" line="171"/>
+        <location filename="../src/Updater.cpp" line="168"/>
         <source>Cannot start the update installer.</source>
         <translation>无法启动更新安装程序。</translation>
     </message>
