@@ -1,22 +1,51 @@
-﻿#include "DirectoryPlugin.h"
-#include <QVariantMap>
+#include "DirectoryPlugin.h"
+
+#include "../utils/ShellOpen.h"
+
 #include <QDir>
 #include <QFileInfo>
-#include <QFileIconProvider>
-#include <QDesktopServices>
-#include <QUrl>
-#include <QDebug>
-
-#ifdef Q_OS_WIN
-#include <windows.h>
-#endif
+#include <QVariantMap>
+#include <QtConcurrent>
 
 DirectoryPlugin::DirectoryPlugin(QObject *parent)
     : IPlugin(parent)
 {
+    // 与 FilePlugin 相同的全局查询状态：始终只跑一个列举，仅保留最新请求。
+    connect(&m_watcher, &QFutureWatcher<QVariantList>::finished, this, [this]() {
+        m_listing = false;
+        if (m_runningQuery.id != m_requestedQuery.id) {
+            if (m_requestedQuery.id) startListing();
+            return;
+        }
+        emit queryFinished(PluginQueryResult{m_runningQuery.id, m_watcher.result()});
+    });
 }
 
-QString DirectoryPlugin::resolvePath(const QString &args) const
+void DirectoryPlugin::cancelQuery()
+{
+    m_requestedQuery = {};
+}
+
+PluginQueryResult DirectoryPlugin::query(const PluginQueryRequest &request)
+{
+    m_requestedQuery = request;
+    if (!m_listing) startListing();
+    QVariantMap item;
+    item["title"] = tr("Listing directory...");
+    item["subtitle"] = request.invocation.arguments.trimmed();
+    item["action"] = QVariantMap{{"type", "none"}};
+    return {request.id, {item}, true};
+}
+
+void DirectoryPlugin::startListing()
+{
+    m_listing = true;
+    m_runningQuery = m_requestedQuery;
+    m_watcher.setFuture(QtConcurrent::run(&DirectoryPlugin::listDirectory,
+        m_runningQuery.invocation.arguments, m_runningQuery.limit));
+}
+
+QString DirectoryPlugin::resolvePath(const QString &args)
 {
     if (args.trimmed().isEmpty()) {
         return QDir::homePath();
@@ -38,7 +67,7 @@ QString DirectoryPlugin::resolvePath(const QString &args) const
     return QString();
 }
 
-QVariantList DirectoryPlugin::query(const QString &args)
+QVariantList DirectoryPlugin::listDirectory(const QString &args, int limit)
 {
     QVariantList results;
     QString path = resolvePath(args);
@@ -56,7 +85,7 @@ QVariantList DirectoryPlugin::query(const QString &args)
         item["icon"] = "";
         QVariantMap action;
         action["type"] = QStringLiteral("none");
-        action["plugin"] = command();
+        action["plugin"] = QStringLiteral("cd");
         item["action"] = action;
         results.append(item);
         return results;
@@ -70,14 +99,17 @@ QVariantList DirectoryPlugin::query(const QString &args)
     QVariantMap enterAction;
     enterAction["type"] = QStringLiteral("openFolder");
     enterAction["data"] = dir.absolutePath();
-    enterAction["plugin"] = command();
+    enterAction["plugin"] = QStringLiteral("cd");
     enterItem["action"] = enterAction;
     results.append(enterItem);
 
-    // 列出子目录和文件。图标由结果列表异步加载，避免阻塞输入。
-    QFileInfoList entries = dir.entryInfoList(QDir::Dirs | QDir::Files | QDir::NoDotAndDotDot,
-                                               QDir::DirsFirst | QDir::Name);
+    // 列出子目录和文件；超出 limit 提前结束，避免巨型目录的无效遍历。
+    // 图标由结果列表异步加载，避免阻塞输入。
+    const QFileInfoList entries = dir.entryInfoList(QDir::Dirs | QDir::Files | QDir::NoDotAndDotDot,
+                                                    QDir::DirsFirst | QDir::Name);
+    results.reserve(qMin(entries.size() + 1, limit));
     for (const QFileInfo &fi : entries) {
+        if (results.size() >= limit) break;
         QVariantMap item;
         item["title"] = fi.fileName();
         item["subtitle"] = fi.isDir() ? tr("Folder") : fi.suffix().toUpper();
@@ -92,7 +124,7 @@ QVariantList DirectoryPlugin::query(const QString &args)
             action["type"] = QStringLiteral("openFile");
             action["data"] = fi.absoluteFilePath();
         }
-        action["plugin"] = command();
+        action["plugin"] = QStringLiteral("cd");
         item["action"] = action;
         results.append(item);
     }
@@ -100,30 +132,15 @@ QVariantList DirectoryPlugin::query(const QString &args)
     return results;
 }
 
-bool DirectoryPlugin::execute(const QVariantMap &action)
+PluginExecutionResult DirectoryPlugin::execute(const PluginInvocation &invocation)
 {
-    QString type = action.value("type").toString();
-    QString data = action.value("data").toString();
-    if (data.isEmpty()) return false;
-
-    if (type == "openFolder") {
-#ifdef Q_OS_WIN
-        HINSTANCE result = ShellExecuteW(nullptr, L"open", (LPCWSTR)data.utf16(), nullptr, nullptr, SW_SHOWNORMAL);
-        return (INT_PTR)result > 32;
-#else
-        return QDesktopServices::openUrl(QUrl::fromLocalFile(data));
-#endif
-    } else if (type == "openFile") {
-        return QDesktopServices::openUrl(QUrl::fromLocalFile(data));
-    } else if (type == "navigate") {
-        // 导航操作直接打开选中的目录。
-#ifdef Q_OS_WIN
-        HINSTANCE result = ShellExecuteW(nullptr, L"open", (LPCWSTR)data.utf16(), nullptr, nullptr, SW_SHOWNORMAL);
-        return (INT_PTR)result > 32;
-#else
-        return QDesktopServices::openUrl(QUrl::fromLocalFile(data));
-#endif
+    const QVariantMap action = invocation.action;
+    const QString type = action.value("type").toString();
+    const QString data = action.value("data").toString();
+    // 三种动作（打开目录/打开文件/进入目录）统一走系统默认程序。
+    if ((type == QLatin1String("openFolder") || type == QLatin1String("openFile") || type == QLatin1String("navigate"))
+        && ShellOpen::open(data)) {
+        return {PluginExecutionResult::Status::Succeeded, PluginExecutionResult::HostAction::Hide};
     }
-    return false;
+    return {PluginExecutionResult::Status::Failed, PluginExecutionResult::HostAction::Keep};
 }
-
