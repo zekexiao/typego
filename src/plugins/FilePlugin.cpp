@@ -132,9 +132,18 @@ QVariantList FilePlugin::searchFiles(const QString &args, int limit)
         const QString fullPath = QString::fromWCharArray(wpath, static_cast<int>(length));
         const bool isFolder = Everything_IsFolderResult(i);
         // 纯字符串拆分文件名与所在目录，不为每条结果做文件系统 stat。
-        const int sep = fullPath.lastIndexOf(QLatin1Char('\\'));
-        const QString name = sep >= 0 ? fullPath.mid(sep + 1) : fullPath;
-        const QString dir = sep > 0 ? fullPath.left(sep) : QString();
+        // 注意两个边界：根目录 "C:\" 没有文件名，整个路径作为标题；
+        // "C:\foo" 的所在目录应显示为 "C:\" 而不是 "C:"。
+        QString display = fullPath;
+        if (display.size() > 3 && display.endsWith(QLatin1Char('\\'))) display.chop(1);
+        const int sep = display.lastIndexOf(QLatin1Char('\\'));
+        QString name = sep >= 0 ? display.mid(sep + 1) : display;
+        QString dir;
+        if (sep > 0 && !name.isEmpty()) {
+            dir = display.left(sep);
+            if (dir.endsWith(QLatin1Char(':'))) dir += QLatin1Char('\\');
+        }
+        if (name.isEmpty()) name = display;
         const QString kind = typeLabel(name, isFolder);
 
         QVariantMap item;
