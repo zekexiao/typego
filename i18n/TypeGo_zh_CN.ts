@@ -256,22 +256,22 @@
         <translation>未找到文件</translation>
     </message>
     <message>
-        <location filename="../src/plugins/FilePlugin.cpp" line="157"/>
+        <location filename="../src/plugins/FilePlugin.cpp" line="166"/>
         <source>Showing %1 of %2 results</source>
         <translation>显示 %1 / %2 条结果</translation>
     </message>
     <message>
-        <location filename="../src/plugins/FilePlugin.cpp" line="158"/>
+        <location filename="../src/plugins/FilePlugin.cpp" line="167"/>
         <source>Use a more specific keyword to narrow the results</source>
         <translation>使用更精确的关键词缩小范围</translation>
     </message>
     <message>
-        <location filename="../src/plugins/FilePlugin.cpp" line="171"/>
+        <location filename="../src/plugins/FilePlugin.cpp" line="180"/>
         <source>File search is only available on Windows</source>
         <translation>文件搜索仅在 Windows 上可用</translation>
     </message>
     <message>
-        <location filename="../src/plugins/FilePlugin.cpp" line="172"/>
+        <location filename="../src/plugins/FilePlugin.cpp" line="181"/>
         <source>Everything SDK only supports Windows</source>
         <translation>Everything SDK 仅支持 Windows 平台</translation>
     </message>
