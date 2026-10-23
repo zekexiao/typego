@@ -110,6 +110,14 @@ public:
             : argumentsTemplate.trimmed();
     }
 
+    // 视图销毁前由插件调用，避免后台命令成为孤儿进程。
+    void stopProcess()
+    {
+        if (m_process->state() == QProcess::NotRunning) return;
+        m_process->kill();
+        m_process->waitForFinished(1000);
+    }
+
     void setCommand(const QString &command)
     {
         if (m_command == command.trimmed()) return;
@@ -183,12 +191,12 @@ QVariantList ShellPlugin::query(const QString &args, QueryContext context)
     return QVariantList() << item;
 }
 
-bool ShellPlugin::execute(const QVariantMap &action)
+PluginExecutionResult ShellPlugin::execute(const PluginInvocation &invocation)
 {
-    Q_UNUSED(action)
-    return true;
+    // 与旧适配层语义一致：占位项执行成功即隐藏窗口，真正的打开视图由宿主处理。
+    Q_UNUSED(invocation)
+    return {PluginExecutionResult::Status::Succeeded, PluginExecutionResult::HostAction::Hide};
 }
-
 IPlugin::LaunchMode ShellPlugin::launchMode(const QString &args) const
 {
     return args.trimmed().isEmpty() ? LaunchMode::List : LaunchMode::QueryView;
@@ -203,15 +211,23 @@ void ShellPlugin::activateQuery(const QString &args)
     }
 }
 
-QWidget *ShellPlugin::viewUrl()
+QWidget *ShellPlugin::createView(QWidget *parent)
 {
     if (!m_view) {
-        m_view = new ShellView;
+        m_view = new ShellView(parent);
         connect(m_view, &QObject::destroyed, this, [this]() { m_view = nullptr; });
     }
     m_view->setTerminal(terminalProgram(), terminalArgumentsTemplate());
     m_view->setCommand(m_query);
     return m_view;
+}
+
+void ShellPlugin::releaseInactiveResources()
+{
+    // 离开插件即终止未完成的命令并销毁视图。
+    if (!m_view) return;
+    m_view->stopProcess();
+    m_view->deleteLater();
 }
 
 QWidget *ShellPlugin::settingsWidget()
@@ -266,22 +282,36 @@ QWidget *ShellPlugin::settingsWidget()
     return widget;
 }
 
+void ShellPlugin::loadTerminalConfig() const
+{
+    if (m_configLoaded) return;
+    QSettings settings(QStringLiteral("TypeGo"), QStringLiteral("TypeGo"));
+    m_terminalProgram = settings.value(QString::fromLatin1(ShellProgramKey), defaultTerminalProgram()).toString();
+    m_terminalArgumentsTemplate =
+        settings.value(QString::fromLatin1(ShellArgumentsKey), defaultTerminalArgumentsTemplate()).toString();
+    m_configLoaded = true;
+}
+
 QString ShellPlugin::terminalProgram() const
 {
-    QSettings settings(QStringLiteral("TypeGo"), QStringLiteral("TypeGo"));
-    return settings.value(QString::fromLatin1(ShellProgramKey), defaultTerminalProgram()).toString();
+    loadTerminalConfig();
+    return m_terminalProgram;
 }
 
 QString ShellPlugin::terminalArgumentsTemplate() const
 {
-    QSettings settings(QStringLiteral("TypeGo"), QStringLiteral("TypeGo"));
-    return settings.value(QString::fromLatin1(ShellArgumentsKey), defaultTerminalArgumentsTemplate()).toString();
+    loadTerminalConfig();
+    return m_terminalArgumentsTemplate;
 }
 
 void ShellPlugin::setTerminalConfig(const QString &program, const QString &argumentsTemplate)
 {
+    loadTerminalConfig();
+    m_terminalProgram = program.trimmed().isEmpty() ? defaultTerminalProgram() : program.trimmed();
+    m_terminalArgumentsTemplate = argumentsTemplate.trimmed().isEmpty()
+        ? defaultTerminalArgumentsTemplate()
+        : argumentsTemplate.trimmed();
     QSettings settings(QStringLiteral("TypeGo"), QStringLiteral("TypeGo"));
-    settings.setValue(QString::fromLatin1(ShellProgramKey), program.trimmed().isEmpty() ? defaultTerminalProgram() : program.trimmed());
-    settings.setValue(QString::fromLatin1(ShellArgumentsKey),
-                      argumentsTemplate.trimmed().isEmpty() ? defaultTerminalArgumentsTemplate() : argumentsTemplate.trimmed());
+    settings.setValue(QString::fromLatin1(ShellProgramKey), m_terminalProgram);
+    settings.setValue(QString::fromLatin1(ShellArgumentsKey), m_terminalArgumentsTemplate);
 }
