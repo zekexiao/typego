@@ -103,17 +103,17 @@
 <context>
     <name>CalcPlugin</name>
     <message>
-        <location filename="../src/plugins/CalcPlugin.cpp" line="241"/>
+        <location filename="../src/plugins/CalcPlugin.cpp" line="21"/>
         <source>Enter an expression to calculate</source>
         <translation>输入表达式进行计算</translation>
     </message>
     <message>
-        <location filename="../src/plugins/CalcPlugin.cpp" line="242"/>
+        <location filename="../src/plugins/CalcPlugin.cpp" line="22"/>
         <source>e.g. 1+2, sqrt(16), 2^10</source>
         <translation>例如: 1+2, sqrt(16), 2^10</translation>
     </message>
     <message>
-        <location filename="../src/plugins/CalcPlugin.cpp" line="253"/>
+        <location filename="../src/plugins/CalcPlugin.cpp" line="33"/>
         <source>Expression Error</source>
         <translation>表达式错误</translation>
     </message>
@@ -140,23 +140,23 @@
 <context>
     <name>ConvertPlugin</name>
     <message>
-        <location filename="../src/plugins/ConvertPlugin.cpp" line="166"/>
+        <location filename="../src/plugins/ConvertPlugin.cpp" line="101"/>
         <source>Enter a value to convert</source>
         <translation>输入要换算的值</translation>
     </message>
     <message>
-        <location filename="../src/plugins/ConvertPlugin.cpp" line="166"/>
+        <location filename="../src/plugins/ConvertPlugin.cpp" line="101"/>
         <source>Convert %1</source>
         <translation>换算 %1</translation>
     </message>
     <message>
-        <location filename="../src/plugins/ConvertPlugin.cpp" line="167"/>
+        <location filename="../src/plugins/ConvertPlugin.cpp" line="102"/>
         <source>Examples: 1mile, 10km, 25cm</source>
         <translation>示例：1mile、10km、25cm</translation>
     </message>
     <message>
         <location filename="../src/plugins/BuiltinPlugins.cpp" line="34"/>
-        <location filename="../src/plugins/ConvertPlugin.h" line="14"/>
+        <location filename="../src/plugins/ConvertPlugin.h" line="15"/>
         <source>Unit converter</source>
         <translation>单位换算</translation>
     </message>
@@ -164,23 +164,28 @@
 <context>
     <name>DirectoryPlugin</name>
     <message>
-        <location filename="../src/plugins/DirectoryPlugin.cpp" line="54"/>
+        <location filename="../src/plugins/DirectoryPlugin.cpp" line="34"/>
+        <source>Listing directory...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/plugins/DirectoryPlugin.cpp" line="83"/>
         <source>Directory does not exist</source>
         <translation>目录不存在</translation>
     </message>
     <message>
-        <location filename="../src/plugins/DirectoryPlugin.cpp" line="67"/>
+        <location filename="../src/plugins/DirectoryPlugin.cpp" line="96"/>
         <source>Open %1</source>
         <translation>打开 %1</translation>
     </message>
     <message>
-        <location filename="../src/plugins/DirectoryPlugin.cpp" line="83"/>
+        <location filename="../src/plugins/DirectoryPlugin.cpp" line="115"/>
         <source>Folder</source>
         <translation>文件夹</translation>
     </message>
     <message>
         <location filename="../src/plugins/BuiltinPlugins.cpp" line="37"/>
-        <location filename="../src/plugins/DirectoryPlugin.h" line="17"/>
+        <location filename="../src/plugins/DirectoryPlugin.h" line="21"/>
         <source>Directory browser and navigation</source>
         <translation>目录浏览与导航</translation>
     </message>
@@ -196,83 +201,83 @@
 <context>
     <name>FilePlugin</name>
     <message>
-        <location filename="../src/plugins/FilePlugin.cpp" line="47"/>
+        <location filename="../src/plugins/FilePlugin.cpp" line="43"/>
         <source>Searching files...</source>
         <translation>正在搜索文件…</translation>
     </message>
     <message>
-        <location filename="../src/plugins/FilePlugin.cpp" line="64"/>
+        <location filename="../src/plugins/FilePlugin.cpp" line="60"/>
         <source>Folder</source>
         <translation>文件夹</translation>
     </message>
     <message>
-        <location filename="../src/plugins/FilePlugin.cpp" line="67"/>
+        <location filename="../src/plugins/FilePlugin.cpp" line="64"/>
         <source>%1 File</source>
         <translation>%1 文件</translation>
     </message>
     <message>
-        <location filename="../src/plugins/FilePlugin.cpp" line="69"/>
+        <location filename="../src/plugins/FilePlugin.cpp" line="66"/>
         <source>File</source>
         <translation>文件</translation>
     </message>
     <message>
-        <location filename="../src/plugins/FilePlugin.cpp" line="79"/>
+        <location filename="../src/plugins/FilePlugin.cpp" line="76"/>
         <source>Enter a filename to search</source>
         <translation>输入文件名进行搜索</translation>
     </message>
     <message>
-        <location filename="../src/plugins/FilePlugin.cpp" line="80"/>
+        <location filename="../src/plugins/FilePlugin.cpp" line="77"/>
         <source>Powered by Everything for fast search</source>
         <translation>由 Everything 提供极速搜索支持</translation>
     </message>
     <message>
-        <location filename="../src/plugins/FilePlugin.cpp" line="98"/>
+        <location filename="../src/plugins/FilePlugin.cpp" line="95"/>
         <source>Everything service is not running</source>
         <translation>Everything 服务未运行</translation>
     </message>
     <message>
-        <location filename="../src/plugins/FilePlugin.cpp" line="99"/>
+        <location filename="../src/plugins/FilePlugin.cpp" line="96"/>
         <source>Please start Everything before using file search</source>
         <translation>请先启动 Everything 再使用文件搜索</translation>
     </message>
     <message>
-        <location filename="../src/plugins/FilePlugin.cpp" line="101"/>
+        <location filename="../src/plugins/FilePlugin.cpp" line="98"/>
         <source>Search failed</source>
         <translation>搜索失败</translation>
     </message>
     <message>
-        <location filename="../src/plugins/FilePlugin.cpp" line="102"/>
+        <location filename="../src/plugins/FilePlugin.cpp" line="99"/>
         <source>Error code: </source>
         <translation>错误码: </translation>
     </message>
     <message>
-        <location filename="../src/plugins/FilePlugin.cpp" line="121"/>
+        <location filename="../src/plugins/FilePlugin.cpp" line="116"/>
         <source>No files found</source>
         <translation>未找到文件</translation>
     </message>
     <message>
-        <location filename="../src/plugins/FilePlugin.cpp" line="159"/>
+        <location filename="../src/plugins/FilePlugin.cpp" line="157"/>
         <source>Showing %1 of %2 results</source>
         <translation>显示 %1 / %2 条结果</translation>
     </message>
     <message>
-        <location filename="../src/plugins/FilePlugin.cpp" line="160"/>
+        <location filename="../src/plugins/FilePlugin.cpp" line="158"/>
         <source>Use a more specific keyword to narrow the results</source>
         <translation>使用更精确的关键词缩小范围</translation>
     </message>
     <message>
-        <location filename="../src/plugins/FilePlugin.cpp" line="173"/>
+        <location filename="../src/plugins/FilePlugin.cpp" line="171"/>
         <source>File search is only available on Windows</source>
         <translation>文件搜索仅在 Windows 上可用</translation>
     </message>
     <message>
-        <location filename="../src/plugins/FilePlugin.cpp" line="174"/>
+        <location filename="../src/plugins/FilePlugin.cpp" line="172"/>
         <source>Everything SDK only supports Windows</source>
         <translation>Everything SDK 仅支持 Windows 平台</translation>
     </message>
     <message>
         <location filename="../src/plugins/BuiltinPlugins.cpp" line="44"/>
-        <location filename="../src/plugins/FilePlugin.h" line="16"/>
+        <location filename="../src/plugins/FilePlugin.h" line="14"/>
         <source>File search (Everything)</source>
         <translation>文件搜索（Everything）</translation>
     </message>
@@ -543,32 +548,32 @@ Update now?</source>
 <context>
     <name>QObject</name>
     <message>
-        <location filename="../src/plugins/ConvertPlugin.cpp" line="114"/>
+        <location filename="../src/plugins/ConvertPlugin.cpp" line="47"/>
         <source>Convert</source>
         <translation>换算</translation>
     </message>
     <message>
-        <location filename="../src/plugins/ConvertPlugin.cpp" line="115"/>
+        <location filename="../src/plugins/ConvertPlugin.cpp" line="48"/>
         <source>Try values like 1mile, 10km, 25cm</source>
         <translation>试试 1mile、10km、25cm 这样的值</translation>
     </message>
     <message>
-        <location filename="../src/plugins/ConvertPlugin.cpp" line="116"/>
+        <location filename="../src/plugins/ConvertPlugin.cpp" line="49"/>
         <source>Unsupported input</source>
         <translation>不支持的输入</translation>
     </message>
     <message>
-        <location filename="../src/plugins/ConvertPlugin.cpp" line="116"/>
+        <location filename="../src/plugins/ConvertPlugin.cpp" line="49"/>
         <source>Length units are supported for now</source>
         <translation>目前仅支持长度单位</translation>
     </message>
     <message>
-        <location filename="../src/plugins/ConvertPlugin.cpp" line="120"/>
+        <location filename="../src/plugins/ConvertPlugin.cpp" line="53"/>
         <source>Convert %1</source>
         <translation>换算 %1</translation>
     </message>
     <message>
-        <location filename="../src/plugins/ConvertPlugin.cpp" line="121"/>
+        <location filename="../src/plugins/ConvertPlugin.cpp" line="54"/>
         <source>Length conversion</source>
         <translation>长度换算</translation>
     </message>
@@ -598,17 +603,17 @@ Update now?</source>
         <translation>无法运行命令：%1</translation>
     </message>
     <message>
-        <location filename="../src/plugins/ShellPlugin.cpp" line="117"/>
+        <location filename="../src/plugins/ShellPlugin.cpp" line="125"/>
         <source>Shell</source>
         <translation>命令行</translation>
     </message>
     <message>
-        <location filename="../src/plugins/ShellPlugin.cpp" line="120"/>
+        <location filename="../src/plugins/ShellPlugin.cpp" line="128"/>
         <source>Enter a command after shell or cmd</source>
         <translation>在 shell 或 cmd 后输入命令</translation>
     </message>
     <message>
-        <location filename="../src/plugins/ShellPlugin.cpp" line="133"/>
+        <location filename="../src/plugins/ShellPlugin.cpp" line="141"/>
         <source>Running with %1</source>
         <translation>正在用 %1 运行</translation>
     </message>
@@ -923,77 +928,77 @@ Update now?</source>
         <translation>运行 shell 命令</translation>
     </message>
     <message>
-        <location filename="../src/plugins/ShellPlugin.cpp" line="176"/>
+        <location filename="../src/plugins/ShellPlugin.cpp" line="184"/>
         <source>Enter a shell command</source>
         <translation>输入 shell 命令</translation>
     </message>
     <message>
-        <location filename="../src/plugins/ShellPlugin.cpp" line="176"/>
+        <location filename="../src/plugins/ShellPlugin.cpp" line="184"/>
         <source>Run &quot;%1&quot;</source>
         <translation>运行“%1”</translation>
     </message>
     <message>
-        <location filename="../src/plugins/ShellPlugin.cpp" line="177"/>
+        <location filename="../src/plugins/ShellPlugin.cpp" line="185"/>
         <source>Example: shell dir</source>
         <translation>示例：shell dir</translation>
     </message>
     <message>
-        <location filename="../src/plugins/ShellPlugin.cpp" line="177"/>
+        <location filename="../src/plugins/ShellPlugin.cpp" line="185"/>
         <source>Press Enter to open the command output view</source>
         <translation>按 Enter 打开命令输出视图</translation>
     </message>
     <message>
-        <location filename="../src/plugins/ShellPlugin.cpp" line="223"/>
+        <location filename="../src/plugins/ShellPlugin.cpp" line="239"/>
         <source>Shell command runner</source>
         <translation>Shell 命令执行器</translation>
     </message>
     <message>
-        <location filename="../src/plugins/ShellPlugin.cpp" line="225"/>
+        <location filename="../src/plugins/ShellPlugin.cpp" line="241"/>
         <source>Choose the terminal command used to run shell queries. Use {cmd} where the typed command should be inserted.</source>
         <translation>选择用于执行 shell 查询的终端命令，用 {cmd} 标记要插入命令的位置。</translation>
     </message>
     <message>
-        <location filename="../src/plugins/ShellPlugin.cpp" line="232"/>
+        <location filename="../src/plugins/ShellPlugin.cpp" line="248"/>
         <source>Command Prompt (cmd.exe /C)</source>
         <translation>命令提示符（cmd.exe /C）</translation>
     </message>
     <message>
-        <location filename="../src/plugins/ShellPlugin.cpp" line="240"/>
+        <location filename="../src/plugins/ShellPlugin.cpp" line="256"/>
         <source>/C {cmd}</source>
         <translation>/C {cmd}</translation>
     </message>
     <message>
-        <location filename="../src/plugins/ShellPlugin.cpp" line="233"/>
+        <location filename="../src/plugins/ShellPlugin.cpp" line="249"/>
         <source>PowerShell</source>
         <translation>PowerShell</translation>
     </message>
     <message>
-        <location filename="../src/plugins/ShellPlugin.cpp" line="234"/>
+        <location filename="../src/plugins/ShellPlugin.cpp" line="250"/>
         <source>Git Bash</source>
         <translation>Git Bash</translation>
     </message>
     <message>
-        <location filename="../src/plugins/ShellPlugin.cpp" line="235"/>
+        <location filename="../src/plugins/ShellPlugin.cpp" line="251"/>
         <source>Custom</source>
         <translation>自定义</translation>
     </message>
     <message>
-        <location filename="../src/plugins/ShellPlugin.cpp" line="239"/>
+        <location filename="../src/plugins/ShellPlugin.cpp" line="255"/>
         <source>cmd.exe</source>
         <translation>cmd.exe</translation>
     </message>
     <message>
-        <location filename="../src/plugins/ShellPlugin.cpp" line="246"/>
+        <location filename="../src/plugins/ShellPlugin.cpp" line="262"/>
         <source>Preset</source>
         <translation>预设</translation>
     </message>
     <message>
-        <location filename="../src/plugins/ShellPlugin.cpp" line="247"/>
+        <location filename="../src/plugins/ShellPlugin.cpp" line="263"/>
         <source>Program</source>
         <translation>程序</translation>
     </message>
     <message>
-        <location filename="../src/plugins/ShellPlugin.cpp" line="248"/>
+        <location filename="../src/plugins/ShellPlugin.cpp" line="264"/>
         <source>Arguments</source>
         <translation>参数</translation>
     </message>
