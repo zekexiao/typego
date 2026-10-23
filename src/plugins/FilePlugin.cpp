@@ -1,12 +1,8 @@
-﻿#include "FilePlugin.h"
+#include "FilePlugin.h"
+
+#include "../utils/ShellOpen.h"
+
 #include <QVariantMap>
-#include <QDir>
-#include <QFileInfo>
-#include <QFileIconProvider>
-#include <QDesktopServices>
-#include <QUrl>
-#include <QDebug>
-#include <limits>
 #include <QtConcurrent>
 
 #ifdef Q_OS_WIN
@@ -59,12 +55,13 @@ void FilePlugin::startSearch()
         m_runningQuery.invocation.arguments.trimmed(), m_runningQuery.limit));
 }
 
-QString FilePlugin::typeLabel(const QFileInfo &fileInfo, bool isFolder)
+QString FilePlugin::typeLabel(const QString &fileName, bool isFolder)
 {
     if (isFolder) return tr("Folder");
-    const QString suffix = fileInfo.suffix().trimmed();
-    if (!suffix.isEmpty()) {
-        return tr("%1 File").arg(suffix.toUpper());
+    // 从文件名取后缀，避免 QFileInfo 触发文件系统 stat。
+    const int dot = fileName.lastIndexOf(QLatin1Char('.'));
+    if (dot > 0 && dot < fileName.size() - 1) {
+        return tr("%1 File").arg(fileName.mid(dot + 1).toUpper());
     }
     return tr("File");
 }
@@ -111,11 +108,9 @@ QVariantList FilePlugin::searchFiles(const QString &args, int limit)
         return results;
     }
 
-    DWORD count = Everything_GetNumResults();
+    const DWORD count = Everything_GetNumResults();
     const DWORD totalCount = Everything_GetTotResults();
-    const DWORD maxReserve = static_cast<DWORD>((std::numeric_limits<int>::max)());
-    const DWORD reserveCount = qMin<DWORD>(count, maxReserve - (totalCount > count ? 1 : 0));
-    results.reserve(static_cast<int>(reserveCount + (totalCount > count ? 1 : 0)));
+    results.reserve(static_cast<int>(count) + (totalCount > count ? 1 : 0));
     if (count == 0) {
         QVariantMap item;
         item["title"] = tr("No files found");
@@ -132,26 +127,29 @@ QVariantList FilePlugin::searchFiles(const QString &args, int limit)
 
     for (DWORD i = 0; i < count; ++i) {
         wchar_t wpath[1024];
-        if (Everything_GetResultFullPathNameW(i, wpath, 1024) > 0) {
-            QString fullPath = QString::fromWCharArray(wpath);
-            QFileInfo fi(fullPath);
-            const bool isFolder = Everything_IsFolderResult(i);
-            const QString kind = typeLabel(fi, isFolder);
+        const DWORD length = Everything_GetResultFullPathNameW(i, wpath, 1024);
+        if (length == 0) continue;
+        const QString fullPath = QString::fromWCharArray(wpath, static_cast<int>(length));
+        const bool isFolder = Everything_IsFolderResult(i);
+        // 纯字符串拆分文件名与所在目录，不为每条结果做文件系统 stat。
+        const int sep = fullPath.lastIndexOf(QLatin1Char('\\'));
+        const QString name = sep >= 0 ? fullPath.mid(sep + 1) : fullPath;
+        const QString dir = sep > 0 ? fullPath.left(sep) : QString();
+        const QString kind = typeLabel(name, isFolder);
 
-            QVariantMap item;
-            item["title"] = fi.fileName();
-            item["subtitle"] = kind + QStringLiteral(" · ") + fi.absolutePath();
-            item["kind"] = kind;
-            item["path"] = fullPath;
-            item["icon"] = "";
+        QVariantMap item;
+        item["title"] = name;
+        item["subtitle"] = dir.isEmpty() ? kind : kind + QStringLiteral(" · ") + dir;
+        item["kind"] = kind;
+        item["path"] = fullPath;
+        item["icon"] = "";
 
-            QVariantMap action;
-            action["type"] = isFolder ? QStringLiteral("openFolder") : QStringLiteral("openFile");
-            action["data"] = fullPath;
-            action["plugin"] = QStringLiteral("file");
-            item["action"] = action;
-            results.append(item);
-        }
+        QVariantMap action;
+        action["type"] = isFolder ? QStringLiteral("openFolder") : QStringLiteral("openFile");
+        action["data"] = fullPath;
+        action["plugin"] = QStringLiteral("file");
+        item["action"] = action;
+        results.append(item);
     }
 
     if (totalCount > count) {
@@ -183,16 +181,13 @@ QVariantList FilePlugin::searchFiles(const QString &args, int limit)
     return results;
 }
 
-bool FilePlugin::execute(const QVariantMap &action)
+PluginExecutionResult FilePlugin::execute(const PluginInvocation &invocation)
 {
-    QString type = action.value("type").toString();
-    QString data = action.value("data").toString();
-    if (data.isEmpty()) return false;
-
-    if (type == "openFile") {
-        return QDesktopServices::openUrl(QUrl::fromLocalFile(data));
-    } else if (type == "openFolder") {
-        return QDesktopServices::openUrl(QUrl::fromLocalFile(data));
+    const QVariantMap action = invocation.action;
+    const QString type = action.value("type").toString();
+    const QString data = action.value("data").toString();
+    if ((type == QLatin1String("openFile") || type == QLatin1String("openFolder")) && ShellOpen::open(data)) {
+        return {PluginExecutionResult::Status::Succeeded, PluginExecutionResult::HostAction::Hide};
     }
-    return false;
+    return {PluginExecutionResult::Status::Failed, PluginExecutionResult::HostAction::Keep};
 }
