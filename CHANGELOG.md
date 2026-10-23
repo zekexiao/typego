@@ -1,5 +1,25 @@
 # TypeGo 更新日志
 
+## 1.4 - 2026-10-23
+
+### 中文
+
+- 开放原生插件 SDK：插件基座支持异步查询、执行回执与视图生命周期管理，第三方可独立开发插件
+- 目录浏览（cd）改为后台异步列举，大目录与网络盘不再阻塞输入，可随时取消
+- 文件搜索性能优化：结果不再逐条读取文件系统信息，出结果更快
+- 修复文件搜索中驱动器根目录（如 C:\）标题为空、根目录下文件路径缺少反斜杠的问题
+- shell 命令在退出插件视图时自动终止未完成的进程，避免残留
+- 换算、shell 等插件视图在离开后释放内存
+
+### English
+
+- Opened the native plugin SDK: the plugin host now supports async queries, execution receipts, and view lifecycle management so third parties can build plugins independently
+- Directory browsing (cd) now lists entries in a background thread with cancellation, so large folders and network drives no longer block typing
+- Faster file search: results no longer stat the filesystem one by one
+- Fixed file search showing an empty title for drive roots (e.g. C:\) and a missing backslash in paths directly under a root
+- Shell commands are terminated automatically when leaving the plugin view, leaving no stray processes
+- Convert, shell, and other plugin views now release memory after leaving
+
 ## 1.3 - 2026-10-22
 
 ### 中文
