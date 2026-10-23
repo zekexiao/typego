@@ -1,5 +1,15 @@
 # TypeGo 更新日志
 
+## 1.5 - 2026-10-23
+
+### 中文
+
+- 修复共享网络环境下检查更新报 403 失败：更新检测改用 GitHub 页面接口，不再受匿名 API 限流影响
+
+### English
+
+- Fixed update checks failing with 403 on shared networks: update detection now uses GitHub's public page feed instead of the rate-limited anonymous API
+
 ## 1.4 - 2026-10-23
 
 ### 中文
