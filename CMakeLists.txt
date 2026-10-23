@@ -69,11 +69,13 @@ add_library(typego_core STATIC
     src/plugins/IPlugin.cpp
     src/plugins/CalcPlugin.cpp
     src/plugins/ConvertPlugin.cpp
+    src/plugins/ExpressionParser.cpp
     src/plugins/PluginAction.cpp
     src/plugins/PluginManager.cpp
     src/plugins/PluginManifest.cpp
     src/plugins/ExternalPluginRegistry.cpp
     src/plugins/TerminalLauncher.cpp
+    src/plugins/UnitConversion.cpp
     src/todo/JsonTaskStorage.cpp
     src/todo/Task.cpp
     src/todo/TaskRepository.cpp
@@ -82,6 +84,7 @@ add_library(typego_core STATIC
     src/utils/AppUsageStore.cpp
     src/utils/PinyinConverter.cpp
     src/utils/ReleaseParser.cpp
+    src/utils/ShellOpen.cpp
     src/utils/Version.cpp
 )
 target_include_directories(typego_core PUBLIC "${CMAKE_SOURCE_DIR}/src")
