@@ -27,7 +27,7 @@ public:
     LaunchMode launchMode(const QString &args) const override;
     bool supportsAutoEnter() const override { return true; }
     void activateCommand(const QString &command) override;
-    QWidget *viewUrl() override;
+    QWidget *createView(QWidget *parent) override;
 
 private:
     Settings *m_settings;

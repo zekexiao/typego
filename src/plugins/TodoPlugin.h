@@ -18,7 +18,7 @@ public:
     bool execute(const QVariantMap &action) override;
     LaunchMode launchMode(const QString &args) const override;
     bool supportsAutoEnter() const override { return true; }
-    QWidget *viewUrl() override;
+    QWidget *createView(QWidget *parent) override;
     PluginLeaveDecision prepareToLeave(PluginLeaveReason reason, quint64 token) override;
 
 private:

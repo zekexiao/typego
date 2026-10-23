@@ -25,11 +25,12 @@ QVariantList AppPlugin::query(const QString &args)
     return results;
 }
 
-bool AppPlugin::execute(const QVariantMap &action)
+PluginExecutionResult AppPlugin::execute(const PluginInvocation &invocation)
 {
-    if (!m_launcher) return false;
-    QString path = action.value("data").toString();
-    if (path.isEmpty()) return false;
-    return m_launcher->launch(path);
+    const QString path = m_launcher ? invocation.action.value("data").toString() : QString();
+    if (!path.isEmpty() && m_launcher->launch(path)) {
+        return {PluginExecutionResult::Status::Succeeded, PluginExecutionResult::HostAction::Hide};
+    }
+    return {PluginExecutionResult::Status::Failed, PluginExecutionResult::HostAction::Keep};
 }
 

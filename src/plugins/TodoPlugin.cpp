@@ -29,11 +29,11 @@ IPlugin::LaunchMode TodoPlugin::launchMode(const QString &args) const
     return LaunchMode::FullView;
 }
 
-QWidget *TodoPlugin::viewUrl()
+QWidget *TodoPlugin::createView(QWidget *parent)
 {
     if (!m_view) {
         if (!m_service) m_service = new TaskService(this);
-        m_view = new TodoView(m_service);
+        m_view = new TodoView(m_service, parent);
         connect(m_view, &TodoView::closeRequested, this, &TodoPlugin::viewCloseRequested);
         connect(m_view, &QObject::destroyed, this, [this]() { m_view = nullptr; });
     }

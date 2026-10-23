@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 
 #include "IPlugin.h"
 #include "../AppLauncher.h"
@@ -17,9 +17,8 @@ public:
     QString command() const override { return QStringLiteral("app"); }
     QString description() const override { return tr("Search and launch applications"); }
     QVariantList query(const QString &args) override;
-    bool execute(const QVariantMap &action) override;
+    PluginExecutionResult execute(const PluginInvocation &invocation) override;
 
 private:
     AppLauncher *m_launcher;
 };
-

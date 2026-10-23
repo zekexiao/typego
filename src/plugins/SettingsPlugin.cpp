@@ -44,10 +44,10 @@ void SettingsPlugin::activateCommand(const QString &command)
     }
 }
 
-QWidget *SettingsPlugin::viewUrl()
+QWidget *SettingsPlugin::createView(QWidget *parent)
 {
     if (!m_view) {
-        m_view = new SettingsView(m_settings, m_pluginManager, m_hotkeys, m_launcher, m_updater);
+        m_view = new SettingsView(m_settings, m_pluginManager, m_hotkeys, m_launcher, m_updater, parent);
         connect(static_cast<SettingsView *>(m_view), &SettingsView::closeRequested, this, &SettingsPlugin::viewCloseRequested);
         connect(m_view, &QObject::destroyed, this, [this]() { m_view = nullptr; });
     }
