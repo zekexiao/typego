@@ -1,5 +1,27 @@
 # TypeGo 更新日志
 
+## 1.6 - 2026-10-24
+
+### 中文
+
+- 修复目录输错时悄悄跳回用户主目录的问题：无效或不可读路径明确提示，相对路径统一从用户主目录解析
+- 优化大目录浏览：仅保留需要显示的排序结果，降低内存占用，支持取消过时查询，并提示结果截断
+- 优化大量待办任务的完成、删除与撤销操作，子树遍历不再逐节点扫描全部任务
+- 修复托盘重启的单实例竞争：新进程等待旧进程退出后启动；启动失败时保留当前实例并提示
+- 修复多屏悬浮图标位置恢复：支持负坐标副屏，屏幕拔插或可用区域变化时自动校正位置
+- 固定应用仅在保存成功后更新界面；失败保留原列表并提示，损坏的固定数据不再被默认项覆盖
+- 补齐新增提示的中文翻译，并扩展目录、存储失败、多屏坐标、进程交接及大量待办的自动化测试
+
+### English
+
+- Fixed invalid directory input silently falling back to the home folder: invalid or unreadable paths now show an error, and relative paths consistently resolve from the user home directory
+- Reduced memory use when browsing large directories by retaining only the displayed sorted entries, cancelling stale queries, and indicating truncated results
+- Optimized completion, deletion, and undo for large todo subtrees without repeatedly scanning all tasks for each node
+- Fixed the tray restart race: the new process waits for the previous process to exit; launch failures keep the current instance running with an error message
+- Fixed floating icon placement across multiple monitors, including negative coordinates and automatic repositioning when screens or available geometry change
+- Pinned apps now update only after a successful save; failures preserve the previous list and show feedback, while malformed data is protected from being overwritten by defaults
+- Added Chinese translations for new feedback and expanded automated coverage for directories, storage failures, screen positions, process handoff, and large todo lists
+
 ## 1.5 - 2026-10-23
 
 ### 中文
