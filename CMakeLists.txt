@@ -82,6 +82,7 @@ add_library(typego_core STATIC
     src/todo/TaskService.cpp
     src/utils/AppMatcher.cpp
     src/utils/AppUsageStore.cpp
+    src/utils/ScreenPosition.cpp
     src/utils/Restart.cpp
     src/utils/DirectoryListing.cpp
     src/utils/PinyinConverter.cpp

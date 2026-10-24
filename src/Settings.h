@@ -60,6 +60,7 @@ public:
     bool showFloatIcon() const;
     void setShowFloatIcon(bool enabled);
     Q_INVOKABLE QPoint floatIconPos() const;
+    bool hasFloatIconPos() const;
     Q_INVOKABLE void setFloatIconPos(const QPoint &pos);
 
     bool autoHideOnFocusLoss() const;

@@ -152,6 +152,11 @@ void Settings::setShowFloatIcon(bool enabled)
     emit showFloatIconChanged();
 }
 
+bool Settings::hasFloatIconPos() const
+{
+    return m_settings.contains("floatIconX") && m_settings.contains("floatIconY");
+}
+
 QPoint Settings::floatIconPos() const
 {
     int x = m_settings.value("floatIconX", -1).toInt();

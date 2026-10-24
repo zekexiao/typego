@@ -35,6 +35,7 @@
 #include "ThemeManager.h"
 #include "Updater.h"
 #include "utils/Restart.h"
+#include "utils/ScreenPosition.h"
 #include "plugins/BuiltinPlugins.h"
 #include "plugins/ExternalPluginRegistry.h"
 #include "plugins/PluginManager.h"
@@ -172,14 +173,27 @@ int main(int argc, char *argv[])
     QTimer::singleShot(5000, &updater, &Updater::checkForUpdate);
 
     FloatIcon floatIcon(&settings, &themeManager, &window);
-    QPoint floatPos = settings.floatIconPos();
-    QScreen *screen = QGuiApplication::primaryScreen();
-    if (screen && (floatPos.x() < 0 || floatPos.y() < 0)) {
-        const QRect geo = screen->availableGeometry();
-        floatIcon.move(geo.right() - 60, geo.bottom() - 60);
-    } else {
-        floatIcon.move(floatPos);
-    }
+    auto restoreFloatPosition = [&]() {
+        QList<QRect> screens;
+        if (QScreen *primary = QGuiApplication::primaryScreen()) screens.append(primary->availableGeometry());
+        for (QScreen *screen : QGuiApplication::screens())
+            if (screen != QGuiApplication::primaryScreen()) screens.append(screen->availableGeometry());
+        const QPoint position = ScreenPosition::restore(settings.floatIconPos(), settings.hasFloatIconPos(), floatIcon.size(), screens);
+        floatIcon.move(position);
+        if (!screens.isEmpty()) settings.setFloatIconPos(position);
+    };
+    auto watchScreen = [&](QScreen *screen) {
+        QObject::connect(screen, &QScreen::availableGeometryChanged, &floatIcon, restoreFloatPosition);
+    };
+    for (QScreen *screen : QGuiApplication::screens()) watchScreen(screen);
+    QObject::connect(&app, &QGuiApplication::screenAdded, &floatIcon, [&](QScreen *screen) {
+        watchScreen(screen);
+        restoreFloatPosition();
+    });
+    QObject::connect(&app, &QGuiApplication::screenRemoved, &floatIcon, [&]() {
+        QTimer::singleShot(0, &floatIcon, restoreFloatPosition);
+    });
+    restoreFloatPosition();
 
     auto updateFloatVisible = [&]() {
         settings.showFloatIcon() ? floatIcon.show() : floatIcon.hide();
