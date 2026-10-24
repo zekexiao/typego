@@ -9,6 +9,7 @@
 
 #include "utils/AppMatcher.h"
 #include "utils/AppUsageStore.h"
+#include "utils/PinStorage.h"
 
 class Settings;
 
@@ -18,12 +19,6 @@ struct AppItem {
     QString desc;
     QString iconPath;
     AppMatcher::Entry match;   // 扫描期构造好的匹配键，搜索时只读
-};
-
-struct PinItem {
-    QString name;
-    QString path;
-    QString iconPath;
 };
 
 // 负责发现、搜索、启动和固定应用程序。
@@ -38,7 +33,7 @@ public:
     bool isScanning() const { return !m_scanReady || m_scanning; }
 
     QVariantList pinnedApps() const;
-    bool hasPinnedApps() const { return !m_pins.isEmpty(); }
+    bool hasPinnedApps() const { return !m_pins.items().isEmpty(); }
     Q_INVOKABLE bool pinApp(const QString &path, const QString &name, const QString &iconPath);
     Q_INVOKABLE bool unpinApp(const QString &path);
     Q_INVOKABLE bool isPinned(const QString &path) const;
@@ -49,6 +44,7 @@ public:
 signals:
     void pinsChanged();
     void appsChanged();
+    void pinStorageError(const QString &message);
 
 private:
     void rebuildApps();
@@ -58,8 +54,6 @@ private:
     static bool shouldHideEntry(const QString &name, const QString &path);
     void addBuiltinApps();
     QString extractIcon(const QString &filePath);
-    bool loadPins();
-    void savePins() const;
     QString pinFilePath() const;
     // 频次文件与 pins.json 同目录（AppDataLocation）。
     static QString usageFilePath();
@@ -70,7 +64,7 @@ private:
     bool m_scanPending = false;
     bool m_scanReady = false;
     QString m_iconCacheDir;
-    QList<PinItem> m_pins;
+    PinStorage m_pins;
     Settings *m_settings = nullptr;
     // 使用频次记录：只在 launch() 成功后写入内存，2 秒防抖落盘，析构时兜底保存。
     AppUsageStore m_usage;

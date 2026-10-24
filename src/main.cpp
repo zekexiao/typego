@@ -155,6 +155,9 @@ int main(int argc, char *argv[])
     externalPlugins.discover();
 
     MainWindow window(&launcher, &pluginManager, &settings, &updater, &themeManager);
+    QObject::connect(&launcher, &AppLauncher::pinStorageError, &window, [&window](const QString &message) {
+        QMessageBox::warning(&window, QCoreApplication::translate("Main", "Pinned apps not saved"), message);
+    });
     window.setWindowIcon(appIcon);
     if (!externalPlugins.diagnostics().isEmpty()) {
         QStringList errors;

@@ -9,10 +9,6 @@
 #include <QDebug>
 #include <QFileIconProvider>
 #include <QPainter>
-#include <QJsonDocument>
-#include <QJsonArray>
-#include <QJsonObject>
-#include <QSaveFile>
 #include <QStandardPaths>
 #include <utility>
 #include <QTimer>
@@ -27,6 +23,7 @@
 
 AppLauncher::AppLauncher(Settings *settings, QObject *parent)
     : QObject(parent)
+    , m_pins(pinFilePath())
     , m_settings(settings)
     , m_usage(usageFilePath())
 {
@@ -54,9 +51,15 @@ AppLauncher::AppLauncher(Settings *settings, QObject *parent)
         connect(m_settings, &Settings::customScanDirsRecursiveChanged, this, &AppLauncher::rebuildApps);
     }
     // 仅首次运行时创建默认固定项，已保存的空列表必须保持为空。
-    if (!loadPins()) {
+    if (m_pins.load() && m_pins.missing()) {
         pinApp(QStringLiteral("calc"), tr("Calculator"), QString());
         pinApp(QStringLiteral("taskmgr"), tr("Task Manager"), QString());
+    }
+    if (!m_pins.error().isEmpty()) {
+        // 窗口在启动器之后创建，延后提示才能接上界面的错误反馈。
+        QTimer::singleShot(0, this, [this]() {
+            emit pinStorageError(tr("Pinned apps could not be loaded or saved. The original file has been kept. Check pins.json and folder permissions; restart TypeGo after repairing the file.\n%1").arg(m_pins.error()));
+        });
     }
 }
 
@@ -368,51 +371,10 @@ QString AppLauncher::pinFilePath() const
     return dir + "/pins.json";
 }
 
-bool AppLauncher::loadPins()
-{
-    QString path = pinFilePath();
-    QFile file(path);
-    if (!file.open(QIODevice::ReadOnly)) return false;
-    QByteArray data = file.readAll();
-    file.close();
-
-    QJsonDocument doc = QJsonDocument::fromJson(data);
-    if (!doc.isArray()) return false;
-    QJsonArray arr = doc.array();
-    for (const QJsonValue &v : arr) {
-        QJsonObject o = v.toObject();
-        PinItem p;
-        p.name = o.value("name").toString();
-        p.path = o.value("path").toString();
-        p.iconPath = o.value("iconPath").toString();
-        m_pins.append(p);
-    }
-    return true;
-}
-
-void AppLauncher::savePins() const
-{
-    QJsonArray arr;
-    for (const auto &p : m_pins) {
-        QJsonObject o;
-        o.insert("name", p.name);
-        o.insert("path", p.path);
-        o.insert("iconPath", p.iconPath);
-        arr.append(o);
-    }
-    QJsonDocument doc(arr);
-    QSaveFile file(pinFilePath());
-    if (file.open(QIODevice::WriteOnly)) {
-        if (file.write(doc.toJson(QJsonDocument::Compact)) >= 0) {
-            file.commit();
-        }
-    }
-}
-
 QVariantList AppLauncher::pinnedApps() const
 {
     QVariantList results;
-    for (const auto &p : m_pins) {
+    for (const auto &p : m_pins.items()) {
         QVariantMap m;
         m["name"] = p.name;
         m["path"] = p.path;
@@ -425,25 +387,33 @@ QVariantList AppLauncher::pinnedApps() const
 bool AppLauncher::pinApp(const QString &path, const QString &name, const QString &iconPath)
 {
     if (path.isEmpty()) return false;
-    for (const auto &p : m_pins) {
+    for (const auto &p : m_pins.items()) {
         if (p.path == path) return false;
     }
     PinItem p;
     p.name = name;
     p.path = path;
     p.iconPath = iconPath.isEmpty() ? extractIcon(path) : iconPath;
-    m_pins.append(p);
-    savePins();
+    QList<PinItem> items = m_pins.items();
+    items.append(p);
+    if (!m_pins.save(items)) {
+        emit pinStorageError(tr("Cannot save pinned apps. Your previous pins have been kept. Check the data file and folder permissions, then try again.\n%1").arg(m_pins.error()));
+        return false;
+    }
     emit pinsChanged();
     return true;
 }
 
 bool AppLauncher::unpinApp(const QString &path)
 {
-    for (int i = 0; i < m_pins.size(); ++i) {
-        if (m_pins[i].path == path) {
-            m_pins.removeAt(i);
-            savePins();
+    for (int i = 0; i < m_pins.items().size(); ++i) {
+        if (m_pins.items().at(i).path == path) {
+            QList<PinItem> items = m_pins.items();
+            items.removeAt(i);
+            if (!m_pins.save(items)) {
+                emit pinStorageError(tr("Cannot save pinned apps. Your previous pins have been kept. Check the data file and folder permissions, then try again.\n%1").arg(m_pins.error()));
+                return false;
+            }
             emit pinsChanged();
             return true;
         }
@@ -453,7 +423,7 @@ bool AppLauncher::unpinApp(const QString &path)
 
 bool AppLauncher::isPinned(const QString &path) const
 {
-    for (const auto &p : m_pins) {
+    for (const auto &p : m_pins.items()) {
         if (p.path == path) return true;
     }
     return false;
