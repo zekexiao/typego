@@ -54,13 +54,9 @@ void TaskService::deleteTask(const QString &id)
 {
     if (!m_repo->exists(id)) return;
     m_deletedTasks.clear();
-    QHash<QString, QList<Task>> children;
-    for (const Task &task : m_repo->tasks()) children[task.parentId].append(task);
-    m_deletedTasks.append(m_repo->find(id));
-    for (qsizetype i = 0; i < m_deletedTasks.size(); ++i) {
-        const QString parentId = m_deletedTasks.at(i).id;
-        m_deletedTasks.append(children.value(parentId));
-    }
+    const QStringList ids = m_repo->subtreeIds(id);
+    m_deletedTasks.reserve(ids.size());
+    for (const QString &taskId : ids) m_deletedTasks.append(m_repo->find(taskId));
     m_repo->removeRecursive(id);
     persist();
 }
@@ -103,18 +99,13 @@ void TaskService::setCompleted(const QString &id, bool completed)
 
 void TaskService::setCompletedRecursive(const QString &id, bool completed)
 {
-    Task t = m_repo->find(id);
-    if (t.id.isEmpty()) return;
-
-    // 设置自身状态
-    t.completed = completed;
-    t.updatedTime = QDateTime::currentDateTime();
-    m_repo->update(t);
-
-    // 递归设置子任务状态
-    auto children = m_repo->childrenOf(id);
-    for (const auto &child : children) {
-        setCompletedRecursive(child.id, completed);
+    const QStringList ids = m_repo->subtreeIds(id);
+    const QDateTime now = QDateTime::currentDateTime();
+    for (const QString &taskId : ids) {
+        Task task = m_repo->find(taskId);
+        task.completed = completed;
+        task.updatedTime = now;
+        m_repo->update(task);
     }
 }
 

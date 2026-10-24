@@ -1,6 +1,7 @@
 #include "TaskRepository.h"
 #include <QUuid>
 #include <QJsonArray>
+#include <QSet>
 
 TaskRepository::TaskRepository(QObject *parent)
     : QObject(parent)
@@ -96,8 +97,7 @@ void TaskRepository::remove(const QString &id)
 void TaskRepository::removeRecursive(const QString &id)
 {
     if (!m_tasks.contains(id)) return;
-    QStringList desc;
-    collectDescendants(id, desc);
+    const QStringList desc = subtreeIds(id);
     // 信号契约与 remove() 一致：每个实际被移除的节点都广播一次。
     // 倒序遍历使广播顺序是由叶到根，界面将来改成增量删除时可以先删最深的节点，
     // 不会因为父节点先消失而找不到子节点的行。
@@ -106,8 +106,6 @@ void TaskRepository::removeRecursive(const QString &id)
         m_tasks.remove(descendantId);
         emit taskRemoved(descendantId);
     }
-    m_tasks.remove(id);
-    emit taskRemoved(id);
 }
 
 bool TaskRepository::moveTo(const QString &id, const QString &newParentId)
@@ -154,12 +152,22 @@ QJsonArray TaskRepository::save() const
     return arr;
 }
 
-void TaskRepository::collectDescendants(const QString &id, QStringList &out) const
+QStringList TaskRepository::subtreeIds(const QString &id) const
 {
-    for (const auto &t : m_tasks) {
-        if (t.parentId == id) {
-            out.append(t.id);
-            collectDescendants(t.id, out);
+    if (!m_tasks.contains(id)) return {};
+    QHash<QString, QStringList> children;
+    children.reserve(m_tasks.size());
+    for (const Task &task : m_tasks) children[task.parentId].append(task.id);
+    QStringList out{id};
+    QSet<QString> visited{id};
+    for (qsizetype i = 0; i < out.size(); ++i) {
+        const auto found = children.constFind(out.at(i));
+        if (found == children.cend()) continue;
+        for (const QString &child : found.value()) {
+            if (visited.contains(child)) continue;
+            visited.insert(child);
+            out.append(child);
         }
     }
+    return out;
 }

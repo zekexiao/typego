@@ -18,6 +18,8 @@ public:
 
     /// 获取某个父任务的子任务
     QList<Task> childrenOf(const QString &parentId) const;
+    // 一次构建邻接表，按父节点先于子节点的顺序返回整棵子树。
+    QStringList subtreeIds(const QString &id) const;
 
     /// 根据 id 查找任务
     Task find(const QString &id) const;
@@ -65,7 +67,5 @@ signals:
     void taskMoved(const QString &id);
 
 private:
-    void collectDescendants(const QString &id, QStringList &out) const;
-
     QHash<QString, Task> m_tasks;
 };

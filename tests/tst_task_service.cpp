@@ -27,6 +27,7 @@ private slots:
     void updateTitleSkipsNoOpWrites();
     void unknownIdsDoNotCrash();
     void unreadableStorageBlocksWrites();
+    void largeSubtreeCompletionAndDeletion();
 
 private:
     QString path() const { return m_dir.filePath(QStringLiteral("todo.json")); }
@@ -265,6 +266,39 @@ void TstTaskService::unreadableStorageBlocksWrites()
     QFile check(path());
     QVERIFY(check.open(QIODevice::ReadOnly));
     QCOMPARE(check.readAll(), broken);              // 磁盘内容一字未改
+}
+
+void TstTaskService::largeSubtreeCompletionAndDeletion()
+{
+    QJsonArray tasks;
+    Task root;
+    root.id = QStringLiteral("root");
+    root.title = root.id;
+    tasks.append(root.toJson());
+    for (int i = 0; i < 5000; ++i) {
+        Task child;
+        child.id = QString::number(i);
+        child.title = child.id;
+        child.parentId = root.id;
+        tasks.append(child.toJson());
+    }
+    Task other;
+    other.id = QStringLiteral("other");
+    other.title = other.id;
+    tasks.append(other.toJson());
+    repo()->load(tasks);
+    QSignalSpy updates(repo(), &TaskRepository::taskUpdated);
+    m_service->setCompleted(root.id, true);
+    QCOMPARE(updates.count(), 5001);
+    for (int i = 0; i < 5000; ++i) QVERIFY(repo()->find(QString::number(i)).completed);
+    QVERIFY(!repo()->find(other.id).completed);
+    m_service->deleteTask(root.id);
+    QCOMPARE(taskCount(), 1);
+    QVERIFY(repo()->exists(other.id));
+    QVERIFY(m_service->undoDelete());
+    QCOMPARE(taskCount(), 5002);
+    TaskService reopened(path());
+    QVERIFY(reopened.repository()->find(QStringLiteral("4999")).completed);
 }
 
 QTEST_GUILESS_MAIN(TstTaskService)
