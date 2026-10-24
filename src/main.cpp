@@ -34,6 +34,7 @@
 #include "Settings.h"
 #include "ThemeManager.h"
 #include "Updater.h"
+#include "utils/Restart.h"
 #include "plugins/BuiltinPlugins.h"
 #include "plugins/ExternalPluginRegistry.h"
 #include "plugins/PluginManager.h"
@@ -60,6 +61,23 @@ static void applyConfiguredFont(QApplication &app, const Settings &settings, con
 
 int main(int argc, char *argv[])
 {
+    for (int i = 1; i < argc; ++i) {
+        if (qstrcmp(argv[i], "--restart-parent") != 0) continue;
+        bool valid = false;
+        const qint64 pid = i + 1 < argc ? QString::fromLocal8Bit(argv[i + 1]).toLongLong(&valid) : 0;
+        if (!valid || !Restart::waitForParent(pid)) {
+#ifdef Q_OS_WIN
+            // 此时翻译器尚未初始化，按 Windows 界面语言提供启动阶段错误提示。
+            const bool chinese = PRIMARYLANGID(GetUserDefaultUILanguage()) == LANG_CHINESE;
+            MessageBoxW(nullptr, chinese
+                ? L"无法完成重启：旧进程未退出或无法等待。请关闭旧实例后重新打开 TypeGo。"
+                : L"Cannot restart: the previous process has not exited or could not be waited for. Close it and reopen TypeGo.",
+                L"TypeGo", MB_OK | MB_ICONWARNING);
+#endif
+            return 1;
+        }
+        break;
+    }
     Logger::instance().init();
     qInstallMessageHandler(Logger::qtMessageHandler);
 
@@ -236,7 +254,13 @@ int main(int argc, char *argv[])
                     QCoreApplication::translate("Main", "Save your changes and try again."));
                 return;
             }
-            if (restart) QProcess::startDetached(QCoreApplication::applicationFilePath(), QStringList());
+            if (restart && !QProcess::startDetached(QCoreApplication::applicationFilePath(),
+                    {QStringLiteral("--restart-parent"), QString::number(QCoreApplication::applicationPid())})) {
+                window.showAndActivate();
+                QMessageBox::warning(&window, QCoreApplication::translate("Main", "Cannot restart"),
+                    QCoreApplication::translate("Main", "The new process could not be started. TypeGo is still running; please try again."));
+                return;
+            }
             app.quit();
         });
     };
