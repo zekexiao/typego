@@ -3,6 +3,7 @@
 #include "IPlugin.h"
 
 #include <QFutureWatcher>
+#include "../utils/DirectoryListing.h"
 
 /**
  * @brief 目录浏览和跳转插件
@@ -16,6 +17,7 @@ class DirectoryPlugin : public IPlugin {
     Q_OBJECT
 public:
     explicit DirectoryPlugin(QObject *parent = nullptr);
+    ~DirectoryPlugin() override;
 
     QString command() const override { return QStringLiteral("cd"); }
     QString description() const override { return tr("Directory browser and navigation"); }
@@ -24,12 +26,12 @@ public:
     void cancelQuery() override;
 
 private:
-    static QString resolvePath(const QString &args);
-    static QVariantList listDirectory(const QString &args, int limit);
+    static QVariantList listDirectory(const QString &args, int limit, const DirectoryListing::Cancellation &cancel);
     void startListing();
 
     QFutureWatcher<QVariantList> m_watcher;
     PluginQueryRequest m_requestedQuery;
     PluginQueryRequest m_runningQuery;
     bool m_listing = false;
+    DirectoryListing::Cancellation m_cancel;
 };

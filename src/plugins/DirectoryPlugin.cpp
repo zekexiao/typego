@@ -21,13 +21,20 @@ DirectoryPlugin::DirectoryPlugin(QObject *parent)
     });
 }
 
+DirectoryPlugin::~DirectoryPlugin()
+{
+    cancelQuery();
+}
+
 void DirectoryPlugin::cancelQuery()
 {
+    if (m_cancel) m_cancel->store(true, std::memory_order_relaxed);
     m_requestedQuery = {};
 }
 
 PluginQueryResult DirectoryPlugin::query(const PluginQueryRequest &request)
 {
+    if (m_cancel) m_cancel->store(true, std::memory_order_relaxed);
     m_requestedQuery = request;
     if (!m_listing) startListing();
     QVariantMap item;
@@ -41,46 +48,19 @@ void DirectoryPlugin::startListing()
 {
     m_listing = true;
     m_runningQuery = m_requestedQuery;
+    m_cancel = std::make_shared<std::atomic_bool>(false);
     m_watcher.setFuture(QtConcurrent::run(&DirectoryPlugin::listDirectory,
-        m_runningQuery.invocation.arguments, m_runningQuery.limit));
+        m_runningQuery.invocation.arguments, m_runningQuery.limit, m_cancel));
 }
 
-QString DirectoryPlugin::resolvePath(const QString &args)
-{
-    if (args.trimmed().isEmpty()) {
-        return QDir::homePath();
-    }
-    QString path = args.trimmed();
-    // 展开用户主目录。
-    if (path.startsWith("~")) {
-        path = QDir::homePath() + path.mid(1);
-    }
-    QDir dir(path);
-    if (dir.exists()) {
-        return dir.absolutePath();
-    }
-    // 相对路径以用户主目录为基准。
-    QDir homeDir(QDir::homePath());
-    if (homeDir.exists(path)) {
-        return homeDir.absoluteFilePath(path);
-    }
-    return QString();
-}
-
-QVariantList DirectoryPlugin::listDirectory(const QString &args, int limit)
+QVariantList DirectoryPlugin::listDirectory(const QString &args, int limit, const DirectoryListing::Cancellation &cancel)
 {
     QVariantList results;
-    QString path = resolvePath(args);
-
-    if (path.isEmpty()) {
-        // 路径不存在时回退到用户主目录。
-        path = QDir::homePath();
-    }
-
-    QDir dir(path);
-    if (!dir.exists()) {
+    const auto listing = DirectoryListing::list(args, QDir::homePath(), qMax(0, limit - 1), cancel);
+    if (listing.cancelled) return results;
+    if (!listing.valid) {
         QVariantMap item;
-        item["title"] = tr("Directory does not exist");
+        item["title"] = tr("Directory does not exist or cannot be read");
         item["subtitle"] = args;
         item["icon"] = "";
         QVariantMap action;
@@ -92,9 +72,12 @@ QVariantList DirectoryPlugin::listDirectory(const QString &args, int limit)
     }
 
     // 添加打开当前目录的操作。
+    QDir dir(listing.path);
     QVariantMap enterItem;
     enterItem["title"] = tr("Open %1").arg(dir.dirName());
-    enterItem["subtitle"] = dir.absolutePath();
+    enterItem["subtitle"] = listing.truncated
+        ? tr("%1 - Showing the first %2 entries").arg(dir.absolutePath()).arg(listing.entries.size())
+        : dir.absolutePath();
     enterItem["icon"] = "";
     QVariantMap enterAction;
     enterAction["type"] = QStringLiteral("openFolder");
@@ -103,13 +86,10 @@ QVariantList DirectoryPlugin::listDirectory(const QString &args, int limit)
     enterItem["action"] = enterAction;
     results.append(enterItem);
 
-    // 列出子目录和文件；超出 limit 提前结束，避免巨型目录的无效遍历。
+    // 后台仅保留排序后的有限结果，主线程不再访问目录。
     // 图标由结果列表异步加载，避免阻塞输入。
-    const QFileInfoList entries = dir.entryInfoList(QDir::Dirs | QDir::Files | QDir::NoDotAndDotDot,
-                                                    QDir::DirsFirst | QDir::Name);
-    results.reserve(qMin(entries.size() + 1, limit));
-    for (const QFileInfo &fi : entries) {
-        if (results.size() >= limit) break;
+    results.reserve(listing.entries.size() + 1);
+    for (const QFileInfo &fi : listing.entries) {
         QVariantMap item;
         item["title"] = fi.fileName();
         item["subtitle"] = fi.isDir() ? tr("Folder") : fi.suffix().toUpper();
