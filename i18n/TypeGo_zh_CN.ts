@@ -4,89 +4,104 @@
 <context>
     <name>AppLauncher</name>
     <message>
-        <location filename="../src/AppLauncher.cpp" line="76"/>
+        <location filename="../src/AppLauncher.cpp" line="79"/>
         <source>Notepad</source>
         <translation>记事本</translation>
     </message>
     <message>
-        <location filename="../src/AppLauncher.cpp" line="76"/>
+        <location filename="../src/AppLauncher.cpp" line="79"/>
         <source>Windows Notepad</source>
         <translation>Windows 记事本</translation>
     </message>
     <message>
-        <location filename="../src/AppLauncher.cpp" line="58"/>
-        <location filename="../src/AppLauncher.cpp" line="77"/>
+        <location filename="../src/AppLauncher.cpp" line="55"/>
+        <location filename="../src/AppLauncher.cpp" line="80"/>
         <source>Calculator</source>
         <translation>计算器</translation>
     </message>
     <message>
-        <location filename="../src/AppLauncher.cpp" line="77"/>
+        <location filename="../src/AppLauncher.cpp" line="61"/>
+        <source>Pinned apps could not be loaded or saved. The original file has been kept. Check pins.json and folder permissions; restart TypeGo after repairing the file.
+%1</source>
+        <translation>无法读取或保存固定应用，原文件已保留。请检查 pins.json 和目录权限，修复文件后重启 TypeGo。
+%1</translation>
+    </message>
+    <message>
+        <location filename="../src/AppLauncher.cpp" line="80"/>
         <source>Windows Calculator</source>
         <translation>Windows 计算器</translation>
     </message>
     <message>
-        <location filename="../src/AppLauncher.cpp" line="78"/>
+        <location filename="../src/AppLauncher.cpp" line="81"/>
         <source>Paint</source>
         <translation>画图</translation>
     </message>
     <message>
-        <location filename="../src/AppLauncher.cpp" line="78"/>
+        <location filename="../src/AppLauncher.cpp" line="81"/>
         <source>Windows Paint</source>
         <translation>Windows 画图</translation>
     </message>
     <message>
-        <location filename="../src/AppLauncher.cpp" line="79"/>
+        <location filename="../src/AppLauncher.cpp" line="82"/>
         <source>Command Prompt</source>
         <translation>命令提示符</translation>
     </message>
     <message>
-        <location filename="../src/AppLauncher.cpp" line="79"/>
+        <location filename="../src/AppLauncher.cpp" line="82"/>
         <source>CMD Command Line</source>
         <translation>CMD 命令行</translation>
     </message>
     <message>
-        <location filename="../src/AppLauncher.cpp" line="80"/>
+        <location filename="../src/AppLauncher.cpp" line="83"/>
         <source>File Explorer</source>
         <translation>文件资源管理器</translation>
     </message>
     <message>
-        <location filename="../src/AppLauncher.cpp" line="219"/>
+        <location filename="../src/AppLauncher.cpp" line="222"/>
         <source>Custom Directory</source>
         <translation>自定义目录</translation>
     </message>
     <message>
-        <location filename="../src/AppLauncher.cpp" line="59"/>
-        <location filename="../src/AppLauncher.cpp" line="81"/>
+        <location filename="../src/AppLauncher.cpp" line="400"/>
+        <location filename="../src/AppLauncher.cpp" line="414"/>
+        <source>Cannot save pinned apps. Your previous pins have been kept. Check the data file and folder permissions, then try again.
+%1</source>
+        <translation>无法保存固定应用，原有列表已保留。请检查数据文件和目录权限后重试。
+%1</translation>
+    </message>
+    <message>
+        <location filename="../src/AppLauncher.cpp" line="56"/>
+        <location filename="../src/AppLauncher.cpp" line="84"/>
         <source>Task Manager</source>
         <translation>任务管理器</translation>
     </message>
     <message>
-        <location filename="../src/AppLauncher.cpp" line="81"/>
+        <location filename="../src/AppLauncher.cpp" line="84"/>
         <source>Windows Task Manager</source>
         <translation>Windows 任务管理器</translation>
     </message>
     <message>
-        <location filename="../src/AppLauncher.cpp" line="82"/>
+        <location filename="../src/AppLauncher.cpp" line="85"/>
         <source>Settings</source>
         <translation>设置</translation>
     </message>
     <message>
-        <location filename="../src/AppLauncher.cpp" line="82"/>
+        <location filename="../src/AppLauncher.cpp" line="85"/>
         <source>Windows Settings</source>
         <translation>Windows 设置</translation>
     </message>
     <message>
-        <location filename="../src/AppLauncher.cpp" line="83"/>
+        <location filename="../src/AppLauncher.cpp" line="86"/>
         <source>Browser</source>
         <translation>浏览器</translation>
     </message>
     <message>
-        <location filename="../src/AppLauncher.cpp" line="83"/>
+        <location filename="../src/AppLauncher.cpp" line="86"/>
         <source>Open Bing Search</source>
         <translation>打开必应搜索</translation>
     </message>
     <message>
-        <location filename="../src/AppLauncher.cpp" line="215"/>
+        <location filename="../src/AppLauncher.cpp" line="218"/>
         <source>Start Menu</source>
         <translation>开始菜单</translation>
     </message>
@@ -164,28 +179,33 @@
 <context>
     <name>DirectoryPlugin</name>
     <message>
-        <location filename="../src/plugins/DirectoryPlugin.cpp" line="34"/>
+        <location filename="../src/plugins/DirectoryPlugin.cpp" line="41"/>
         <source>Listing directory...</source>
         <translation>正在列出目录…</translation>
     </message>
     <message>
-        <location filename="../src/plugins/DirectoryPlugin.cpp" line="83"/>
-        <source>Directory does not exist</source>
-        <translation>目录不存在</translation>
+        <location filename="../src/plugins/DirectoryPlugin.cpp" line="63"/>
+        <source>Directory does not exist or cannot be read</source>
+        <translation>目录不存在或无法读取</translation>
     </message>
     <message>
-        <location filename="../src/plugins/DirectoryPlugin.cpp" line="96"/>
+        <location filename="../src/plugins/DirectoryPlugin.cpp" line="77"/>
         <source>Open %1</source>
         <translation>打开 %1</translation>
     </message>
     <message>
-        <location filename="../src/plugins/DirectoryPlugin.cpp" line="115"/>
+        <location filename="../src/plugins/DirectoryPlugin.cpp" line="79"/>
+        <source>%1 - Showing the first %2 entries</source>
+        <translation>%1 - 仅显示前 %2 项</translation>
+    </message>
+    <message>
+        <location filename="../src/plugins/DirectoryPlugin.cpp" line="95"/>
         <source>Folder</source>
         <translation>文件夹</translation>
     </message>
     <message>
         <location filename="../src/plugins/BuiltinPlugins.cpp" line="37"/>
-        <location filename="../src/plugins/DirectoryPlugin.h" line="21"/>
+        <location filename="../src/plugins/DirectoryPlugin.h" line="23"/>
         <source>Directory browser and navigation</source>
         <translation>目录浏览与导航</translation>
     </message>
@@ -331,66 +351,81 @@
 <context>
     <name>Main</name>
     <message>
-        <location filename="../src/main.cpp" line="146"/>
+        <location filename="../src/main.cpp" line="159"/>
+        <source>Pinned apps not saved</source>
+        <translation>固定应用未保存</translation>
+    </message>
+    <message>
+        <location filename="../src/main.cpp" line="168"/>
         <source>Plugin unavailable</source>
         <translation>插件不可用</translation>
     </message>
     <message>
-        <location filename="../src/main.cpp" line="147"/>
+        <location filename="../src/main.cpp" line="169"/>
         <source>Some plugins could not be registered. Check the package and SDK compatibility, then restart TypeGo.</source>
         <translation>部分插件无法注册。请检查插件包及 SDK 兼容性，然后重启 TypeGo。</translation>
     </message>
     <message>
-        <location filename="../src/main.cpp" line="200"/>
+        <location filename="../src/main.cpp" line="235"/>
         <source>Shortcut unavailable</source>
         <translation>快捷键不可用</translation>
     </message>
     <message>
-        <location filename="../src/main.cpp" line="201"/>
+        <location filename="../src/main.cpp" line="236"/>
         <source>
 Open Settings from the tray icon to choose another shortcut.</source>
         <translation>
 请从托盘图标打开设置，选择其他快捷键。</translation>
     </message>
     <message>
-        <location filename="../src/main.cpp" line="213"/>
+        <location filename="../src/main.cpp" line="248"/>
         <source>Show</source>
         <translation>显示</translation>
     </message>
     <message>
-        <location filename="../src/main.cpp" line="214"/>
+        <location filename="../src/main.cpp" line="249"/>
         <source>Settings</source>
         <translation>设置</translation>
     </message>
     <message>
-        <location filename="../src/main.cpp" line="215"/>
+        <location filename="../src/main.cpp" line="250"/>
         <source>Pin File...</source>
         <translation>固定文件…</translation>
     </message>
     <message>
-        <location filename="../src/main.cpp" line="216"/>
+        <location filename="../src/main.cpp" line="251"/>
         <source>Restart</source>
         <translation>重启</translation>
     </message>
     <message>
-        <location filename="../src/main.cpp" line="217"/>
+        <location filename="../src/main.cpp" line="252"/>
         <source>Quit</source>
         <translation>退出</translation>
     </message>
     <message>
-        <location filename="../src/main.cpp" line="226"/>
+        <location filename="../src/main.cpp" line="261"/>
         <source>Pin File</source>
         <translation>固定文件</translation>
     </message>
     <message>
-        <location filename="../src/main.cpp" line="235"/>
+        <location filename="../src/main.cpp" line="270"/>
         <source>Cannot exit</source>
         <translation>无法退出</translation>
     </message>
     <message>
-        <location filename="../src/main.cpp" line="236"/>
+        <location filename="../src/main.cpp" line="271"/>
         <source>Save your changes and try again.</source>
         <translation>请先保存修改，再重试。</translation>
+    </message>
+    <message>
+        <location filename="../src/main.cpp" line="277"/>
+        <source>Cannot restart</source>
+        <translation>无法重启</translation>
+    </message>
+    <message>
+        <location filename="../src/main.cpp" line="278"/>
+        <source>The new process could not be started. TypeGo is still running; please try again.</source>
+        <translation>无法启动新进程。TypeGo 仍在运行，请重试。</translation>
     </message>
 </context>
 <context>
@@ -1006,12 +1041,12 @@ Update now?</source>
 <context>
     <name>TaskService</name>
     <message>
-        <location filename="../src/todo/TaskService.cpp" line="170"/>
+        <location filename="../src/todo/TaskService.cpp" line="161"/>
         <source>Existing task data could not be loaded. The original file has been kept; changes have not been saved.</source>
         <translation>无法读取已有的待办数据，原始文件已保留，当前更改尚未保存。</translation>
     </message>
     <message>
-        <location filename="../src/todo/TaskService.cpp" line="174"/>
+        <location filename="../src/todo/TaskService.cpp" line="165"/>
         <source>Cannot save tasks. Check available disk space and folder permissions, then save again before closing TypeGo.</source>
         <translation>无法保存待办。请检查磁盘空间和文件夹权限，并在退出 TypeGo 前重新保存。</translation>
     </message>
