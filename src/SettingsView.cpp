@@ -21,6 +21,7 @@
 #include <QIcon>
 #include <QKeyEvent>
 #include <QLabel>
+#include <QLineEdit>
 #include <QMessageBox>
 #include <QListWidget>
 #include <QPainter>
@@ -46,6 +47,7 @@ HotkeyEdit::HotkeyEdit(QWidget *parent)
     : QKeySequenceEdit(parent)
 {
     setMaximumSequenceLength(1);
+    if (auto *lineEdit = findChild<QLineEdit *>()) lineEdit->setPlaceholderText(tr("Press Shortcut"));
     setClearButtonEnabled(true);
     ensureAltSpaceNativeFilterInstalled();
 }
