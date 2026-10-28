@@ -1,5 +1,17 @@
 # TypeGo 更新日志
 
+## 1.8 - 2026-10-28
+
+### 中文
+
+- 修复快捷键设置输入框仍显示英文提示的问题，改为显示“按下快捷键”
+- 改进更新安装交接：等待当前程序退出后再启动安装包；安装未完成时重新打开 TypeGo
+
+### English
+
+- Fixed the shortcut settings field showing an untranslated English prompt
+- Improved update handoff by waiting for TypeGo to exit before launching the installer and reopening TypeGo if installation does not complete
+
 ## 1.7 - 2026-10-28
 
 ### 中文

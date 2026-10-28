@@ -1,7 +1,7 @@
 ; TypeGo Windows 安装包
 
 #define MyAppName "TypeGo"
-#define MyAppVersion "1.7"
+#define MyAppVersion "1.8"
 #define MyAppPublisher "Linger Me, Inc."
 #define MyAppURL "https://typego.app"
 #define MyAppExeName "TypeGo.exe"
