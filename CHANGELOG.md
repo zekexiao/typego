@@ -1,5 +1,19 @@
 # TypeGo 更新日志
 
+## 1.7 - 2026-10-28
+
+### 中文
+
+- 移除内置 Todo 管理、本地存储及相关测试，专注应用、文件与命令快速启动
+- 移除遗留服务器代码与运行入口，精简构建依赖、界面资源和维护文档
+- 更新官网介绍与开发清单，聚焦快速启动体验
+
+### English
+
+- Removed built-in todo management, local storage, and related tests to focus on launching apps, files, and commands quickly
+- Removed legacy server code and its run command, simplifying build dependencies, UI resources, and project documentation
+- Updated website copy and development priorities around the launcher experience
+
 ## 1.6 - 2026-10-24
 
 ### 中文
