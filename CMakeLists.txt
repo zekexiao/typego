@@ -61,8 +61,7 @@ set(SPDLOG_BUILD_BENCH OFF CACHE BOOL "" FORCE)
 set(SPDLOG_INSTALL OFF CACHE BOOL "" FORCE)
 add_subdirectory(third_party/spdlog EXCLUDE_FROM_ALL)
 
-# 纯逻辑层：表达式计算、单位换算插件、动作分类、拼音、待办数据与业务规则、
-# 版本与更新检查解析、配置读写。Plugins/TodoView 等依赖窗口的部分不在此列。
+# 纯逻辑层：表达式计算、单位换算插件、动作分类、拼音、版本与更新检查解析、配置读写。
 # 独立成静态库让可执行程序和单元测试共用同一份实现，避免源码清单两处重复。
 add_library(typego_core STATIC
     src/Settings.cpp
@@ -76,10 +75,6 @@ add_library(typego_core STATIC
     src/plugins/ExternalPluginRegistry.cpp
     src/plugins/TerminalLauncher.cpp
     src/plugins/UnitConversion.cpp
-    src/todo/JsonTaskStorage.cpp
-    src/todo/Task.cpp
-    src/todo/TaskRepository.cpp
-    src/todo/TaskService.cpp
     src/utils/AppMatcher.cpp
     src/utils/AppUsageStore.cpp
     src/utils/DirectoryListing.cpp
@@ -117,8 +112,6 @@ qt_add_executable(TypeGo
     src/plugins/SettingsPlugin.cpp
     src/plugins/FilePlugin.cpp
     src/plugins/ShellPlugin.cpp
-    src/plugins/TodoPlugin.cpp
-    src/todo/TodoView.cpp
     src/Updater.cpp
     resources.qrc
     assets/app_icon.rc

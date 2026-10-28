@@ -7,7 +7,6 @@
 #include "PluginManager.h"
 #include "SettingsPlugin.h"
 #include "ShellPlugin.h"
-#include "TodoPlugin.h"
 #include <QCoreApplication>
 
 void registerBuiltinPlugins(PluginManager &manager, Settings &settings, GlobalHotkey &hotkeys,
@@ -46,6 +45,4 @@ void registerBuiltinPlugins(PluginManager &manager, Settings &settings, GlobalHo
     add(QStringLiteral("shell"), QCoreApplication::translate("ShellPlugin", "Run shell commands"),
         [](QObject *parent) { return new ShellPlugin(parent); }, {QStringLiteral("cmd")},
         IPlugin::LaunchMode::QueryView, true, false, true, true);
-    add(QStringLiteral("todo"), QCoreApplication::translate("TodoPlugin", "Task Management"),
-        [](QObject *parent) { return new TodoPlugin(parent); }, {}, IPlugin::LaunchMode::FullView, false, true);
 }

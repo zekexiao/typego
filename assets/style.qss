@@ -322,67 +322,6 @@ QTreeView::item {
     border-radius: 8px;
 }
 
-QTreeWidget#todoTree {
-    padding: 6px;
-    background-color: transparent;
-    border: none;
-}
-
-QTreeWidget#todoTree::item {
-    min-height: 24px;
-    padding: 6px 12px;
-    border-radius: 8px;
-}
-
-QTreeWidget#todoTree::item:disabled {
-    min-height: 24px;
-    padding: 12px 10px 4px 10px;
-    background-color: transparent;
-    color: @TEXT_SECONDARY@;
-}
-
-QTreeWidget#todoTree::item:selected,
-QTreeWidget#todoTree::item:selected:active,
-QTreeWidget#todoTree::item:selected:!active {
-    background-color: @HOVER@;
-    color: @TEXT@;
-}
-
-QWidget#todoListPanel {
-    background-color: transparent;
-}
-
-QWidget#todoDetailPanel {
-    background-color: @GLASS_SURFACE@;
-    border: 1px solid @BORDER@;
-    border-radius: 12px;
-}
-
-QLabel#todoEmptyDetailLabel {
-    background-color: transparent;
-    color: @TEXT_SECONDARY@;
-    font-size: 14px;
-    font-weight: 500;
-}
-
-QWidget#todoDetailEditor {
-    background-color: transparent;
-}
-
-QLineEdit#todoTitleEdit {
-    font-weight: 600;
-}
-
-QTextEdit#todoNoteEdit {
-    padding: 8px 10px;
-    background-color: @GLASS_INSET@;
-    color: @TEXT@;
-    border: 1px solid @BORDER@;
-    border-radius: 8px;
-    selection-background-color: @ACCENT@;
-    selection-color: white;
-}
-
 QPlainTextEdit#shellOutput {
     padding: 10px;
     background-color: @GLASS_INSET@;
@@ -393,14 +332,6 @@ QPlainTextEdit#shellOutput {
     font-size: 12px;
     selection-background-color: @ACCENT@;
     selection-color: white;
-}
-
-QLineEdit#todoSearch {
-    background-color: @GLASS_INSET@;
-}
-
-QPushButton#todoBackButton {
-    min-width: 56px;
 }
 
 QPushButton#pinnedAppButton {

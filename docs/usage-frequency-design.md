@@ -73,7 +73,7 @@
 
 ### 3.3 现有持久化
 
-`pins.json`、`todo.json` 都放在 `QStandardPaths::AppDataLocation`，都用 `QSaveFile` 原子写入。频次文件沿用同样的位置和写入方式。
+`pins.json` 放在 `QStandardPaths::AppDataLocation`，使用 `QSaveFile` 原子写入。频次文件沿用同样的位置和写入方式。
 
 ## 4. 方案总览
 
@@ -129,7 +129,7 @@ QHash<QString, Usage> m_entries;  // key = 小写化的应用路径
 
 ### 6.2 磁盘格式
 
-文件：`<AppDataLocation>/app_usage.json`，与 `pins.json`、`todo.json` 同目录。
+文件：`<AppDataLocation>/app_usage.json`，与 `pins.json` 同目录。
 
 ```json
 {
@@ -298,7 +298,7 @@ explicit AppUsageStore(QString filePath,
 
 - 数据仅包含本机路径、启动次数和最近使用时间，留在本地 AppData，无任何网络上报。
 - 设置页「设置 → 隐私」提供「清空」入口（已实现），确认后调用 `AppLauncher::clearUsageHistory()`，清空内存并落盘为空文件，当前结果列表立即失去频次加成。
-- 该文件不参与 `pins.json` / `todo.json` 的导入导出（当前也没有这类功能）。
+- 该文件不参与 `pins.json` 的导入导出（当前也没有这类功能）。
 
 ## 12. 实施拆分（批准后执行）
 

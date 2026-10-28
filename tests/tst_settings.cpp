@@ -157,14 +157,14 @@ void TstSettings::valuesSurviveNewInstance()
         Settings writer(path);
         writer.setTheme(QStringLiteral("dark"));
         writer.setCustomScanDirs({QStringLiteral("E:/Bin")});
-        writer.setPluginHotkey(QStringLiteral("todo"), QStringLiteral("Ctrl+T"));
+        writer.setPluginHotkey(QStringLiteral("demo"), QStringLiteral("Ctrl+T"));
         writer.setFloatIconPos(QPoint(120, 240));
     }
     Settings reader(path);
     const QStringList expectedDirs{QStringLiteral("E:/Bin")};
     QCOMPARE(reader.theme(), QStringLiteral("dark"));
     QCOMPARE(reader.customScanDirs(), expectedDirs);
-    QCOMPARE(reader.pluginHotkey(QStringLiteral("todo")), QStringLiteral("Ctrl+T"));
+    QCOMPARE(reader.pluginHotkey(QStringLiteral("demo")), QStringLiteral("Ctrl+T"));
     QCOMPARE(reader.floatIconPos(), QPoint(120, 240));
 }
 

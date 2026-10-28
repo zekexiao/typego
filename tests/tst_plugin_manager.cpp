@@ -154,11 +154,11 @@ void TstPluginManager::disabledPluginShortCircuitsQueryAndLaunchMode()
     PluginManager manager;
     Settings settings(m_dir.filePath(QStringLiteral("disabled.ini")));
     manager.setSettings(&settings);
-    auto *plugin = new RecordingPlugin(QStringLiteral("todo"), &manager);
+    auto *plugin = new RecordingPlugin(QStringLiteral("demo"), &manager);
     manager.registerPlugin(plugin);
 
-    settings.setPluginEnabled(QStringLiteral("todo"), false);
-    const QVariantList results = manager.queryCommand(QStringLiteral("todo"), QStringLiteral("买焊丝"));
+    settings.setPluginEnabled(QStringLiteral("demo"), false);
+    const QVariantList results = manager.queryCommand(QStringLiteral("demo"), QStringLiteral("买焊丝"));
     QCOMPARE(results.size(), 1);
     const QVariantMap item = results.first().toMap();
     QCOMPARE(item.value(QStringLiteral("title")).toString(), QStringLiteral("Plugin disabled"));
@@ -166,20 +166,20 @@ void TstPluginManager::disabledPluginShortCircuitsQueryAndLaunchMode()
              QStringLiteral("none"));
     // 禁用时不能把查询打到插件上，否则插件仍会去扫盘或起进程。
     QCOMPARE(plugin->queryCount, 0);
-    const IPlugin::LaunchMode disabledMode = manager.launchModeForCommand(QStringLiteral("todo"), QStringLiteral("x"));
+    const IPlugin::LaunchMode disabledMode = manager.launchModeForCommand(QStringLiteral("demo"), QStringLiteral("x"));
     QCOMPARE(int(disabledMode), int(IPlugin::LaunchMode::List));
 
-    settings.setPluginEnabled(QStringLiteral("todo"), true);
-    manager.queryCommand(QStringLiteral("todo"), QStringLiteral("买焊丝"), IPlugin::QueryContext::Enter);
+    settings.setPluginEnabled(QStringLiteral("demo"), true);
+    manager.queryCommand(QStringLiteral("demo"), QStringLiteral("买焊丝"), IPlugin::QueryContext::Enter);
     QCOMPARE(plugin->queryCount, 1);
     QCOMPARE(plugin->lastArgs, QStringLiteral("买焊丝"));
     QCOMPARE(int(plugin->lastContext), int(IPlugin::QueryContext::Enter));
-    const IPlugin::LaunchMode enabledMode = manager.launchModeForCommand(QStringLiteral("todo"), QStringLiteral("x"));
+    const IPlugin::LaunchMode enabledMode = manager.launchModeForCommand(QStringLiteral("demo"), QStringLiteral("x"));
     QCOMPARE(int(enabledMode), int(IPlugin::LaunchMode::QueryView));
 
     // 没注入 Settings 时插件按启用处理，查询照常透传。
     manager.setSettings(nullptr);
-    manager.queryCommand(QStringLiteral("todo"), QStringLiteral("y"));
+    manager.queryCommand(QStringLiteral("demo"), QStringLiteral("y"));
     QCOMPARE(plugin->queryCount, 2);
 }
 

@@ -10,8 +10,7 @@ corepack pnpm dev
 corepack pnpm build
 ```
 
-生产构建输出位于 `dist/`。部署前可设置 `PUBLIC_SITE_URL`，并将 `/download/*` 和
-`/api/*` 请求反向代理到 `server/` 中的 Go 后端。
+生产构建输出位于 `dist/`。部署前可设置 `PUBLIC_SITE_URL`。安装包下载链接指向 GitHub Releases。
 
 ## 版本与更新日志
 

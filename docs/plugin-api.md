@@ -162,7 +162,7 @@ createView(invocation, parent) 必须返回 GUI 线程中、以传入 parent 为
 
 prepareToLeave(reason, token) 的原因区分 Navigate、Hide、Disable 和 Shutdown。返回 Ready 表示内容和任务已能安全离开；Refused 保留现状，插件应通过自己的视图或日志说明保存失败原因；Pending 等待 Host::finishLeave(token, accepted)。同原因请求合并，其他原因等待当前离开结束后重试。
 
-保存失败不得报告 Ready；禁用或正常退出被拒绝时，宿主保留插件和编辑内容。示例 sdk-editor 使用 QSaveFile 保存后才允许关闭，sdk-job 展示后台操作期间等待离开。强制终止与系统结束不能依靠异步退出协议保证保存，需要业务草稿恢复。客户端更新安装的退出协调、既有待办业务服务全部落盘错误尚未统一接入，不能据此承诺所有内部模块的数据保护已完成。
+保存失败不得报告 Ready；禁用或正常退出被拒绝时，宿主保留插件和编辑内容。示例 sdk-editor 使用 QSaveFile 保存后才允许关闭，sdk-job 展示后台操作期间等待离开。强制终止与系统结束不能依靠异步退出协议保证保存，需要业务草稿恢复。客户端更新安装的退出协调尚未统一接入，不能据此承诺所有内部模块的数据保护已完成。
 
 ## 示例与验证
 

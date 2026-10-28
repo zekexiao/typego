@@ -110,7 +110,7 @@
     <name>AppPlugin</name>
     <message>
         <location filename="../src/plugins/AppPlugin.h" line="18"/>
-        <location filename="../src/plugins/BuiltinPlugins.cpp" line="30"/>
+        <location filename="../src/plugins/BuiltinPlugins.cpp" line="29"/>
         <source>Search and launch applications</source>
         <translation>搜索并启动应用</translation>
     </message>
@@ -133,7 +133,7 @@
         <translation>表达式错误</translation>
     </message>
     <message>
-        <location filename="../src/plugins/BuiltinPlugins.cpp" line="32"/>
+        <location filename="../src/plugins/BuiltinPlugins.cpp" line="31"/>
         <location filename="../src/plugins/CalcPlugin.h" line="12"/>
         <source>Calculator</source>
         <translation>计算器</translation>
@@ -170,7 +170,7 @@
         <translation>示例：1mile、10km、25cm</translation>
     </message>
     <message>
-        <location filename="../src/plugins/BuiltinPlugins.cpp" line="34"/>
+        <location filename="../src/plugins/BuiltinPlugins.cpp" line="33"/>
         <location filename="../src/plugins/ConvertPlugin.h" line="15"/>
         <source>Unit converter</source>
         <translation>单位换算</translation>
@@ -204,7 +204,7 @@
         <translation>文件夹</translation>
     </message>
     <message>
-        <location filename="../src/plugins/BuiltinPlugins.cpp" line="37"/>
+        <location filename="../src/plugins/BuiltinPlugins.cpp" line="36"/>
         <location filename="../src/plugins/DirectoryPlugin.h" line="23"/>
         <source>Directory browser and navigation</source>
         <translation>目录浏览与导航</translation>
@@ -296,7 +296,7 @@
         <translation>Everything SDK 仅支持 Windows 平台</translation>
     </message>
     <message>
-        <location filename="../src/plugins/BuiltinPlugins.cpp" line="44"/>
+        <location filename="../src/plugins/BuiltinPlugins.cpp" line="43"/>
         <location filename="../src/plugins/FilePlugin.h" line="14"/>
         <source>File search (Everything)</source>
         <translation>文件搜索（Everything）</translation>
@@ -666,7 +666,7 @@ Update now?</source>
         <translation>修改全局热键、窗口样式等配置</translation>
     </message>
     <message>
-        <location filename="../src/plugins/BuiltinPlugins.cpp" line="39"/>
+        <location filename="../src/plugins/BuiltinPlugins.cpp" line="38"/>
         <location filename="../src/plugins/SettingsPlugin.h" line="24"/>
         <source>Open Settings</source>
         <translation>打开设置</translation>
@@ -957,7 +957,7 @@ Update now?</source>
 <context>
     <name>ShellPlugin</name>
     <message>
-        <location filename="../src/plugins/BuiltinPlugins.cpp" line="46"/>
+        <location filename="../src/plugins/BuiltinPlugins.cpp" line="45"/>
         <location filename="../src/plugins/ShellPlugin.h" line="14"/>
         <source>Run shell commands</source>
         <translation>运行 shell 命令</translation>
@@ -1036,199 +1036,6 @@ Update now?</source>
         <location filename="../src/plugins/ShellPlugin.cpp" line="264"/>
         <source>Arguments</source>
         <translation>参数</translation>
-    </message>
-</context>
-<context>
-    <name>TaskService</name>
-    <message>
-        <location filename="../src/todo/TaskService.cpp" line="161"/>
-        <source>Existing task data could not be loaded. The original file has been kept; changes have not been saved.</source>
-        <translation>无法读取已有的待办数据，原始文件已保留，当前更改尚未保存。</translation>
-    </message>
-    <message>
-        <location filename="../src/todo/TaskService.cpp" line="165"/>
-        <source>Cannot save tasks. Check available disk space and folder permissions, then save again before closing TypeGo.</source>
-        <translation>无法保存待办。请检查磁盘空间和文件夹权限，并在退出 TypeGo 前重新保存。</translation>
-    </message>
-</context>
-<context>
-    <name>TodoPlugin</name>
-    <message>
-        <location filename="../src/plugins/BuiltinPlugins.cpp" line="49"/>
-        <location filename="../src/plugins/TodoPlugin.cpp" line="14"/>
-        <location filename="../src/plugins/TodoPlugin.h" line="16"/>
-        <source>Task Management</source>
-        <translation>任务管理</translation>
-    </message>
-    <message>
-        <location filename="../src/plugins/TodoPlugin.cpp" line="15"/>
-        <source>Manage TODO list and subtasks</source>
-        <translation>管理 TODO 列表与子任务</translation>
-    </message>
-</context>
-<context>
-    <name>TodoView</name>
-    <message>
-        <location filename="../src/todo/TodoView.cpp" line="47"/>
-        <source>Add</source>
-        <translation>添加</translation>
-    </message>
-    <message>
-        <location filename="../src/todo/TodoView.cpp" line="61"/>
-        <source>No task selected</source>
-        <translation>未选择任务</translation>
-    </message>
-    <message>
-        <location filename="../src/todo/TodoView.cpp" line="53"/>
-        <source>Save</source>
-        <translation>保存</translation>
-    </message>
-    <message>
-        <location filename="../src/todo/TodoView.cpp" line="56"/>
-        <location filename="../src/todo/TodoView.cpp" line="516"/>
-        <location filename="../src/todo/TodoView.cpp" line="532"/>
-        <source>Complete</source>
-        <translation>完成</translation>
-    </message>
-    <message>
-        <location filename="../src/todo/TodoView.cpp" line="66"/>
-        <source>Todo</source>
-        <translation>任务</translation>
-    </message>
-    <message>
-        <location filename="../src/todo/TodoView.cpp" line="74"/>
-        <source>Add a task and press Enter</source>
-        <translation>输入后回车新增任务</translation>
-    </message>
-    <message>
-        <location filename="../src/todo/TodoView.cpp" line="83"/>
-        <source>Search tasks</source>
-        <translation>搜索任务</translation>
-    </message>
-    <message>
-        <location filename="../src/todo/TodoView.cpp" line="84"/>
-        <source>Active</source>
-        <translation>活动</translation>
-    </message>
-    <message>
-        <location filename="../src/todo/TodoView.cpp" line="85"/>
-        <source>All</source>
-        <translation>全部</translation>
-    </message>
-    <message>
-        <location filename="../src/todo/TodoView.cpp" line="498"/>
-        <source>%1 active | %2 total</source>
-        <translation>%1 项进行中 | 共 %2 项</translation>
-    </message>
-    <message>
-        <location filename="../src/todo/TodoView.cpp" line="52"/>
-        <location filename="../src/todo/TodoView.cpp" line="86"/>
-        <location filename="../src/todo/TodoView.cpp" line="425"/>
-        <source>Completed</source>
-        <translation>完成</translation>
-    </message>
-    <message>
-        <location filename="../src/todo/TodoView.cpp" line="54"/>
-        <location filename="../src/todo/TodoView.cpp" line="215"/>
-        <source>Add Subtask</source>
-        <translation>增加子任务</translation>
-    </message>
-    <message>
-        <location filename="../src/todo/TodoView.cpp" line="55"/>
-        <location filename="../src/todo/TodoView.cpp" line="216"/>
-        <source>Delete</source>
-        <translation>删除</translation>
-    </message>
-    <message>
-        <location filename="../src/todo/TodoView.cpp" line="87"/>
-        <source>High priority</source>
-        <translation>高优先级</translation>
-    </message>
-    <message>
-        <location filename="../src/todo/TodoView.cpp" line="142"/>
-        <source>Priority</source>
-        <translation>优先级</translation>
-    </message>
-    <message>
-        <location filename="../src/todo/TodoView.cpp" line="131"/>
-        <location filename="../src/todo/TodoView.cpp" line="437"/>
-        <location filename="../src/todo/TodoView.cpp" line="563"/>
-        <source>Normal</source>
-        <translation>普通</translation>
-    </message>
-    <message>
-        <location filename="../src/todo/TodoView.cpp" line="48"/>
-        <location filename="../src/todo/TodoView.cpp" line="508"/>
-        <source>Task details</source>
-        <translation>任务详情</translation>
-    </message>
-    <message>
-        <location filename="../src/todo/TodoView.cpp" line="57"/>
-        <source>Undo delete</source>
-        <translation>撤销删除</translation>
-    </message>
-    <message>
-        <location filename="../src/todo/TodoView.cpp" line="120"/>
-        <source>Restore the most recently deleted task and its subtasks</source>
-        <translation>恢复最近一次删除的任务及其子任务</translation>
-    </message>
-    <message>
-        <location filename="../src/todo/TodoView.cpp" line="132"/>
-        <location filename="../src/todo/TodoView.cpp" line="562"/>
-        <source>High</source>
-        <translation>高</translation>
-    </message>
-    <message>
-        <location filename="../src/todo/TodoView.cpp" line="133"/>
-        <location filename="../src/todo/TodoView.cpp" line="561"/>
-        <source>Urgent</source>
-        <translation>紧急</translation>
-    </message>
-    <message>
-        <location filename="../src/todo/TodoView.cpp" line="141"/>
-        <source>Title</source>
-        <translation>标题</translation>
-    </message>
-    <message>
-        <location filename="../src/todo/TodoView.cpp" line="144"/>
-        <source>Note</source>
-        <translation>备注</translation>
-    </message>
-    <message>
-        <location filename="../src/todo/TodoView.cpp" line="214"/>
-        <location filename="../src/todo/TodoView.cpp" line="532"/>
-        <source>Mark Active</source>
-        <translation>标记为进行中</translation>
-    </message>
-    <message>
-        <location filename="../src/todo/TodoView.cpp" line="214"/>
-        <source>Mark Complete</source>
-        <translation>标记为完成</translation>
-    </message>
-    <message>
-        <location filename="../src/todo/TodoView.cpp" line="245"/>
-        <source>Tasks not saved</source>
-        <translation>待办尚未保存</translation>
-    </message>
-    <message>
-        <location filename="../src/todo/TodoView.cpp" line="308"/>
-        <source>New Subtask</source>
-        <translation>新子任务</translation>
-    </message>
-    <message>
-        <location filename="../src/todo/TodoView.cpp" line="338"/>
-        <source>Cannot save task</source>
-        <translation>无法保存任务</translation>
-    </message>
-    <message>
-        <location filename="../src/todo/TodoView.cpp" line="338"/>
-        <source>Task title cannot be empty.</source>
-        <translation>任务标题不能为空。</translation>
-    </message>
-    <message>
-        <location filename="../src/todo/TodoView.cpp" line="442"/>
-        <source>%1  ·  %2</source>
-        <translation>%1  ·  %2</translation>
     </message>
 </context>
 <context>
