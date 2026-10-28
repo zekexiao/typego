@@ -9,15 +9,65 @@
 #include <QStandardPaths>
 #include <QTemporaryFile>
 
-#ifdef Q_OS_WIN
-#include <windows.h>
-#include <shellapi.h>
-#endif
-
 namespace {
 // 更新源用 releases.atom 订阅源而不是 api.github.com：匿名 API 每 IP 每小时 60 次限流，
 // 共享出口 IP 的用户会 403；atom 是普通页面接口，不限流，且同样跟随系统代理。
 constexpr auto kReleasesFeedUrl = "https://github.com/zekexiao/typego/releases.atom";
+
+#ifdef Q_OS_WIN
+bool startInstallerAfterExit(const QString &installerPath, QString *error)
+{
+    QTemporaryFile helper(QDir(QStandardPaths::writableLocation(QStandardPaths::TempLocation))
+                              .filePath(QStringLiteral("TypeGo_handoff_XXXXXX.ps1")));
+    if (!helper.open()) {
+        *error = helper.errorString();
+        return false;
+    }
+    helper.setAutoRemove(false);
+    const QByteArray script = QByteArrayLiteral(
+        "$ErrorActionPreference = 'Stop'\r\n"
+        "$parentPid = [int]$args[0]\r\n"
+        "$installerPath = $args[1]\r\n"
+        "$installDir = $args[2]\r\n"
+        "$appPath = $args[3]\r\n"
+        "try { Wait-Process -Id $parentPid -ErrorAction SilentlyContinue } catch {}\r\n"
+        "try {\r\n"
+        "  $setup = Start-Process -FilePath $installerPath -ArgumentList ('/DIR=\"' + $installDir + '\"') -Verb RunAs -Wait -PassThru\r\n"
+        "  if ($setup.ExitCode -ne 0) { Start-Process -FilePath $appPath }\r\n"
+        "} catch { Start-Process -FilePath $appPath }\r\n"
+        "Remove-Item -LiteralPath $installerPath -Force -ErrorAction SilentlyContinue\r\n"
+        "Remove-Item -LiteralPath $PSCommandPath -Force -ErrorAction SilentlyContinue\r\n");
+    if (helper.write(script) != script.size() || !helper.flush()) {
+        *error = helper.errorString();
+        const QString helperPath = helper.fileName();
+        helper.close();
+        QFile::remove(helperPath);
+        return false;
+    }
+    const QString helperPath = helper.fileName();
+    helper.close();
+
+    const QString powershell = QStandardPaths::findExecutable(QStringLiteral("powershell.exe"));
+    if (powershell.isEmpty()) {
+        *error = QStringLiteral("powershell.exe was not found");
+        QFile::remove(helperPath);
+        return false;
+    }
+
+    const QStringList arguments{
+        QStringLiteral("-NoProfile"), QStringLiteral("-WindowStyle"), QStringLiteral("Hidden"),
+        QStringLiteral("-ExecutionPolicy"), QStringLiteral("Bypass"), QStringLiteral("-File"), helperPath,
+        QString::number(QCoreApplication::applicationPid()), installerPath,
+        QDir::toNativeSeparators(QCoreApplication::applicationDirPath()),
+        QCoreApplication::applicationFilePath()};
+    if (!QProcess::startDetached(powershell, arguments)) {
+        *error = QStringLiteral("Cannot start the update handoff process");
+        QFile::remove(helperPath);
+        return false;
+    }
+    return true;
+}
+#endif
 }
 
 Updater::Updater(QObject *parent)
@@ -145,24 +195,14 @@ void Updater::onDownloadFinished()
     const QString downloadPath = QDir::toNativeSeparators(m_downloadFile->fileName());
     m_downloadFile->close();
 
-    // 安装包负责提权、替换文件和重启，只有成功交接后才退出当前程序。
+    // 先启动等待进程，待当前进程完全退出后再运行安装包，避免安装器看到旧互斥量。
 #ifdef Q_OS_WIN
-    const QString parameters = QStringLiteral(R"(/DIR="%1")")
-                                   .arg(QDir::toNativeSeparators(QCoreApplication::applicationDirPath()));
-    SHELLEXECUTEINFOW info = {};
-    info.cbSize = sizeof(info);
-    info.fMask = SEE_MASK_NOCLOSEPROCESS | SEE_MASK_NOASYNC;
-    info.lpVerb = L"open";
-    info.lpFile = reinterpret_cast<LPCWSTR>(downloadPath.utf16());
-    info.lpParameters = reinterpret_cast<LPCWSTR>(parameters.utf16());
-    info.nShow = SW_SHOWNORMAL;
-    if (!ShellExecuteExW(&info)) {
-        const DWORD error = GetLastError();
-        finishDownload(error == ERROR_CANCELLED ? QString()
-                       : tr("Cannot start the update installer (error %1).").arg(error), error == ERROR_CANCELLED);
+    QString error;
+    if (!startInstallerAfterExit(downloadPath, &error)) {
+        qWarning() << "Cannot prepare the update installer:" << error;
+        finishDownload(tr("Cannot start the update installer."));
         return;
     }
-    if (info.hProcess) CloseHandle(info.hProcess);
 #else
     if (!QProcess::startDetached(downloadPath, QStringList())) {
         finishDownload(tr("Cannot start the update installer."));
