@@ -18,3 +18,4 @@ if not exist "%APP_PATH%" (
 )
 
 "%APP_PATH%" %*
+exit /b %errorlevel%
