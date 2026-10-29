@@ -24,7 +24,8 @@ void InputHighlighter::setThemeManager(ThemeManager *themeManager)
 
 void InputHighlighter::highlightBlock(const QString &text)
 {
-    QColor accent = m_themeManager ? m_themeManager->accent() : QColor(QStringLiteral("#89b4fa"));
+    // 高亮文字直接落在输入框表面，用 accentText 而不是描边色。
+    QColor accent = m_themeManager ? m_themeManager->accentText() : QColor(QStringLiteral("#89b4fa"));
     QColor txt = m_themeManager ? m_themeManager->text() : QColor(QStringLiteral("#cdd6f4"));
 
     int spaceIdx = text.indexOf(' ');

@@ -1,4 +1,14 @@
-/* ????????? 12px?????? 8px??? 14px????? 12px??? 20px? */
+/*
+ * TypeGo 界面设计基线（对齐 Impeccable 规范）
+ *
+ * 间距：4 / 8 / 12 / 16 / 20 / 24。相关元素靠近，不同分组之间留更大间距，
+ *       不要给所有位置同样的 gap。
+ * 圆角：6（小控件）/ 8（输入框、按钮、列表项）/ 12（卡片、列表容器）。
+ * 字号：13（辅助说明）/ 14（正文与控件）/ 20（页面标题）。界面文字不落到 13px 以下。
+ * 颜色：@ACCENT@ 只用于描边、焦点和开关；@ACCENT_FILL@ 用于放白字的实心填充；
+ *       @ACCENT_TEXT@ 用于直接落在背景上的强调文字，三者对比度均满足 WCAG AA。
+ */
+
 QWidget {
     background-color: transparent;
     color: @TEXT@;
@@ -24,36 +34,33 @@ QWidget#windowTitleBar {
 QLabel#windowTitle {
     background-color: transparent;
     color: @TEXT_SECONDARY@;
-    font-size: 12px;
+    font-size: 13px;
     font-weight: 600;
 }
 
+/* 关闭按钮的图标由 TitleBarIconButton 自绘，这里只负责热区底色；
+   悬停用淡红提示危险操作，不做整块实红，避免和周围的安静控件抢注意力。 */
 QPushButton#windowCloseButton {
     min-height: 0;
     padding: 0;
     background-color: transparent;
-    color: @TEXT_SECONDARY@;
     border: none;
     border-radius: 8px;
-    font-size: 18px;
-    font-weight: 400;
 }
 
 QPushButton#windowCloseButton:hover {
-    background-color: @CLOSE_HOVER@;
-    color: white;
+    background-color: @CLOSE_TINT@;
 }
 
 QPushButton#windowCloseButton:pressed {
-    background-color: @CLOSE_PRESSED@;
-    color: white;
+    background-color: @CLOSE_TINT_PRESSED@;
 }
 
 QFrame#settingsGroup,
 QFrame#aboutCard {
     background-color: @GLASS_SURFACE@;
     border: 1px solid @BORDER@;
-    border-radius: 10px;
+    border-radius: 12px;
 }
 
 QFrame#profileCard {
@@ -63,7 +70,7 @@ QFrame#profileCard {
 }
 
 QLabel#profileAvatar {
-    background-color: @ACCENT@;
+    background-color: @ACCENT_FILL@;
     color: white;
     border-radius: 24px;
     font-size: 20px;
@@ -83,6 +90,7 @@ QLabel#pageTitle {
     font-weight: 600;
 }
 
+/* 返回与分离按钮同样自绘图标，这里只保留热区。 */
 QPushButton#titleBackButton {
     min-height: 0;
     padding: 0;
@@ -90,8 +98,6 @@ QPushButton#titleBackButton {
     color: @TEXT_SECONDARY@;
     border: none;
     border-radius: 8px;
-    font-size: 18px;
-    font-weight: 600;
 }
 
 QPushButton#titleBackButton:hover {
@@ -105,13 +111,9 @@ QPushButton#pluginSettingsButton {
     padding-right: 10px;
 }
 
-QWidget#settingsView QLabel#pageTitle {
-    font-size: 22px;
-    font-weight: 600;
-}
-
 QWidget#settingsView QLabel#section {
-    padding: 8px 2px 0 2px;
+    /* 分组标题上方留出比组内间距更大的空隙，让分组边界看得出来。 */
+    padding: 14px 2px 2px 2px;
 }
 
 QWidget#settingsRow,
@@ -149,17 +151,17 @@ QListWidget#scanDirectoryList {
 QListWidget#scanDirectoryList::item {
     min-height: 20px;
     padding: 5px 7px;
-    border-radius: 5px;
+    border-radius: 6px;
 }
 
 QListWidget#scanDirectoryList::item:selected {
-    color: @TEXT@;
-    background-color: @HOVER@;
+    color: white;
+    background-color: @ACCENT_FILL@;
 }
 
 QLabel#aboutName {
     color: @TEXT@;
-    font-size: 22px;
+    font-size: 20px;
     font-weight: 600;
 }
 
@@ -170,7 +172,7 @@ QLabel#aboutDescription {
 }
 
 SettingsSwitch {
-    qproperty-accentColor: @ACCENT@;
+    qproperty-accentColor: @ACCENT_FILL@;
 }
 
 QWidget#convertView {
@@ -190,11 +192,11 @@ QLabel#convertValue {
     font-weight: 600;
 }
 
+/* 导航不画分隔线和左侧色条：选中态用色块与字重表达，避免把普通导航做成告警样式。 */
 QListWidget#settingsNavigation {
-    padding: 2px 12px 2px 0;
+    padding: 0;
     background-color: transparent;
     border: none;
-    border-right: 1px solid @BORDER@;
     border-radius: 0;
 }
 
@@ -204,8 +206,7 @@ QListWidget#settingsNavigation::item {
     color: @TEXT_SECONDARY@;
     background-color: transparent;
     border: none;
-    border-left: 2px solid transparent;
-    border-radius: 6px;
+    border-radius: 8px;
 }
 
 QListWidget#settingsNavigation::item:hover {
@@ -214,9 +215,8 @@ QListWidget#settingsNavigation::item:hover {
 }
 
 QListWidget#settingsNavigation::item:selected {
-    color: @ACCENT@;
-    background-color: @HOVER@;
-    border-left: 2px solid @ACCENT@;
+    color: @TEXT@;
+    background-color: @SURFACE_PRESSED@;
     font-weight: 600;
 }
 
@@ -229,7 +229,7 @@ QComboBox {
     color: @TEXT@;
     border: 1px solid @BORDER@;
     border-radius: 8px;
-    selection-background-color: @ACCENT@;
+    selection-background-color: @ACCENT_FILL@;
     selection-color: white;
 }
 
@@ -247,7 +247,7 @@ QFrame#commandInput[focused="true"] {
 
 QLabel#commandBadge {
     padding: 3px 7px;
-    background-color: @ACCENT@;
+    background-color: @ACCENT_FILL@;
     color: white;
     border-radius: 6px;
 }
@@ -260,11 +260,12 @@ QLineEdit#commandArgumentEdit:focus {
     border: none;
 }
 
+/* 聚焦只改描边颜色：加粗描边会让内边距重算，控件高度跳 1px，整行跟着动。
+   颜色变化在深浅两套主题里都够明显，且与搜索框的聚焦方式一致。 */
 QLineEdit:focus,
 QKeySequenceEdit:focus,
 QComboBox:focus {
-    border: 2px solid @BORDER_FOCUS@;
-    padding: 5px 9px;
+    border-color: @BORDER_FOCUS@;
 }
 
 QLineEdit[placeholderText] {
@@ -273,10 +274,6 @@ QLineEdit[placeholderText] {
 
 QComboBox {
     padding-right: 28px;
-}
-
-QComboBox:focus {
-    padding-right: 27px;
 }
 
 QComboBox:hover {
@@ -296,7 +293,7 @@ QComboBox QAbstractItemView {
     border: 1px solid @BORDER@;
     border-radius: 0;
     outline: none;
-    selection-background-color: @ACCENT@;
+    selection-background-color: @ACCENT_FILL@;
     selection-color: white;
 }
 
@@ -347,7 +344,7 @@ QPlainTextEdit#shellOutput {
     border-radius: 8px;
     font-family: "Cascadia Mono", "Consolas";
     font-size: 12px;
-    selection-background-color: @ACCENT@;
+    selection-background-color: @ACCENT_FILL@;
     selection-color: white;
 }
 
@@ -362,7 +359,7 @@ QTreeView::item:hover {
 
 QListWidget::item:selected,
 QTreeView::item:selected {
-    background-color: @ACCENT@;
+    background-color: @ACCENT_FILL@;
     color: white;
 }
 
@@ -395,10 +392,16 @@ QPushButton:disabled {
 }
 
 QPushButton#primary {
-    background-color: @ACCENT@;
+    background-color: @ACCENT_FILL@;
     color: white;
-    border-color: @ACCENT@;
+    border-color: @ACCENT_FILL@;
     font-weight: 600;
+}
+
+/* 主按钮悬停必须保持实心强调色，不能掉回通用按钮的灰底。 */
+QPushButton#primary:hover {
+    background-color: @ACCENT_PRESSED@;
+    border-color: @ACCENT_PRESSED@;
 }
 
 QPushButton#primary:pressed {
@@ -412,22 +415,23 @@ QPushButton#danger {
 }
 
 QPushButton#danger:hover {
-    background-color: @ERROR@;
+    background-color: @ERROR_FILL@;
+    border-color: @ERROR_FILL@;
     color: white;
 }
 
 QLabel#section {
-    padding-top: 8px;
+    padding: 4px 2px 0 2px;
     background-color: transparent;
     color: @TEXT_SECONDARY@;
-    font-size: 12px;
+    font-size: 13px;
     font-weight: 600;
 }
 
 QLabel#muted {
     background-color: transparent;
     color: @TEXT_SECONDARY@;
-    font-size: 12px;
+    font-size: 13px;
 }
 
 QCheckBox {
@@ -440,7 +444,7 @@ QCheckBox::indicator {
     height: 16px;
     background-color: @GLASS_SURFACE@;
     border: 1px solid @BORDER@;
-    border-radius: 5px;
+    border-radius: 6px;
 }
 
 QCheckBox::indicator:hover {
@@ -463,8 +467,8 @@ QWidget#windowTitleBar QPushButton#titleBackButton:pressed {
 }
 
 QCheckBox::indicator:checked {
-    background-color: @ACCENT@;
-    border-color: @ACCENT@;
+    background-color: @ACCENT_FILL@;
+    border-color: @ACCENT_FILL@;
     image: url(:/assets/check.svg);
 }
 
@@ -483,7 +487,7 @@ QMenu::item {
 }
 
 QMenu::item:selected {
-    background-color: @ACCENT@;
+    background-color: @ACCENT_FILL@;
     color: white;
 }
 
@@ -516,7 +520,7 @@ QToolTip {
     background-color: @SURFACE_PRESSED@;
     color: @TEXT@;
     border: 1px solid @BORDER@;
-    border-radius: 6px;
+    border-radius: 8px;
 }
 
 /* 顶层只绘制一层染色，子页面保持透明，避免多层背景累积遮住磨砂。 */
@@ -539,10 +543,18 @@ QComboBox QAbstractItemView > QWidget {
     background-color: @SURFACE@;
 }
 
-/* ???????????????????????? */
+/* QKeySequenceEdit 是普通 QWidget，样式表的 padding 只把它的自绘背景撑大，
+   不会缩进内部的 QLineEdit，所以内边距必须写在子输入框上。
+   外层用 min-height 补到和普通输入框一样高（24 内容 + 6×2 内边距 + 1×2 描边 = 38）。 */
+QKeySequenceEdit {
+    min-height: 36px;
+    padding: 0;
+}
+
 QKeySequenceEdit QLineEdit,
 QKeySequenceEdit QLineEdit:focus {
-    padding: 0;
+    min-height: 24px;
+    padding: 0 10px;
     border: none;
     background-color: transparent;
 }
@@ -560,7 +572,7 @@ QComboBox QAbstractItemView::item:hover {
 }
 
 QComboBox QAbstractItemView::item:selected {
-    background-color: @ACCENT@;
+    background-color: @ACCENT_FILL@;
     color: white;
 }
 

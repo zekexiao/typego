@@ -17,13 +17,16 @@ class ThemeManager : public QObject {
     Q_PROPERTY(QColor text READ text NOTIFY paletteChanged)
     Q_PROPERTY(QColor textSecondary READ textSecondary NOTIFY paletteChanged)
     Q_PROPERTY(QColor accent READ accent NOTIFY paletteChanged)
-    Q_PROPERTY(QColor accentPressed READ accentPressed NOTIFY paletteChanged)
+    Q_PROPERTY(QColor accentFill READ accentFill NOTIFY paletteChanged)
+    Q_PROPERTY(QColor accentFillPressed READ accentFillPressed NOTIFY paletteChanged)
+    Q_PROPERTY(QColor accentText READ accentText NOTIFY paletteChanged)
     Q_PROPERTY(QColor border READ border NOTIFY paletteChanged)
     Q_PROPERTY(QColor borderFocus READ borderFocus NOTIFY paletteChanged)
     Q_PROPERTY(QColor hover READ hover NOTIFY paletteChanged)
     Q_PROPERTY(QColor selection READ selection NOTIFY paletteChanged)
     Q_PROPERTY(QColor placeholder READ placeholder NOTIFY paletteChanged)
     Q_PROPERTY(QColor error READ error NOTIFY paletteChanged)
+    Q_PROPERTY(QColor errorFill READ errorFill NOTIFY paletteChanged)
     Q_PROPERTY(QColor closeButtonHover READ closeButtonHover NOTIFY paletteChanged)
     Q_PROPERTY(QColor iconPlaceholder READ iconPlaceholder NOTIFY paletteChanged)
 
@@ -43,14 +46,18 @@ public:
     QColor surfacePressed() const;
     QColor text() const;
     QColor textSecondary() const;
+    // accent 只用于描边、焦点和指示；填充面与表面文字分开取值，保证白字和彩色文字都达到 AA 对比度。
     QColor accent() const;
-    QColor accentPressed() const;
+    QColor accentFill() const;
+    QColor accentFillPressed() const;
+    QColor accentText() const;
     QColor border() const;
     QColor borderFocus() const;
     QColor hover() const;
     QColor selection() const;
     QColor placeholder() const;
     QColor error() const;
+    QColor errorFill() const;
     QColor closeButtonHover() const;
     QColor iconPlaceholder() const;
 

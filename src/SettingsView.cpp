@@ -47,6 +47,9 @@ HotkeyEdit::HotkeyEdit(QWidget *parent)
     : QKeySequenceEdit(parent)
 {
     setMaximumSequenceLength(1);
+    // QKeySequenceEdit 是普通 QWidget，样式表的背景和边框只在 WA_StyledBackground 下才绘制；
+    // 否则输入框看起来像一行普通文字，用户看不出这里可以点击录制。
+    setAttribute(Qt::WA_StyledBackground, true);
     if (auto *lineEdit = findChild<QLineEdit *>()) lineEdit->setPlaceholderText(tr("Press Shortcut"));
     setClearButtonEnabled(true);
     ensureAltSpaceNativeFilterInstalled();

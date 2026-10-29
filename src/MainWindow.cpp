@@ -81,11 +81,11 @@ enum ResultRoles {
     SubtitleRole = Qt::UserRole + 2,
 };
 
-// 副标题比标题小一档形成层级，下限保证可读。
+// 副标题比标题小一档形成层级，下限 12px 保证小字号下仍可读。
 QFont subtitleFontFor(const QFont &base)
 {
     QFont font = base;
-    font.setPixelSize(qMax(11, QFontInfo(base).pixelSize() - 2));
+    font.setPixelSize(qMax(12, QFontInfo(base).pixelSize() - 2));
     return font;
 }
 
@@ -354,6 +354,75 @@ private:
     mutable QStringList m_iconQueue;
 };
 
+TitleBarIconButton::TitleBarIconButton(Glyph glyph, ThemeManager *themeManager, QWidget *parent)
+    : QPushButton(parent)
+    , m_glyph(glyph)
+    , m_themeManager(themeManager)
+{
+    setFlat(true);
+    setCursor(Qt::PointingHandCursor);
+    setFocusPolicy(Qt::TabFocus);
+    setFixedSize(32, 28);
+    // 图标随主题重绘，悬停换色不走样式表。
+    if (themeManager) {
+        connect(themeManager, &ThemeManager::paletteChanged, this, qOverload<>(&QWidget::update));
+    }
+}
+
+void TitleBarIconButton::paintEvent(QPaintEvent *event)
+{
+    // 先让样式表画热区底色，再叠加矢量图标。
+    QPushButton::paintEvent(event);
+
+    const bool active = underMouse() || isDown();
+    QColor color = m_themeManager ? m_themeManager->textSecondary()
+                                  : palette().color(QPalette::WindowText);
+    if (active) {
+        const bool danger = m_glyph == Glyph::Close && m_themeManager;
+        color = danger ? m_themeManager->closeButtonHover()
+                       : (m_themeManager ? m_themeManager->text() : color);
+    }
+
+    QPainter painter(this);
+    painter.setRenderHint(QPainter::Antialiasing);
+    QPen pen(color, 1.4);
+    pen.setCapStyle(Qt::RoundCap);
+    pen.setJoinStyle(Qt::RoundJoin);
+    painter.setPen(pen);
+    painter.setBrush(Qt::NoBrush);
+
+    // 图标统一按 11px 围径绘制，与 13px 字号的视觉重量相当。
+    const QPointF center = QRectF(rect()).center();
+    const qreal r = 5.0;
+
+    switch (m_glyph) {
+    case Glyph::Close:
+        painter.drawLine(QPointF(center.x() - r, center.y() - r), QPointF(center.x() + r, center.y() + r));
+        painter.drawLine(QPointF(center.x() - r, center.y() + r), QPointF(center.x() + r, center.y() - r));
+        break;
+    case Glyph::Back: {
+        QPainterPath chevron;
+        chevron.moveTo(center.x() + 2.0, center.y() - r);
+        chevron.lineTo(center.x() - 3.0, center.y());
+        chevron.lineTo(center.x() + 2.0, center.y() + r);
+        painter.drawPath(chevron);
+        break;
+    }
+    case Glyph::Detach: {
+        // 缺一个角的方框 + 指向右上方的箭头，表示脱离到独立窗口。
+        QPainterPath frame;
+        frame.moveTo(center.x() - 1.5, center.y() - r);
+        frame.lineTo(center.x() - r, center.y() - r);
+        frame.lineTo(center.x() - r, center.y() + r);
+        frame.lineTo(center.x() + r, center.y() + r);
+        frame.lineTo(center.x() + r, center.y() + 1.5);
+        painter.drawPath(frame);
+        painter.drawLine(QPointF(center.x() - 0.5, center.y() + 0.5), QPointF(center.x() + r, center.y() - r));
+        break;
+    }
+    }
+}
+
 ResultItemDelegate::ResultItemDelegate(ThemeManager *themeManager, QObject *parent)
     : QStyledItemDelegate(parent)
     , m_themeManager(themeManager)
@@ -426,7 +495,8 @@ void ResultItemDelegate::paint(QPainter *painter, const QStyleOptionViewItem &op
     if (!subtitle.isEmpty()) {
         baselineTop += titleMetrics.height() + ResultTitleSubtitleGap;
         // 路径类副标题从中间省略，保留头尾信息。
-        const QColor paintSubtitle = selected ? QColor(255, 255, 255, 205) : subtitleColor;
+        // 选中行底色是实心强调色，副标题加不透明一点才能保持可读。
+        const QColor paintSubtitle = selected ? QColor(255, 255, 255, 220) : subtitleColor;
         painter->setFont(subtitleFont);
         painter->setPen(paintSubtitle);
         painter->drawText(QRect(textRect.left(), baselineTop, availableWidth, subtitleMetrics.height()),
@@ -670,24 +740,20 @@ MainWindow::MainWindow(AppLauncher *launcher, PluginManager *pluginManager, Sett
     m_titleBackSlot->setFixedWidth(68);
     auto *backSlotLayout = new QHBoxLayout(m_titleBackSlot);
     backSlotLayout->setContentsMargins(0, 0, 0, 0);
-    m_pluginBackButton = new QPushButton(QStringLiteral("‹"), m_titleBackSlot);
+    backSlotLayout->setSpacing(0);
+    m_pluginBackButton = new TitleBarIconButton(TitleBarIconButton::Glyph::Back, themeManager, m_titleBackSlot);
     m_pluginBackButton->setObjectName(QStringLiteral("titleBackButton"));
-    m_pluginBackButton->setFixedSize(32, 28);
-    m_pluginBackButton->setFlat(true);
-    m_pluginBackButton->setCursor(Qt::PointingHandCursor);
     m_pluginBackButton->setToolTip(tr("Back to results"));
     m_pluginBackButton->setAccessibleName(tr("Back"));
     m_pluginBackButton->hide();
     backSlotLayout->addWidget(m_pluginBackButton);
-    m_pluginDetachButton = new QPushButton(QStringLiteral("↗"), m_titleBackSlot);
+    m_pluginDetachButton = new TitleBarIconButton(TitleBarIconButton::Glyph::Detach, themeManager, m_titleBackSlot);
     m_pluginDetachButton->setObjectName(QStringLiteral("titleBackButton"));
-    m_pluginDetachButton->setFixedSize(32, 28);
-    m_pluginDetachButton->setFlat(true);
-    m_pluginDetachButton->setCursor(Qt::PointingHandCursor);
     m_pluginDetachButton->setToolTip(tr("Detach plugin view to a window"));
     m_pluginDetachButton->setAccessibleName(tr("Detach window"));
     m_pluginDetachButton->hide();
     backSlotLayout->addWidget(m_pluginDetachButton);
+    backSlotLayout->addStretch();
     auto *titleLabel = new QLabel(QStringLiteral("TypeGo"), titleBar);
     titleLabel->setObjectName(QStringLiteral("windowTitle"));
     titleLabel->setAlignment(Qt::AlignCenter);
@@ -695,10 +761,20 @@ MainWindow::MainWindow(AppLauncher *launcher, PluginManager *pluginManager, Sett
     titleLayout->addStretch();
     titleLayout->addWidget(titleLabel);
     titleLayout->addStretch();
-    auto *closeButton = new QPushButton(QStringLiteral("×"), titleBar);
+    // 右侧用与左侧等宽的槽位放关闭按钮，标题才会落在窗口真正的水平中线上。
+    auto *closeSlot = new QWidget(titleBar);
+    closeSlot->setObjectName(QStringLiteral("titleBackSlot"));
+    closeSlot->setFixedWidth(68);
+    auto *closeSlotLayout = new QHBoxLayout(closeSlot);
+    closeSlotLayout->setContentsMargins(0, 0, 0, 0);
+    closeSlotLayout->setSpacing(0);
+    closeSlotLayout->addStretch();
+    auto *closeButton = new TitleBarIconButton(TitleBarIconButton::Glyph::Close, themeManager, closeSlot);
     closeButton->setObjectName(QStringLiteral("windowCloseButton"));
-    closeButton->setFixedSize(32, 28);
-    titleLayout->addWidget(closeButton);
+    closeButton->setToolTip(tr("Close"));
+    closeButton->setAccessibleName(tr("Close"));
+    closeSlotLayout->addWidget(closeButton);
+    titleLayout->addWidget(closeSlot);
     windowAgent->setTitleBar(titleBar);
     windowAgent->setSystemButton(QWK::WindowAgentBase::Close, closeButton);
     windowAgent->setHitTestVisible(closeButton, true);
@@ -732,6 +808,7 @@ MainWindow::MainWindow(AppLauncher *launcher, PluginManager *pluginManager, Sett
     m_pinnedPanel = new QWidget;
     m_pinnedLayout = new QHBoxLayout(m_pinnedPanel);
     m_pinnedLayout->setContentsMargins(0, 0, 0, 0);
+    m_pinnedLayout->setSpacing(8);
     contentLayout->addWidget(m_pinnedPanel);
 
     m_stack = new QStackedWidget;

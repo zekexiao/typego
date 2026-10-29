@@ -123,13 +123,16 @@ QString ThemeManager::styleSheet() const
     style.replace(QStringLiteral("@SELECTION@"), selection().name(QColor::HexRgb));
     style.replace(QStringLiteral("@HOVER@"), hover().name(QColor::HexRgb));
     style.replace(QStringLiteral("@ACCENT@"), accent().name(QColor::HexRgb));
-    style.replace(QStringLiteral("@ACCENT_PRESSED@"), accentPressed().name(QColor::HexRgb));
+    style.replace(QStringLiteral("@ACCENT_FILL@"), accentFill().name(QColor::HexRgb));
+    style.replace(QStringLiteral("@ACCENT_TEXT@"), accentText().name(QColor::HexRgb));
+    style.replace(QStringLiteral("@ACCENT_PRESSED@"), accentFillPressed().name(QColor::HexRgb));
     style.replace(QStringLiteral("@PLACEHOLDER@"), placeholder().name(QColor::HexRgb));
     style.replace(QStringLiteral("@ERROR@"), error().name(QColor::HexRgb));
-    // 关闭按钮的按下色基于悬停色加深，保持两套主题下的一致反馈。
-    QColor closeHover = closeButtonHover();
-    style.replace(QStringLiteral("@CLOSE_HOVER@"), closeHover.name(QColor::HexRgb));
-    style.replace(QStringLiteral("@CLOSE_PRESSED@"), closeHover.darker(115).name(QColor::HexRgb));
+    style.replace(QStringLiteral("@ERROR_FILL@"), errorFill().name(QColor::HexRgb));
+    // 关闭按钮只给热区加一层红色染底，图标颜色在 TitleBarIconButton 里取 closeButtonHover()。
+    const QColor closeHover = closeButtonHover();
+    style.replace(QStringLiteral("@CLOSE_TINT@"), translucentColor(closeHover, m_isDark ? 64 : 26));
+    style.replace(QStringLiteral("@CLOSE_TINT_PRESSED@"), translucentColor(closeHover, m_isDark ? 104 : 48));
     return style;
 }
 
@@ -213,12 +216,25 @@ QColor ThemeManager::textSecondary() const
 
 QColor ThemeManager::accent() const
 {
+    // 描边与指示色在深浅两套主题下都可辨识；填充和文字用下面两个专用取值。
     return QColor(QStringLiteral("#0a84ff"));
 }
 
-QColor ThemeManager::accentPressed() const
+QColor ThemeManager::accentFill() const
 {
-    return m_isDark ? QColor(QStringLiteral("#409cff")) : QColor(QStringLiteral("#0071e3"));
+    // 填充面上放白字：深色主题需要压暗到 #0a6fd8 才达到 4.9:1 对比度。
+    return m_isDark ? QColor(QStringLiteral("#0a6fd8")) : QColor(QStringLiteral("#0071e3"));
+}
+
+QColor ThemeManager::accentFillPressed() const
+{
+    return m_isDark ? QColor(QStringLiteral("#0b5cb0")) : QColor(QStringLiteral("#0062c4"));
+}
+
+QColor ThemeManager::accentText() const
+{
+    // 作为文字直接落在背景或卡片上，需要比描边更亮的蓝。
+    return m_isDark ? QColor(QStringLiteral("#4da3ff")) : QColor(QStringLiteral("#0071e3"));
 }
 
 QColor ThemeManager::border() const
@@ -238,17 +254,25 @@ QColor ThemeManager::hover() const
 
 QColor ThemeManager::selection() const
 {
-    return m_isDark ? QColor(QStringLiteral("#0a84ff")) : QColor(QStringLiteral("#007aff"));
+    // 选中行是实心填充 + 白字，必须用填充色而不是描边色。
+    return accentFill();
 }
 
 QColor ThemeManager::placeholder() const
 {
-    return m_isDark ? QColor(QStringLiteral("#8e8e93")) : QColor(QStringLiteral("#8e8e93"));
+    // 占位与禁用文字同样属于正文尺寸下的文字，深色主题维持 4.9:1，浅色主题 4.5:1。
+    return m_isDark ? QColor(QStringLiteral("#9a9aa0")) : QColor(QStringLiteral("#76767b"));
 }
 
 QColor ThemeManager::error() const
 {
     return m_isDark ? QColor(QStringLiteral("#f38ba8")) : QColor(QStringLiteral("#dc2626"));
+}
+
+QColor ThemeManager::errorFill() const
+{
+    // 危险操作的按下填充：两套主题都用深红，白字对比度 6.5:1。
+    return QColor(QStringLiteral("#b91c1c"));
 }
 
 QColor ThemeManager::closeButtonHover() const

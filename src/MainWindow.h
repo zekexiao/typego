@@ -3,6 +3,7 @@
 #include <QFrame>
 #include <QIcon>
 #include <QPixmap>
+#include <QPushButton>
 #include <QSet>
 #include <QStyledItemDelegate>
 #include <QWidget>
@@ -49,6 +50,22 @@ private:
     QIcon m_icon;
     bool m_hovered = false;
     bool m_pressed = false;
+};
+
+// 标题栏矢量图标按钮：样式表只管热区底色，图标由代码绘制，
+// 避免依赖字体字形（× ‹ ↗ 在不同字号和字体下会发虚、基线也不稳）。
+class TitleBarIconButton final : public QPushButton {
+public:
+    enum class Glyph { Close, Back, Detach };
+
+    TitleBarIconButton(Glyph glyph, ThemeManager *themeManager, QWidget *parent = nullptr);
+
+protected:
+    void paintEvent(QPaintEvent *event) override;
+
+private:
+    Glyph m_glyph;
+    ThemeManager *m_themeManager;
 };
 
 // 搜索结果列表的自绘项代理：标题/副标题分层、悬停和选中反馈、长文本省略。
