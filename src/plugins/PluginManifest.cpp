@@ -71,9 +71,11 @@ PluginManifestResult parsePluginManifest(const QJsonObject &root, const QString 
     static const QRegularExpression versionPattern(QStringLiteral("^[0-9]+[.][0-9]+[.][0-9]+$"));
     if (!validId(descriptor.id) || descriptor.description.isEmpty() || descriptor.description.size() > 512
         || manifest.version.size() > 32 || !versionPattern.match(manifest.version).hasMatch()
-        || !optionalBool(data, QStringLiteral("hasSettings")))
+        || !optionalBool(data, QStringLiteral("hasSettings"))
+        || !optionalBool(data, QStringLiteral("background")))
         return fail(Api::ErrorCode::InvalidArgument, QStringLiteral("Invalid plugin identity, version or description"));
     descriptor.hasSettings = data.value(QStringLiteral("hasSettings")).toBool();
+    descriptor.background = data.value(QStringLiteral("background")).toBool();
     if (data.contains(QStringLiteral("requires")) && !data.value(QStringLiteral("requires")).isArray())
         return fail(Api::ErrorCode::InvalidArgument, QStringLiteral("requires must be an array"));
     const QSet<QString> capabilities{QStringLiteral("widgets"), QStringLiteral("async"), QStringLiteral("config")};

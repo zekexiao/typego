@@ -27,6 +27,9 @@ public:
     QString pluginIdForCommand(const QString &command) const;
     bool isEnabled(const QString &command) const;
     bool isInstantiated(const QString &id) const;
+    // 后台插件在启动和重新启用时初始化；普通插件仍保持首次使用才加载。
+    void startBackgroundPlugins();
+    void startBackgroundPlugin(const QString &id);
     bool supportsAutoEnter(const QString &cmd) const;
     const PluginCommand *commandDescriptor(const QString &cmd) const;
     PluginInvocation invocation(const QString &cmd, const QString &args = {},

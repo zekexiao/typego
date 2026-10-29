@@ -22,4 +22,6 @@ struct PluginDescriptor {
     QList<PluginCommand> commands;
     bool configurable = true;
     bool hasSettings = false;
+    // 需要持续后台工作的插件（如剪贴板）在启动时初始化，而不是首次使用时。
+    bool background = false;
 };

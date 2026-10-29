@@ -28,6 +28,7 @@ public:
         return leaveDecision;
     }
     void cancelQuery() override { ++cancellations; }
+    void activate(const PluginInvocation &) override { ++activations; }
 
     PluginQueryRequest lastQuery;
     PluginInvocation lastInvocation;
@@ -39,6 +40,7 @@ public:
     int executions = 0;
     int preparations = 0;
     int cancellations = 0;
+    int activations = 0;
 };
 
 class TstPluginRuntime : public QObject {
@@ -65,6 +67,7 @@ private slots:
     void refusedDisablePreservesEnabledState();
     void pendingLeaveMergesAndRejectsOldTokens();
     void shutdownWaitsWithoutCreatingUnusedPlugins();
+    void backgroundPluginsStartOnlyWhenEnabled();
     void failedFactoryCanRetryWithoutRecursion();
 };
 
@@ -226,6 +229,41 @@ void TstPluginRuntime::shutdownWaitsWithoutCreatingUnusedPlugins()
     QTRY_COMPARE(completed, 2);
     QVERIFY(accepted);
     QCOMPARE(unusedCreated, 0);
+}
+
+void TstPluginRuntime::backgroundPluginsStartOnlyWhenEnabled()
+{
+    QTemporaryDir dir;
+    QVERIFY(dir.isValid());
+    Settings settings(dir.filePath(QStringLiteral("settings.ini")));
+    PluginManager manager;
+    manager.setSettings(&settings);
+    int backgroundCreated = 0;
+    auto background = descriptor(QStringLiteral("monitor"));
+    background.background = true;
+    QVERIFY(manager.registerPlugin(background, [&](QObject *parent) {
+        ++backgroundCreated;
+        return new RuntimePlugin(parent);
+    }));
+    int normalCreated = 0;
+    QVERIFY(manager.registerPlugin(descriptor(QStringLiteral("normal")), [&](QObject *parent) {
+        ++normalCreated;
+        return new RuntimePlugin(parent);
+    }));
+    manager.startBackgroundPlugins();
+    QCOMPARE(backgroundCreated, 1);
+    QCOMPARE(normalCreated, 0);
+    QVERIFY(manager.isInstantiated(QStringLiteral("monitor")));
+    QVERIFY(!manager.isInstantiated(QStringLiteral("normal")));
+    auto *monitor = static_cast<RuntimePlugin *>(manager.plugin(QStringLiteral("monitor")));
+    QCOMPARE(monitor->activations, 1);
+    // 禁用后不再启动，重新启用时通过 activate 恢复后台工作。
+    manager.setPluginEnabled(QStringLiteral("monitor"), false, [](bool) {});
+    manager.startBackgroundPlugin(QStringLiteral("monitor"));
+    QCOMPARE(monitor->activations, 1);
+    manager.setPluginEnabled(QStringLiteral("monitor"), true, [](bool) {});
+    manager.startBackgroundPlugin(QStringLiteral("monitor"));
+    QCOMPARE(monitor->activations, 2);
 }
 
 void TstPluginRuntime::failedFactoryCanRetryWithoutRecursion()

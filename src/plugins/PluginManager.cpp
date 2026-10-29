@@ -138,6 +138,18 @@ bool PluginManager::isInstantiated(const QString &id) const
     const auto it = m_entries.find(normalized(id));
     return it != m_entries.end() && !it->second.instance.isNull();
 }
+void PluginManager::startBackgroundPlugins()
+{
+    for (const QString &id : m_ids) startBackgroundPlugin(id);
+}
+void PluginManager::startBackgroundPlugin(const QString &id)
+{
+    const auto it = m_entries.find(normalized(id));
+    if (it == m_entries.end() || !it->second.descriptor.background) return;
+    // 禁用状态不初始化，也不恢复已停止的后台监听。
+    if (IPlugin *instance = ensureInstance(it->second))
+        instance->activate(invocation(it->second.descriptor.commands.first().keyword));
+}
 IPlugin *PluginManager::plugin(const QString &cmd)
 {
     const Route *r = route(cmd);

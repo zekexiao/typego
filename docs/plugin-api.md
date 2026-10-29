@@ -45,7 +45,7 @@ initialize(Host*) 在首次使用时执行。仅 initialize 与 shutdown 是必�
     assets/...
 ~~~
 
-目录名必须与元信息 id 完全一致。扫描仅读取 DLL 内嵌的 Qt 插件元数据，不加载 DLL 或执行客户构造函数；命令与设置列表可在未实例化插件时显示。注册失败会在启动时提示错误与路径，首次加载或初始化失败会写入日志；查询会展示错误，执行会返回失败。
+目录名必须与元信息 id 完全一致。扫描仅读取 DLL 内嵌的 Qt 插件元数据，不加载 DLL 或执行客户构造函数；命令与设置列表可在未实例化插件时显示。注册失败会在启动时提示错误与路径，首次加载或初始化失败会写入日志；查询会展示错误，执行会返回失败。声明 `background` 的插件是唯一例外：宿主在启动时以及该插件被重新启用时初始化它，因此初始化必须轻量并能随时停止后台工作。
 
 设置页可禁用插件。禁用会先协调保存并阻止新调用，已加载二进制保留映射到进程结束。更新或删除插件前必须退出 TypeGo；不要覆盖正在运行的 DLL。卸载插件包不会自动删除独立保存在 %LOCALAPPDATA%/TypeGo/plugin-data/<id>/ 的用户数据。
 
@@ -60,6 +60,7 @@ plugin.json 由客户维护，SDK 在构建时添加 apiMajor、apiMinor 和 abi
   "description": "My plugin",
   "requires": ["async", "widgets", "config"],
   "hasSettings": false,
+  "background": false,
   "commands": [
     {"id": "search", "keyword": "myplugin", "aliases": ["mp"]},
     {"id": "new", "keyword": "myplugin-new", "directActivation": true},
@@ -75,6 +76,7 @@ plugin.json 由客户维护，SDK 在构建时添加 apiMajor、apiMinor 和 abi
 | description | 必填显示描述，1–512 字符 |
 | requires | 可选数组；当前支持 async、widgets、config。未知必需能力在加载前被拒绝 |
 | hasSettings | 可选布尔值，默认 false；为 true 时实现 createSettingsView |
+| background | 可选布尔值，默认 false；为 true 时宿主在启动和重新启用时初始化插件，用于需要持续后台工作的能力（如剪贴板监听）。此类插件必须让 initialize 保持轻量，并在禁用或退出时停止后台工作 |
 | commands | 1–32 条；每条 id 在插件内唯一，身份规则同插件 id |
 | keyword / aliases | keyword 必填；aliases 默认空，最多 16 个；小写字母开头，其余为小写字母、数字或短横线，最多 64 字符；所有入口全局唯一 |
 | mode | list（默认）、view、queryView；后者可配合 requiresArguments |

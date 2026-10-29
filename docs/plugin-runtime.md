@@ -14,6 +14,7 @@
 - 一个应用可以有多条不同命令。插件通过 `PluginInvocation.commandId` 分流业务，不需要宿主识别插件名字。
 - 描述、是否有设置页、自动进入和呈现方式由元信息声明；读取它们不会创建实例。
 - 工厂接收 QObject 父对象，管理器持有运行实例；工厂和构造函数均应轻量。数据库、正文、图片和编辑器继续按需加载。
+- `PluginDescriptor.background` 为 true 时管理器在 `startBackgroundPlugins()`（启动）和插件重新启用时调用 `activate`，用于剪贴板监听这类必须持续工作的插件；禁用或退出时插件应在 `prepareToLeave` 停止后台工作。其余插件仍保持首次使用才创建。
 
 已有插件保留 `registerPlugin(IPlugin *)`、字符串查询及 map 动作的适配接口。旧插件的 `command()` 和 `description()` 暂时仍是 `IPlugin` 的必需接口，登记元信息需与之保持一致。
 

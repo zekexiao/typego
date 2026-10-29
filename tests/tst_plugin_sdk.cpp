@@ -56,6 +56,13 @@ void TstPluginSdk::metadataMatchesConsumerToolchain()
     QCOMPARE(result.manifest.descriptor.commands.size(), 3);
     QCOMPARE(result.manifest.abi, Api::nativeAbi());
     QVERIFY(!result.manifest.descriptor.commands.first().supportsDetach);
+    QVERIFY(!result.manifest.descriptor.background);
+
+    const auto background = parsePluginManifest(changed(QStringLiteral("background"), true));
+    QVERIFY2(!background.error, qPrintable(background.error.message));
+    QVERIFY(background.manifest.descriptor.background);
+    QCOMPARE(parsePluginManifest(changed(QStringLiteral("background"), QStringLiteral("yes"))).error.code,
+             Api::ErrorCode::InvalidArgument);
 
     auto metadataWithDetach = metadata();
     auto data = metadataWithDetach.value(QStringLiteral("MetaData")).toObject();

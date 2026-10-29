@@ -156,6 +156,11 @@ int main(int argc, char *argv[])
         .filePath(QStringLiteral("plugins")));
     ExternalPluginRegistry externalPlugins(pluginManager, std::move(pluginPaths));
     externalPlugins.discover();
+    // 声明 background 的插件（如剪贴板）需要从启动开始工作；其余插件仍按首次使用加载。
+    pluginManager.startBackgroundPlugins();
+    QObject::connect(&settings, &Settings::pluginEnabledChanged, &pluginManager, [&pluginManager](const QString &id) {
+        pluginManager.startBackgroundPlugin(id);
+    });
 
     MainWindow window(&launcher, &pluginManager, &settings, &updater, &themeManager);
     QObject::connect(&launcher, &AppLauncher::pinStorageError, &window, [&window](const QString &message) {
