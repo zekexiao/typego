@@ -22,6 +22,7 @@ find_package(Qt6 REQUIRED COMPONENTS Core Gui Widgets Svg Network Concurrent Lin
 add_subdirectory(sdk)
 add_subdirectory(plugins/neo-json-viewer)
 add_subdirectory(plugins/clipboard)
+add_subdirectory(plugins/screenshot)
 # 生成可直接交给客户的 SDK；示例从安装目录独立查找接口。
 add_custom_target(plugin_sdk_package ALL
     COMMAND ${CMAKE_COMMAND} --install "${CMAKE_BINARY_DIR}/sdk"

@@ -1,0 +1,12 @@
+{
+  "id": "screenshot",
+  "version": "1.0.0",
+  "description": "Screenshot, annotate, pin to screen and keep history",
+  "requires": ["widgets", "config"],
+  "hasSettings": true,
+  "commands": [
+    {"id": "capture", "keyword": "shot", "aliases": ["screenshot", "snip", "jietu"], "mode": "list", "presentation": "overlay", "directActivation": true},
+    {"id": "fullscreen", "keyword": "shot-full", "aliases": ["shot-screen"], "mode": "list", "presentation": "overlay", "directActivation": true},
+    {"id": "history", "keyword": "shot-history", "aliases": ["shots"], "mode": "list"}
+  ]
+}

@@ -78,3 +78,8 @@ typego_add_test(tst_clipboard_store tst_clipboard_store.cpp
     ${CMAKE_SOURCE_DIR}/plugins/clipboard/ClipboardStore.cpp
     ${CMAKE_SOURCE_DIR}/plugins/clipboard/ClipboardIcons.cpp)
 target_include_directories(tst_clipboard_store PRIVATE "${CMAKE_SOURCE_DIR}/plugins/clipboard")
+
+# 截图历史存储只依赖 Qt Gui，可在临时目录中验证淘汰、缩略图和清理。
+typego_add_test(tst_screenshot_store tst_screenshot_store.cpp
+    ${CMAKE_SOURCE_DIR}/plugins/screenshot/ScreenshotStore.cpp)
+target_include_directories(tst_screenshot_store PRIVATE "${CMAKE_SOURCE_DIR}/plugins/screenshot")

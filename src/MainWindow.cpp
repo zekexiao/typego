@@ -1460,6 +1460,21 @@ void MainWindow::applyExecutionResult(const PluginInvocation &call, const Plugin
     }
     if (result.hostAction == PluginExecutionResult::HostAction::Hide) requestHide();
     else if (result.hostAction == PluginExecutionResult::HostAction::OpenView) {
+        const PluginCommand *command = m_pluginManager->commandDescriptor(call.keyword);
+        if (command && command->presentation == PluginPresentation::Overlay) {
+            // 截屏覆盖层必须先把启动器藏起来，否则画面里会带上 TypeGo 自己。
+            // 隐藏同样走离开检查，内嵌应用有未保存内容时不会强行关闭。
+            QPointer<MainWindow> guard(this);
+            m_windowHost->prepareToHide([guard, call](bool accepted) {
+                if (!guard || !accepted) return;
+                guard->hide();
+                if (!guard->m_windowHost->open(call)) {
+                    QMessageBox::warning(guard, tr("Action failed"),
+                        tr("The selected item could not be opened or executed."));
+                }
+            });
+            return;
+        }
         if (!m_windowHost->open(call)) {
             QMessageBox::warning(this, tr("Action failed"), tr("The selected item could not be opened or executed."));
         }

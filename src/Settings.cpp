@@ -79,7 +79,11 @@ void Settings::setPluginEnabled(const QString &name, bool enabled)
 
 QString Settings::pluginHotkey(const QString &name) const
 {
-    return m_settings.value("pluginHotkeys/" + name).toString();
+    // 截图对标 PixPin 使用 F1 作为开箱即用的默认快捷键；用户清空后保持为空。
+    const QString key = QStringLiteral("pluginHotkeys/") + name;
+    if (!m_settings.contains(key) && name == QLatin1String("shot"))
+        return QStringLiteral("F1");
+    return m_settings.value(key).toString();
 }
 
 void Settings::setPluginHotkey(const QString &name, const QString &shortcut)
