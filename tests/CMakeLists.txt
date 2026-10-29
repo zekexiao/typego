@@ -70,3 +70,5 @@ target_compile_options(restart_parent PRIVATE $<$<CXX_COMPILER_ID:MSVC>:/utf-8>)
 typego_add_test(tst_restart tst_restart.cpp)
 add_dependencies(tst_restart restart_parent)
 target_compile_definitions(tst_restart PRIVATE TYPEGO_RESTART_PARENT="$<TARGET_FILE:restart_parent>")
+
+typego_add_test(tst_json_tree_model tst_json_tree_model.cpp)

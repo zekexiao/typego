@@ -1,0 +1,9 @@
+{
+  "id": "json-viewer",
+  "version": "1.0.0",
+  "description": "JSON View",
+  "requires": ["widgets"],
+  "commands": [
+    {"id": "viewer", "keyword": "json", "aliases": ["json-viewer"], "mode": "view", "presentation": "embedded", "directActivation": true, "detachable": true}
+  ]
+}

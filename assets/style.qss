@@ -322,6 +322,23 @@ QTreeView::item {
     border-radius: 8px;
 }
 
+/* 单元格编辑器由委托定位，不能继承普通表单输入框的最小高度和内边距。 */
+QTreeView#jsonTreeView QLineEdit,
+QTreeView#jsonTreeView QAbstractSpinBox,
+QTreeView#jsonTreeView QComboBox {
+    min-height: 0;
+    padding: 0 2px;
+    border-radius: 2px;
+}
+
+QTreeView#jsonTreeView QLineEdit:focus,
+QTreeView#jsonTreeView QAbstractSpinBox:focus,
+QTreeView#jsonTreeView QComboBox:focus {
+    min-height: 0;
+    padding: 0 1px;
+    border-radius: 2px;
+}
+
 QPlainTextEdit#shellOutput {
     padding: 10px;
     background-color: @GLASS_INSET@;

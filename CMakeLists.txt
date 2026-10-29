@@ -20,6 +20,7 @@ list(PREPEND CMAKE_PREFIX_PATH "C:/Qt/6.10.3/msvc2022_64")
 find_package(Qt6 REQUIRED COMPONENTS Core Gui Widgets Svg Network Concurrent LinguistTools)
 
 add_subdirectory(sdk)
+add_subdirectory(plugins/neo-json-viewer)
 # 生成可直接交给客户的 SDK；示例从安装目录独立查找接口。
 add_custom_target(plugin_sdk_package ALL
     COMMAND ${CMAKE_COMMAND} --install "${CMAKE_BINARY_DIR}/sdk"
@@ -96,6 +97,8 @@ target_link_libraries(typego_core PUBLIC
     Qt6::Gui
     Qt6::Widgets
 )
+
+target_link_libraries(typego_core PUBLIC neo_json_model)
 
 qt_add_executable(TypeGo
     src/main.cpp
