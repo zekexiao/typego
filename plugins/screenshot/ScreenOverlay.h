@@ -49,6 +49,7 @@ private:
     void paintGuides(QPainter &painter);
     void paintHover(QPainter &painter);
     void paintMagnifier(QPainter &painter);
+    void paintTextInputOutline(QPainter &painter);
     void updateCursorShape();
     void commitTextInput();
 

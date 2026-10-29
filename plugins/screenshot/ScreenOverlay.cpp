@@ -92,6 +92,7 @@ void ScreenOverlay::paintEvent(QPaintEvent *)
     paintGuides(painter);
     paintHover(painter);
     paintMagnifier(painter);
+    paintTextInputOutline(painter);
 }
 
 void ScreenOverlay::paintDesktop(QPainter &painter)
@@ -420,23 +421,42 @@ void ScreenOverlay::beginTextInput(const QPointF &globalPosition)
     cancelTextInput();
     m_textOrigin = globalPosition;
     const QPointF local = toLocal(globalPosition);
-    m_textEdit = new QLineEdit(this);
+
     QFont font;
     font.setPixelSize(qBound(12, 12 + m_session->width() * 3, 48));
     font.setBold(true);
-    m_textEdit->setFont(font);
+
+    m_textEdit = new QLineEdit(this);
     m_textEdit->setFrame(false);
+    m_textEdit->setContentsMargins(0, 0, 0, 0);
+    m_textEdit->setTextMargins(0, 0, 0, 0);
     const QString color = m_session->color().name();
+    // 字体必须写进样式表：设置样式表会重新应用界面默认字体，只调 setFont 会被覆盖。
     m_textEdit->setStyleSheet(QStringLiteral(
-        "QLineEdit { background: rgba(20, 22, 26, 205); color: %1; border: 1px solid rgba(255,255,255,140); border-radius: 3px; padding: 2px 4px; }")
-        .arg(color));
-    m_textEdit->setFixedHeight(font.pixelSize() + 12);
+        "QLineEdit { background: rgba(20, 22, 26, 200); color: %1; border: none; padding: 0;"
+        " font-size: %2px; font-weight: bold; }")
+        .arg(color).arg(font.pixelSize()));
+    m_textEdit->setFont(font);
+
+    // 高度取字体紧致行高，编辑框基线才能与最终 drawText 的基线一致。
+    const QFontMetrics metrics(font);
+    m_textEdit->setFixedHeight(qMax(1, metrics.ascent() + metrics.descent()));
     m_textEdit->resize(240, m_textEdit->height());
-    m_textEdit->move(local.toPoint() - QPoint(4, 2));
+    m_textEdit->move(local.toPoint());
     m_textEdit->show();
     m_textEdit->setFocus(Qt::MouseFocusReason);
     installEventFilter(m_textEdit);
     update();
+}
+
+void ScreenOverlay::paintTextInputOutline(QPainter &painter)
+{
+    if (!m_textEdit) return;
+    painter.save();
+    painter.setBrush(Qt::NoBrush);
+    painter.setPen(QPen(QColor(255, 255, 255, 170), 1, Qt::DashLine));
+    painter.drawRect(m_textEdit->geometry().adjusted(-3, -3, 3, 3));
+    painter.restore();
 }
 
 void ScreenOverlay::cancelTextInput()
