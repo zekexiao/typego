@@ -198,12 +198,7 @@ private:
                 || item.actionId.size() > 128 || !validPluginParameters(item.parameters))
                 return errorQuery(result.id, {Api::ErrorCode::InvalidArgument, QStringLiteral("Invalid query result fields")});
             ids.insert(item.id);
-            QString icon;
-            if (!item.icon.isEmpty()) {
-                const QString root = QFileInfo(m_loader.fileName()).absolutePath();
-                  const QString path = QFileInfo(QDir(root).filePath(item.icon)).canonicalFilePath();
-                if (inside(path, root)) icon = path;
-            }
+            const QString icon = resolveIcon(item.icon);
             const QVariantMap action = item.actionId.isEmpty()
                 ? QVariantMap{{QStringLiteral("type"), QStringLiteral("none")}}
                 : QVariantMap{{QStringLiteral("type"), QStringLiteral("external")},
@@ -223,6 +218,20 @@ private:
             return failure(result.error ? result.error : Api::Error{Api::ErrorCode::Internal, QStringLiteral("Plugin operation failed")});
         return {static_cast<PluginExecutionResult::Status>(result.status),
                 static_cast<PluginExecutionResult::HostAction>(result.hostAction)};
+    }
+    // 结果图标只能是包内文件或本插件自己的数据/缓存/临时目录文件，避免任意路径读取。
+    QString resolveIcon(const QString &icon) const
+    {
+        if (icon.isEmpty()) return {};
+        const QString id = m_manifest.descriptor.id;
+        QStringList roots{QFileInfo(m_loader.fileName()).absolutePath()};
+        for (const QString &base : {m_paths.data, m_paths.cache, m_paths.temporary})
+            if (!base.isEmpty()) roots.append(QDir(base).filePath(id));
+        const QString canonical = QFileInfo(QDir(roots.first()).filePath(icon)).canonicalFilePath();
+        if (canonical.isEmpty()) return {};
+        for (const QString &root : std::as_const(roots))
+            if (inside(canonical, QFileInfo(root).canonicalFilePath())) return canonical;
+        return {};
     }
     QWidget *checkedView(QWidget *view, QWidget *parent)
     {

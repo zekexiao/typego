@@ -1,6 +1,7 @@
 #include <QtTest>
 #include <QDir>
 #include <QFile>
+#include <QFileInfo>
 #include <QJsonArray>
 #include <QPluginLoader>
 #include <QSettings>
@@ -241,6 +242,18 @@ void TstPluginSdk::malformedResultsAndLateCallbacksAreRejected()
         QCOMPARE(result.items.first().toMap().value(QStringLiteral("errorCode")).toInt(), static_cast<int>(Api::ErrorCode::InvalidArgument));
         QVERIFY(!result.pending);
     }
+    // 图标允许包内文件与本插件自己的数据目录；其他路径静默忽略。
+    const auto dataIcon = manager.startQuery(QStringLiteral("contract"), QStringLiteral("icon-data"));
+    const QString dataIconPath = dataIcon.items.first().toMap().value(QStringLiteral("icon")).toString();
+    QVERIFY(!dataIconPath.isEmpty());
+    QVERIFY(QFileInfo::exists(dataIconPath));
+    const auto packageIcon = manager.startQuery(QStringLiteral("contract"), QStringLiteral("icon-package"));
+    const QString packageIconPath = packageIcon.items.first().toMap().value(QStringLiteral("icon")).toString();
+    QVERIFY(!packageIconPath.isEmpty());
+    QVERIFY(QFileInfo::exists(packageIconPath));
+    const auto outsideIcon = manager.startQuery(QStringLiteral("contract"), QStringLiteral("icon-outside"));
+    QVERIFY(outsideIcon.items.first().toMap().value(QStringLiteral("icon")).toString().isEmpty());
+    QVERIFY(!outsideIcon.items.first().toMap().contains(QStringLiteral("errorCode")));
     QSignalSpy finished(&manager, &PluginManager::queryFinished);
     QVERIFY(manager.startQuery(QStringLiteral("contract"), QStringLiteral("late")).pending);
     manager.startQuery(QStringLiteral("contract"), QStringLiteral("current"));

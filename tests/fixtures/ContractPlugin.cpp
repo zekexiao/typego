@@ -1,4 +1,6 @@
 #include <TypeGoPlugin/Plugin.h>
+#include <QDir>
+#include <QFile>
 #include <QTimer>
 
 namespace Api = TypeGo::PluginApi;
@@ -19,6 +21,25 @@ public:
         if (text == QLatin1String("invalid-parameters"))
             result.items.first().parameters.insert(QStringLiteral("object"), QVariantMap{{QStringLiteral("nested"), true}});
         if (text == QLatin1String("oversized")) result.items.first().title.fill(QLatin1Char('x'), 513);
+        // 图标可引用本插件包、数据目录内的文件，其他路径必须被拒绝。
+        if (text == QLatin1String("icon-data")) {
+            const QString path = QDir(m_host->directory(Api::Directory::Data)).filePath(QStringLiteral("thumb.png"));
+            QFile file(path);
+            if (file.open(QIODevice::WriteOnly)) file.write("icon");
+            result.items.first().icon = path;
+        }
+        if (text == QLatin1String("icon-package")) {
+            const QString path = QDir(m_host->directory(Api::Directory::Package)).filePath(QStringLiteral("icon.png"));
+            QFile file(path);
+            if (file.open(QIODevice::WriteOnly)) file.write("icon");
+            result.items.first().icon = QStringLiteral("icon.png");
+        }
+        if (text == QLatin1String("icon-outside")) {
+            const QString path = QDir(QDir::tempPath()).filePath(QStringLiteral("typego-icon-outside.png"));
+            QFile file(path);
+            if (file.open(QIODevice::WriteOnly)) file.write("icon");
+            result.items.first().icon = path;
+        }
         if (text == QLatin1String("inline")) {
             m_host->publishQuery(result);
             m_host->publishQuery(result);

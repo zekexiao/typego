@@ -34,7 +34,7 @@ Api::Error ClipboardPlugin::initialize(Api::Host *host)
     const QString dataDir = host->directory(Api::Directory::Data);
     if (dataDir.isEmpty())
         return {Api::ErrorCode::IoError, QStringLiteral("Clipboard data directory is unavailable")};
-    m_store = std::make_unique<ClipboardStore>(dataDir);
+    m_store = std::make_unique<ClipboardStore>(dataDir, host->directory(Api::Directory::Cache));
     applyConfig();
     m_store->load();
 
@@ -161,6 +161,8 @@ Api::ResultItem ClipboardPlugin::resultItem(const ClipboardItem &item) const
         result.title = tr("Image %1 × %2").arg(item.imageSize.width()).arg(item.imageSize.height());
         const qint64 bytes = QFileInfo(m_store->imagePath(item)).size();
         result.subtitle = tr("%1 KB · %2").arg(qMax<qint64>(1, bytes / 1024)).arg(time);
+        const QString thumbnail = m_store->thumbnailPath(item);
+        if (!thumbnail.isEmpty() && QFileInfo::exists(thumbnail)) result.icon = thumbnail;
         break;
     }
     }
@@ -176,6 +178,8 @@ Api::QueryResult ClipboardPlugin::query(const Api::QueryRequest &request)
     const int limit = qMin(request.limit, Api::MaxResults);
     for (const ClipboardItem &entry : m_store->items()) {
         if (!filter.isEmpty() && !matches(entry, filter)) continue;
+        // 缓存被清理后按需重建缩略图，避免启动时批量解码图片。
+        if (entry.type == ClipboardItem::Type::Image) m_store->ensureThumbnail(entry);
         items.append(resultItem(entry));
         if (items.size() >= limit) break;
     }

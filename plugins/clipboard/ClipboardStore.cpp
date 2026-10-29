@@ -19,6 +19,8 @@ constexpr qsizetype MaxTextChars = 200000;
 constexpr int MaxFilesPerItem = 64;
 constexpr qint64 MaxImagePixels = 25000000;
 constexpr int MaxItemsLimit = 200;
+// 结果图标按 32px 绘制，缩略图取 64px 兼顾高 DPI。
+constexpr int ThumbnailSize = 64;
 
 QByteArray hashOf(const QByteArray &prefix, const QByteArray &data)
 {
@@ -48,8 +50,9 @@ bool parseType(const QString &value, ClipboardItem::Type *type)
 }
 } // namespace
 
-ClipboardStore::ClipboardStore(QString dataDir)
-    : m_dataDir(std::move(dataDir)), m_imageDir(QDir(m_dataDir).filePath(QStringLiteral("images")))
+ClipboardStore::ClipboardStore(QString dataDir, QString cacheDir)
+    : m_dataDir(std::move(dataDir)), m_imageDir(QDir(m_dataDir).filePath(QStringLiteral("images"))),
+      m_thumbDir(cacheDir.isEmpty() ? QString() : QDir(cacheDir).filePath(QStringLiteral("thumbnails")))
 {
 }
 
@@ -85,7 +88,8 @@ void ClipboardStore::load()
                 item.id = object.value(QStringLiteral("id")).toString();
                 item.timestamp = object.value(QStringLiteral("time")).toVariant().toLongLong();
                 item.hash = QByteArray::fromHex(object.value(QStringLiteral("hash")).toString().toLatin1());
-                if (item.id.isEmpty() || item.hash.isEmpty() || !parseType(object.value(QStringLiteral("type")).toString(), &item.type))
+                if (item.id.isEmpty() || item.id != QFileInfo(item.id).fileName()
+                    || item.hash.isEmpty() || !parseType(object.value(QStringLiteral("type")).toString(), &item.type))
                     continue;
                 if (item.type == ClipboardItem::Type::Text) {
                     item.text = object.value(QStringLiteral("text")).toString();
@@ -110,6 +114,7 @@ void ClipboardStore::load()
     }
     if (m_items.size() > m_maxItems) trim();
     cleanOrphanImages();
+    cleanOrphanThumbs();
 }
 
 bool ClipboardStore::save()
@@ -154,6 +159,7 @@ void ClipboardStore::clear()
     for (const auto &item : std::as_const(m_items)) removeImage(item);
     m_items.clear();
     if (QDir(m_imageDir).exists()) QDir(m_imageDir).removeRecursively();
+    if (!m_thumbDir.isEmpty() && QDir(m_thumbDir).exists()) QDir(m_thumbDir).removeRecursively();
 }
 
 const ClipboardItem *ClipboardStore::find(const QString &id) const
@@ -165,6 +171,30 @@ const ClipboardItem *ClipboardStore::find(const QString &id) const
 QString ClipboardStore::imagePath(const ClipboardItem &item) const
 {
     return QDir(m_imageDir).filePath(item.imageName);
+}
+
+QString ClipboardStore::thumbnailPath(const ClipboardItem &item) const
+{
+    if (m_thumbDir.isEmpty() || item.type != ClipboardItem::Type::Image || item.id.isEmpty()) return {};
+    return QDir(m_thumbDir).filePath(QStringLiteral("thumb-") + item.id + QStringLiteral(".png"));
+}
+
+bool ClipboardStore::writeThumbnail(const ClipboardItem &item, const QImage &image)
+{
+    const QString path = thumbnailPath(item);
+    if (path.isEmpty() || image.isNull()) return false;
+    const QImage thumbnail = image.scaled(ThumbnailSize, ThumbnailSize, Qt::KeepAspectRatio, Qt::SmoothTransformation);
+    if (thumbnail.isNull() || !QDir().mkpath(m_thumbDir)) return false;
+    QSaveFile file(path);
+    return file.open(QIODevice::WriteOnly) && thumbnail.save(&file, "PNG") && file.commit();
+}
+
+bool ClipboardStore::ensureThumbnail(const ClipboardItem &item)
+{
+    const QString path = thumbnailPath(item);
+    if (path.isEmpty()) return false;
+    if (QFileInfo::exists(path)) return true;
+    return writeThumbnail(item, QImage(imagePath(item)));
 }
 
 QString ClipboardStore::newId(qint64 now)
@@ -256,6 +286,8 @@ bool ClipboardStore::captureImage(const QImage &image, qint64 now)
         m_lastError = QStringLiteral("Cannot save clipboard image");
         return false;
     }
+    // 缩略图失败不影响历史，查询时会重试。
+    writeThumbnail(item, image);
     m_items.prepend(std::move(item));
     trim();
     return true;
@@ -279,6 +311,7 @@ void ClipboardStore::removeImage(const ClipboardItem &item)
 {
     if (item.type != ClipboardItem::Type::Image || item.imageName.isEmpty()) return;
     QFile::remove(imagePath(item));
+    QFile::remove(thumbnailPath(item));
 }
 
 void ClipboardStore::cleanOrphanImages()
@@ -289,5 +322,17 @@ void ClipboardStore::cleanOrphanImages()
     for (const auto &item : std::as_const(m_items))
         if (item.type == ClipboardItem::Type::Image) referenced.insert(item.imageName);
     for (const QFileInfo &entry : imageDir.entryInfoList(QDir::Files))
+        if (!referenced.contains(entry.fileName())) QFile::remove(entry.absoluteFilePath());
+}
+
+void ClipboardStore::cleanOrphanThumbs()
+{
+    QDir thumbDir(m_thumbDir);
+    if (m_thumbDir.isEmpty() || !thumbDir.exists()) return;
+    QSet<QString> referenced;
+    for (const auto &item : std::as_const(m_items))
+        if (item.type == ClipboardItem::Type::Image)
+            referenced.insert(QFileInfo(thumbnailPath(item)).fileName());
+    for (const QFileInfo &entry : thumbDir.entryInfoList(QDir::Files))
         if (!referenced.contains(entry.fileName())) QFile::remove(entry.absoluteFilePath());
 }

@@ -25,7 +25,7 @@ struct ClipboardItem {
 // 相同内容只保留一条，再次出现时置顶而不是重复记录。
 class ClipboardStore {
 public:
-    explicit ClipboardStore(QString dataDir);
+    ClipboardStore(QString dataDir, QString cacheDir);
 
     // 读取索引并清理已损坏或超出上限的条目。
     void load();
@@ -38,6 +38,9 @@ public:
     const QList<ClipboardItem> &items() const { return m_items; }
     const ClipboardItem *find(const QString &id) const;
     QString imagePath(const ClipboardItem &item) const;
+    // 缩略图放在可清理的缓存目录，缺失时由 ensureThumbnail 重建。
+    QString thumbnailPath(const ClipboardItem &item) const;
+    bool ensureThumbnail(const ClipboardItem &item);
     QString lastError() const { return m_lastError; }
 
     // 返回 true 表示历史内容有变化，需要调用 save()。
@@ -52,11 +55,14 @@ private:
     void trim();
     void removeImage(const ClipboardItem &item);
     void cleanOrphanImages();
+    void cleanOrphanThumbs();
+    bool writeThumbnail(const ClipboardItem &item, const QImage &image);
     QString newId(qint64 now);
     QString dataPath(const QString &name) const;
 
     QString m_dataDir;
     QString m_imageDir;
+    QString m_thumbDir;
     QList<ClipboardItem> m_items;
     QString m_lastError;
     int m_maxItems = 50;
