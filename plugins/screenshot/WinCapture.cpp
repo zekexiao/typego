@@ -62,24 +62,27 @@ QList<MonitorInfo> monitors()
     return result;
 }
 
-QImage captureVirtualDesktop(QRect *bounds, QString *error)
+namespace {
+
+QRect virtualScreenRect()
 {
-    const int x = GetSystemMetrics(SM_XVIRTUALSCREEN);
-    const int y = GetSystemMetrics(SM_YVIRTUALSCREEN);
-    const int width = GetSystemMetrics(SM_CXVIRTUALSCREEN);
-    const int height = GetSystemMetrics(SM_CYVIRTUALSCREEN);
-    if (width <= 0 || height <= 0) {
-        if (error) *error = QStringLiteral("Cannot read the virtual screen bounds");
+    return QRect(GetSystemMetrics(SM_XVIRTUALSCREEN), GetSystemMetrics(SM_YVIRTUALSCREEN),
+                 GetSystemMetrics(SM_CXVIRTUALSCREEN), GetSystemMetrics(SM_CYVIRTUALSCREEN));
+}
+
+QImage grabScreenRect(const QRect &rect, QString *error)
+{
+    if (rect.width() <= 0 || rect.height() <= 0) {
+        if (error) *error = QStringLiteral("Invalid screen capture rectangle");
         return {};
     }
-
     HDC screenDc = GetDC(nullptr);
     if (!screenDc) {
         if (error) *error = QStringLiteral("Cannot access the screen device context");
         return {};
     }
     HDC memoryDc = CreateCompatibleDC(screenDc);
-    HBITMAP bitmap = memoryDc ? CreateCompatibleBitmap(screenDc, width, height) : nullptr;
+    HBITMAP bitmap = memoryDc ? CreateCompatibleBitmap(screenDc, rect.width(), rect.height()) : nullptr;
     if (!memoryDc || !bitmap) {
         if (memoryDc) DeleteDC(memoryDc);
         ReleaseDC(nullptr, screenDc);
@@ -88,22 +91,24 @@ QImage captureVirtualDesktop(QRect *bounds, QString *error)
     }
 
     const HGDIOBJ previous = SelectObject(memoryDc, bitmap);
-    const BOOL copied = BitBlt(memoryDc, 0, 0, width, height, screenDc, x, y, SRCCOPY | CAPTUREBLT);
+    const BOOL copied = BitBlt(memoryDc, 0, 0, rect.width(), rect.height(), screenDc,
+                               rect.x(), rect.y(), SRCCOPY | CAPTUREBLT);
     SelectObject(memoryDc, previous);
 
     QImage image;
     if (copied) {
-        image = QImage(width, height, QImage::Format_RGB32);
+        image = QImage(rect.width(), rect.height(), QImage::Format_RGB32);
         BITMAPINFO info = {};
         info.bmiHeader.biSize = sizeof(BITMAPINFOHEADER);
-        info.bmiHeader.biWidth = width;
+        info.bmiHeader.biWidth = rect.width();
         // 负高度表示自上而下，和 QImage 扫描线顺序一致。
-        info.bmiHeader.biHeight = -height;
+        info.bmiHeader.biHeight = -rect.height();
         info.bmiHeader.biPlanes = 1;
         info.bmiHeader.biBitCount = 32;
         info.bmiHeader.biCompression = BI_RGB;
-        const int lines = GetDIBits(memoryDc, bitmap, 0, height, image.bits(), &info, DIB_RGB_COLORS);
-        if (lines != height) image = QImage();
+        const int lines = GetDIBits(memoryDc, bitmap, 0, rect.height(), image.bits(), &info,
+                                    DIB_RGB_COLORS);
+        if (lines != rect.height()) image = QImage();
     }
 
     DeleteObject(bitmap);
@@ -114,8 +119,48 @@ QImage captureVirtualDesktop(QRect *bounds, QString *error)
         if (error) *error = QStringLiteral("Screen capture failed");
         return {};
     }
-    if (bounds) *bounds = QRect(x, y, width, height);
     return image;
+}
+
+} // namespace
+
+QImage captureVirtualDesktop(QRect *bounds, QString *error)
+{
+    const QRect rect = virtualScreenRect();
+    if (rect.isEmpty()) {
+        if (error) *error = QStringLiteral("Cannot read the virtual screen bounds");
+        return {};
+    }
+    const QImage image = grabScreenRect(rect, error);
+    if (!image.isNull() && bounds) *bounds = rect;
+    return image;
+}
+
+QImage captureRect(const QRect &physicalRect, QString *error)
+{
+    const QRect rect = physicalRect.intersected(virtualScreenRect());
+    if (rect.isEmpty()) {
+        if (error) *error = QStringLiteral("The capture area is outside the screen");
+        return {};
+    }
+    return grabScreenRect(rect, error);
+}
+
+bool excludeFromCapture(quintptr window)
+{
+#ifndef WDA_EXCLUDEFROMCAPTURE
+#define WDA_EXCLUDEFROMCAPTURE 0x00000011
+#endif
+    HWND handle = reinterpret_cast<HWND>(window);
+    return handle && SetWindowDisplayAffinity(handle, WDA_EXCLUDEFROMCAPTURE);
+}
+
+void forceTopmost(quintptr window)
+{
+    HWND handle = reinterpret_cast<HWND>(window);
+    if (!handle) return;
+    SetWindowPos(handle, HWND_TOPMOST, 0, 0, 0, 0,
+                 SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE | SWP_NOOWNERZORDER | SWP_SHOWWINDOW);
 }
 
 quintptr foregroundWindow()
@@ -179,6 +224,13 @@ QImage captureVirtualDesktop(QRect *, QString *error)
     if (error) *error = QStringLiteral("Screen capture is only supported on Windows");
     return {};
 }
+QImage captureRect(const QRect &, QString *error)
+{
+    if (error) *error = QStringLiteral("Screen capture is only supported on Windows");
+    return {};
+}
+bool excludeFromCapture(quintptr) { return false; }
+void forceTopmost(quintptr) {}
 quintptr foregroundWindow() { return 0; }
 bool isOwnProcess(quintptr) { return false; }
 void activateWindow(quintptr) {}

@@ -19,76 +19,81 @@
         </message>
         <message>
             <location filename="../CaptureToolbar.cpp" line="139" />
+            <source>Scrolling capture (S)</source>
+            <translation>滚动长截图 (S)</translation>
+        </message>
+        <message>
+            <location filename="../CaptureToolbar.cpp" line="140" />
             <source>Copy (Enter / Ctrl+C)</source>
             <translation>复制 (回车 / Ctrl+C)</translation>
         </message>
         <message>
-            <location filename="../CaptureToolbar.cpp" line="140" />
+            <location filename="../CaptureToolbar.cpp" line="141" />
             <source>Save as (Ctrl+S)</source>
             <translation>另存为 (Ctrl+S)</translation>
         </message>
         <message>
-            <location filename="../CaptureToolbar.cpp" line="141" />
+            <location filename="../CaptureToolbar.cpp" line="142" />
             <source>Pin to screen (Ctrl+P)</source>
             <translation>贴到屏幕 (Ctrl+P)</translation>
         </message>
         <message>
-            <location filename="../CaptureToolbar.cpp" line="142" />
+            <location filename="../CaptureToolbar.cpp" line="143" />
             <source>Cancel (Esc)</source>
             <translation>取消 (Esc)</translation>
         </message>
         <message>
-            <location filename="../CaptureToolbar.cpp" line="172" />
+            <location filename="../CaptureToolbar.cpp" line="174" />
             <source>Select</source>
             <translation>选择</translation>
         </message>
         <message>
-            <location filename="../CaptureToolbar.cpp" line="173" />
+            <location filename="../CaptureToolbar.cpp" line="175" />
             <source>Rectangle</source>
             <translation>矩形</translation>
         </message>
         <message>
-            <location filename="../CaptureToolbar.cpp" line="174" />
+            <location filename="../CaptureToolbar.cpp" line="176" />
             <source>Ellipse</source>
             <translation>椭圆</translation>
         </message>
         <message>
-            <location filename="../CaptureToolbar.cpp" line="175" />
+            <location filename="../CaptureToolbar.cpp" line="177" />
             <source>Arrow</source>
             <translation>箭头</translation>
         </message>
         <message>
-            <location filename="../CaptureToolbar.cpp" line="176" />
+            <location filename="../CaptureToolbar.cpp" line="178" />
             <source>Line</source>
             <translation>直线</translation>
         </message>
         <message>
-            <location filename="../CaptureToolbar.cpp" line="177" />
+            <location filename="../CaptureToolbar.cpp" line="179" />
             <source>Pen</source>
             <translation>画笔</translation>
         </message>
         <message>
-            <location filename="../CaptureToolbar.cpp" line="178" />
+            <location filename="../CaptureToolbar.cpp" line="180" />
             <source>Text</source>
             <translation>文字</translation>
         </message>
         <message>
-            <location filename="../CaptureToolbar.cpp" line="179" />
+            <location filename="../CaptureToolbar.cpp" line="181" />
             <source>Highlight</source>
             <translation>高亮</translation>
         </message>
         <message>
-            <location filename="../CaptureToolbar.cpp" line="180" />
+            <location filename="../CaptureToolbar.cpp" line="182" />
             <source>Mosaic</source>
             <translation>马赛克</translation>
         </message>
         <message>
-            <location filename="../CaptureToolbar.cpp" line="181" />
+            <location filename="../CaptureToolbar.cpp" line="183" />
             <source>Blur</source>
             <translation>模糊</translation>
         </message>
         <message>
-            <location filename="../CaptureToolbar.cpp" line="182" />
+            <location filename="../CaptureToolbar.cpp" line="184" />
             <source>Step number</source>
             <translation>序号</translation>
         </message>
@@ -139,82 +144,92 @@
     <context>
         <name>ScreenshotPlugin</name>
         <message>
-            <location filename="../ScreenshotPlugin.cpp" line="96" />
+            <location filename="../ScreenshotPlugin.cpp" line="103" />
             <source>Screenshot %1</source>
             <translation>截图 %1</translation>
         </message>
         <message>
-            <location filename="../ScreenshotPlugin.cpp" line="76" />
+            <location filename="../ScreenshotPlugin.cpp" line="79" />
             <source>Capture the screen</source>
             <translation>截取屏幕</translation>
         </message>
         <message>
-            <location filename="../ScreenshotPlugin.cpp" line="78" />
+            <location filename="../ScreenshotPlugin.cpp" line="79" />
+            <source>Scrolling screenshot</source>
+            <translation>滚动长截图</translation>
+        </message>
+        <message>
+            <location filename="../ScreenshotPlugin.cpp" line="81" />
+            <source>Select the scrolling area; capture starts after you release the mouse</source>
+            <translation>框选需要滚动的区域，松开鼠标后自动开始</translation>
+        </message>
+        <message>
+            <location filename="../ScreenshotPlugin.cpp" line="83" />
             <source>Start with the current display selected</source>
             <translation>从当前屏幕的整屏选区开始</translation>
         </message>
         <message>
-            <location filename="../ScreenshotPlugin.cpp" line="79" />
+            <location filename="../ScreenshotPlugin.cpp" line="85" />
             <source>Drag to select an area, click a highlighted window, or press Enter to copy</source>
             <translation>拖拽框选区域、单击高亮窗口，或按回车复制</translation>
         </message>
         <message>
-            <location filename="../ScreenshotPlugin.cpp" line="97" />
+            <location filename="../ScreenshotPlugin.cpp" line="104" />
             <source>%1 × %2 · %3 · Enter to pin</source>
             <translation>%1 × %2 · %3 · 回车贴图</translation>
         </message>
         <message>
-            <location filename="../ScreenshotPlugin.cpp" line="108" />
+            <location filename="../ScreenshotPlugin.cpp" line="115" />
             <source>No screenshots yet</source>
             <translation>还没有截图</translation>
         </message>
         <message>
-            <location filename="../ScreenshotPlugin.cpp" line="108" />
+            <location filename="../ScreenshotPlugin.cpp" line="115" />
             <source>No matching screenshot</source>
             <translation>没有匹配的截图</translation>
         </message>
         <message>
-            <location filename="../ScreenshotPlugin.cpp" line="109" />
+            <location filename="../ScreenshotPlugin.cpp" line="116" />
             <source>Press F1 or run "shot" to capture the screen</source>
             <translation>按 F1 或输入 shot 截取屏幕</translation>
         </message>
         <message>
-            <location filename="../ScreenshotPlugin.cpp" line="110" />
+            <location filename="../ScreenshotPlugin.cpp" line="117" />
             <source>Try another keyword</source>
             <translation>试试其他关键字</translation>
         </message>
         <message>
-            <location filename="../ScreenshotPlugin.cpp" line="133" />
+            <location filename="../ScreenshotPlugin.cpp" line="142" />
             <source>The screenshot is no longer available</source>
             <translation>截图已不存在</translation>
         </message>
         <message>
-            <location filename="../ScreenshotPlugin.cpp" line="137" />
+            <location filename="../ScreenshotPlugin.cpp" line="146" />
             <source>Cannot read the saved screenshot</source>
             <translation>无法读取已保存的截图</translation>
         </message>
         <message>
-            <location filename="../ScreenshotPlugin.cpp" line="250" />
+            <location filename="../ScreenshotPlugin.cpp" line="272" />
             <source>Screenshot failed</source>
             <translation>截图失败</translation>
         </message>
         <message>
-            <location filename="../ScreenshotPlugin.cpp" line="284" />
+            <location filename="../ScreenshotPlugin.cpp" line="306" />
             <source>Save screenshot</source>
             <translation>保存截图</translation>
         </message>
         <message>
-            <location filename="../ScreenshotPlugin.cpp" line="285" />
+            <location filename="../ScreenshotPlugin.cpp" line="307" />
             <source>PNG image (*.png);;JPEG image (*.jpg *.jpeg)</source>
             <translation>PNG 图片 (*.png);;JPEG 图片 (*.jpg *.jpeg)</translation>
         </message>
         <message>
-            <location filename="../ScreenshotPlugin.cpp" line="292" />
+            <location filename="../ScreenshotPlugin.cpp" line="314" />
             <source>Save failed</source>
             <translation>保存失败</translation>
         </message>
         <message>
-            <location filename="../ScreenshotPlugin.cpp" line="292" />
+            <location filename="../ScreenshotPlugin.cpp" line="314" />
             <source>Cannot save the image to %1</source>
             <translation>无法把图片保存到 %1</translation>
         </message>
@@ -222,17 +237,22 @@
     <context>
         <name>ScreenshotSession</name>
         <message>
-            <location filename="../ScreenshotSession.cpp" line="92" />
+            <location filename="../ScreenshotSession.cpp" line="98" />
             <source>Cannot capture the screen</source>
             <translation>无法捕获屏幕</translation>
         </message>
         <message>
-            <location filename="../ScreenshotSession.cpp" line="122" />
+            <location filename="../ScreenshotSession.cpp" line="128" />
             <source>No screen is available for capture</source>
             <translation>没有可用的屏幕</translation>
         </message>
         <message>
-            <location filename="../ScreenshotSession.cpp" line="205" />
+            <location filename="../ScreenshotSession.cpp" line="216" />
+            <source>Scrolling capture requires the selection to stay on one screen</source>
+            <translation>滚动截图要求选区位于同一块屏幕内</translation>
+        </message>
+        <message>
+            <location filename="../ScreenshotSession.cpp" line="271" />
             <source>The selected area is empty</source>
             <translation>选区为空</translation>
         </message>
@@ -310,6 +330,120 @@
             <location filename="../ScreenshotSettingsWidget.cpp" line="110" />
             <source>Choose save folder</source>
             <translation>选择保存目录</translation>
+        </message>
+    </context>
+    <context>
+        <name>ScrollCaptureSession</name>
+        <message>
+            <location filename="../ScrollCaptureSession.cpp" line="90" />
+            <location filename="../ScrollCaptureSession.cpp" line="104" />
+            <source>Scrolling capture</source>
+            <translation>滚动长截图</translation>
+        </message>
+        <message>
+            <location filename="../ScrollCaptureSession.cpp" line="109" />
+            <source>Scroll the mouse wheel inside the selection, then click Done.</source>
+            <translation>在选区内滚动鼠标滚轮，完成后点击「完成」。</translation>
+        </message>
+        <message>
+            <location filename="../ScrollCaptureSession.cpp" line="114" />
+            <location filename="../ScrollCaptureSession.cpp" line="185" />
+            <source>Waiting for scrolling...</source>
+            <translation>等待滚动…</translation>
+        </message>
+        <message>
+            <location filename="../ScrollCaptureSession.cpp" line="120" />
+            <source>Cancel</source>
+            <translation>取消</translation>
+        </message>
+        <message>
+            <location filename="../ScrollCaptureSession.cpp" line="121" />
+            <source>Done</source>
+            <translation>完成</translation>
+        </message>
+        <message>
+            <location filename="../ScrollCaptureSession.cpp" line="175" />
+            <location filename="../ScrollCaptureSession.cpp" line="205" />
+            <source>Scrolling capture failed</source>
+            <translation>滚动截图失败</translation>
+        </message>
+        <message>
+            <location filename="../ScrollCaptureSession.cpp" line="189" />
+            <source>Stitched %1 px</source>
+            <translation>已拼接 %1 px</translation>
+        </message>
+        <message>
+            <location filename="../ScrollCaptureSession.cpp" line="195" />
+            <source>Scrolling too fast, scroll back a little</source>
+            <translation>滚动过快，请稍微回滚再继续</translation>
+        </message>
+        <message>
+            <location filename="../ScrollCaptureSession.cpp" line="226" />
+            <source>Nothing was captured</source>
+            <translation>没有截取到内容</translation>
+        </message>
+    </context>
+    <context>
+        <name>ScrollResultWindow</name>
+        <message>
+            <location filename="../ScrollResultWindow.cpp" line="28" />
+            <source>Scrolling screenshot</source>
+            <translation>滚动长截图</translation>
+        </message>
+        <message>
+            <location filename="../ScrollResultWindow.cpp" line="38" />
+            <source>Scrolling screenshot · %1 × %2</source>
+            <translation>滚动长截图 · %1 × %2</translation>
+        </message>
+        <message>
+            <location filename="../ScrollResultWindow.cpp" line="43" />
+            <source>Generated from the selected scrolling area</source>
+            <translation>由选中的滚动区域生成</translation>
+        </message>
+        <message>
+            <location filename="../ScrollResultWindow.cpp" line="46" />
+            <source>Copy</source>
+            <translation>复制</translation>
+        </message>
+        <message>
+            <location filename="../ScrollResultWindow.cpp" line="47" />
+            <source>Save as...</source>
+            <translation>另存为...</translation>
+        </message>
+        <message>
+            <location filename="../ScrollResultWindow.cpp" line="48" />
+            <source>Close</source>
+            <translation>关闭</translation>
+        </message>
+        <message>
+            <location filename="../ScrollResultWindow.cpp" line="89" />
+            <source>Copied to clipboard</source>
+            <translation>已复制到剪贴板</translation>
+        </message>
+        <message>
+            <location filename="../ScrollResultWindow.cpp" line="100" />
+            <source>Save scrolling screenshot</source>
+            <translation>保存滚动截图</translation>
+        </message>
+        <message>
+            <location filename="../ScrollResultWindow.cpp" line="101" />
+            <source>PNG image (*.png);;JPEG image (*.jpg *.jpeg)</source>
+            <translation>PNG 图片 (*.png);;JPEG 图片 (*.jpg *.jpeg)</translation>
+        </message>
+        <message>
+            <location filename="../ScrollResultWindow.cpp" line="105" />
+            <source>Save failed</source>
+            <translation>保存失败</translation>
+        </message>
+        <message>
+            <location filename="../ScrollResultWindow.cpp" line="105" />
+            <source>Cannot save the image to %1</source>
+            <translation>无法把图片保存到 %1</translation>
+        </message>
+        <message>
+            <location filename="../ScrollResultWindow.cpp" line="108" />
+            <source>Saved to %1</source>
+            <translation>已保存到 %1</translation>
         </message>
     </context>
 </TS>

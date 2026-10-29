@@ -15,6 +15,9 @@ qt_add_translation(Screenshot_QM_FILES ${Screenshot_TS_FILES})
 typego_add_plugin(screenshot_plugin METADATA "${CMAKE_CURRENT_SOURCE_DIR}/plugin.json" SOURCES
     ScreenshotPlugin.cpp ScreenshotPlugin.h
     ScreenshotSession.cpp ScreenshotSession.h
+    ScrollCaptureSession.cpp ScrollCaptureSession.h
+    ScrollStitcher.cpp ScrollStitcher.h
+    ScrollResultWindow.cpp ScrollResultWindow.h
     ScreenOverlay.cpp ScreenOverlay.h
     ScreenInfo.h
     CaptureToolbar.cpp CaptureToolbar.h

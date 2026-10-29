@@ -2,6 +2,7 @@
 
 #include "CaptureToolbar.h"
 #include "ScreenOverlay.h"
+#include "ScrollCaptureSession.h"
 #include "WinCapture.h"
 
 #include <QApplication>
@@ -51,6 +52,10 @@ ScreenshotSession::ScreenshotSession(quintptr previousForeground, Options option
 ScreenshotSession::~ScreenshotSession()
 {
     if (!m_finished) {
+        if (m_scroll) {
+            delete m_scroll;
+            m_scroll = nullptr;
+        }
         m_toolbar = nullptr;
         for (ScreenOverlay *overlay : std::as_const(m_overlays)) delete overlay;
         m_overlays.clear();
@@ -172,6 +177,7 @@ void ScreenshotSession::restoreWindows()
 void ScreenshotSession::teardown()
 {
     endMouseGrab();
+    destroyScroll();
     if (m_toolbar) m_toolbar->hide();
     m_toolbar = nullptr;
     m_toolbarOwner = nullptr;
@@ -192,6 +198,62 @@ void ScreenshotSession::fail(const QString &message)
     m_finished = true;
     teardown();
     emit failed(message);
+}
+
+void ScreenshotSession::destroyScroll()
+{
+    if (!m_scroll) return;
+    m_scroll->disconnect(this);
+    m_scroll->deleteLater();
+    m_scroll = nullptr;
+}
+
+void ScreenshotSession::beginScrollCapture()
+{
+    if (m_finished || m_scroll || m_selection.isEmpty()) return;
+    ScreenInfo *screen = screenAt(m_selection.center());
+    if (!screen || !screen->logical.contains(m_selection)) {
+        fail(tr("Scrolling capture requires the selection to stay on one screen"));
+        return;
+    }
+
+    if (m_toolbar) {
+        m_toolbar->hide();
+        m_toolbar = nullptr;
+        m_toolbarOwner = nullptr;
+    }
+    for (ScreenOverlay *overlay : std::as_const(m_overlays)) {
+        overlay->hide();
+        overlay->deleteLater();
+    }
+    m_overlays.clear();
+    m_activeOverlay = nullptr;
+    m_grabOverlay = nullptr;
+    m_activeScreen = nullptr;
+
+    m_scroll = new ScrollCaptureSession(m_selection, *screen, this);
+    connect(m_scroll, &ScrollCaptureSession::finished, this, &ScreenshotSession::finishScroll);
+    connect(m_scroll, &ScrollCaptureSession::cancelled, this, &ScreenshotSession::cancelScroll);
+    connect(m_scroll, &ScrollCaptureSession::failed, this, &ScreenshotSession::fail);
+    m_scroll->start();
+}
+
+void ScreenshotSession::finishScroll(const QImage &image)
+{
+    if (m_finished) return;
+    m_finished = true;
+    destroyScroll();
+    teardown();
+    emit scrollFinished(image);
+}
+
+void ScreenshotSession::cancelScroll()
+{
+    if (m_finished) return;
+    m_finished = true;
+    destroyScroll();
+    teardown();
+    emit completed(Finish::Cancel, QImage(), m_selection);
 }
 
 void ScreenshotSession::cancel()
@@ -239,6 +301,7 @@ void ScreenshotSession::showToolbar()
         });
         connect(m_toolbar, &CaptureToolbar::undoRequested, this, &ScreenshotSession::undo);
         connect(m_toolbar, &CaptureToolbar::redoRequested, this, &ScreenshotSession::redo);
+        connect(m_toolbar, &CaptureToolbar::scrollRequested, this, [this]() { beginScrollCapture(); });
         connect(m_toolbar, &CaptureToolbar::copyRequested, this, [this]() { finish(Finish::Copy); });
         connect(m_toolbar, &CaptureToolbar::saveRequested, this, [this]() { finish(Finish::Save); });
         connect(m_toolbar, &CaptureToolbar::pinRequested, this, [this]() { finish(Finish::Pin); });
@@ -514,7 +577,14 @@ void ScreenshotSession::onRelease(ScreenOverlay *overlay, const QPointF &globalP
         m_hoverWindow = {};
         m_hoverTitle.clear();
         m_dragMode = DragMode::None;
-        if (!m_selection.isEmpty()) m_selection = m_selection.intersected(m_virtualLogical);
+        if (!m_selection.isEmpty()) {
+            m_selection = m_selection.intersected(m_virtualLogical);
+            if (m_options.autoScroll && m_selection.width() >= 24 && m_selection.height() >= 24) {
+                hideToolbar();
+                QTimer::singleShot(0, this, &ScreenshotSession::beginScrollCapture);
+                return;
+            }
+        }
         refresh();
         return;
     }
@@ -596,6 +666,13 @@ void ScreenshotSession::onKeyPress(QKeyEvent *event)
     case Qt::Key_Right: nudgeSelection(QPoint(step, 0)); event->accept(); return;
     case Qt::Key_Up: nudgeSelection(QPoint(0, -step)); event->accept(); return;
     case Qt::Key_Down: nudgeSelection(QPoint(0, step)); event->accept(); return;
+    case Qt::Key_S:
+        if (!m_selection.isEmpty()) {
+            beginScrollCapture();
+            event->accept();
+            return;
+        }
+        break;
     case Qt::Key_V: setTool(ShotTool::Select); event->accept(); return;
     case Qt::Key_R: setTool(ShotTool::Rect); event->accept(); return;
     case Qt::Key_O: setTool(ShotTool::Ellipse); event->accept(); return;

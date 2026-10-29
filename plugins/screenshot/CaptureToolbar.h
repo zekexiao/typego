@@ -27,6 +27,7 @@ signals:
     void widthChanged(int width);
     void undoRequested();
     void redoRequested();
+    void scrollRequested();
     void copyRequested();
     void saveRequested();
     void pinRequested();

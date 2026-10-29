@@ -83,3 +83,8 @@ target_include_directories(tst_clipboard_store PRIVATE "${CMAKE_SOURCE_DIR}/plug
 typego_add_test(tst_screenshot_store tst_screenshot_store.cpp
     ${CMAKE_SOURCE_DIR}/plugins/screenshot/ScreenshotStore.cpp)
 target_include_directories(tst_screenshot_store PRIVATE "${CMAKE_SOURCE_DIR}/plugins/screenshot")
+
+# 长截图拼接是纯图像算法，重点覆盖上下滚动、固定头尾和横向滚动。
+typego_add_test(tst_scroll_stitcher tst_scroll_stitcher.cpp
+    ${CMAKE_SOURCE_DIR}/plugins/screenshot/ScrollStitcher.cpp)
+target_include_directories(tst_scroll_stitcher PRIVATE "${CMAKE_SOURCE_DIR}/plugins/screenshot")

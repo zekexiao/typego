@@ -18,6 +18,7 @@ class CaptureToolbar;
 class QKeyEvent;
 class QWidget;
 class ScreenOverlay;
+class ScrollCaptureSession;
 class ShotAnnotation;
 
 // 一次截图会话：隐藏 TypeGo 窗口、捕获桌面、管理选区/标注，最后输出图像。
@@ -30,6 +31,7 @@ public:
         bool fullscreen = false;
         bool magnifier = true;
         int magnifierZoom = 8;
+        bool autoScroll = false;
     };
 
     ScreenshotSession(quintptr previousForeground, Options options, QObject *parent = nullptr);
@@ -80,6 +82,7 @@ public:
 
 signals:
     void completed(ScreenshotSession::Finish action, const QImage &image, const QRect &selection);
+    void scrollFinished(const QImage &image);
     void failed(const QString &message);
 
 private:
@@ -88,6 +91,10 @@ private:
 
     void capture();
     void createOverlays();
+    void beginScrollCapture();
+    void finishScroll(const QImage &image);
+    void cancelScroll();
+    void destroyScroll();
     void refresh();
     void restoreWindows();
     void teardown();
@@ -119,6 +126,7 @@ private:
     QList<ScreenInfo> m_screens;
 
     QList<ScreenOverlay *> m_overlays;
+    ScrollCaptureSession *m_scroll = nullptr;
     CaptureToolbar *m_toolbar = nullptr;
     QPointer<ScreenOverlay> m_toolbarOwner;
     ScreenOverlay *m_activeOverlay = nullptr;

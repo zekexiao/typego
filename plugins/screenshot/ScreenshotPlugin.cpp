@@ -1,6 +1,7 @@
 #include "ScreenshotPlugin.h"
 
 #include "PinWindow.h"
+#include "ScrollResultWindow.h"
 #include "ScreenshotSettingsWidget.h"
 #include "ScreenshotStore.h"
 #include "WinCapture.h"
@@ -68,15 +69,21 @@ void ScreenshotPlugin::applyConfig()
 Api::QueryResult ScreenshotPlugin::query(const Api::QueryRequest &request)
 {
     if (request.invocation.commandId != QLatin1String("history")) {
-        if (request.invocation.commandId == QLatin1String("capture")
-            || request.invocation.commandId == QLatin1String("fullscreen")) {
-            const bool fullscreen = request.invocation.commandId == QLatin1String("fullscreen");
+        const QString command = request.invocation.commandId;
+        if (command == QLatin1String("capture") || command == QLatin1String("fullscreen")
+            || command == QLatin1String("scroll")) {
+            const bool fullscreen = command == QLatin1String("fullscreen");
+            const bool scrolling = command == QLatin1String("scroll");
             Api::ResultItem hint;
             hint.id = QStringLiteral("capture");
-            hint.title = tr("Capture the screen");
-            hint.subtitle = fullscreen
-                ? tr("Start with the current display selected")
-                : tr("Drag to select an area, click a highlighted window, or press Enter to copy");
+            hint.title = scrolling ? tr("Scrolling screenshot") : tr("Capture the screen");
+            if (scrolling) {
+                hint.subtitle = tr("Select the scrolling area; capture starts after you release the mouse");
+            } else if (fullscreen) {
+                hint.subtitle = tr("Start with the current display selected");
+            } else {
+                hint.subtitle = tr("Drag to select an area, click a highlighted window, or press Enter to copy");
+            }
             return {request.id, {hint}, false};
         }
         return {request.id, {}};
@@ -116,10 +123,12 @@ Api::QueryResult ScreenshotPlugin::query(const Api::QueryRequest &request)
 Api::ExecutionResult ScreenshotPlugin::execute(const Api::Invocation &invocation)
 {
     if (invocation.commandId == QLatin1String("capture")
-        || invocation.commandId == QLatin1String("fullscreen")) {
+        || invocation.commandId == QLatin1String("fullscreen")
+        || invocation.commandId == QLatin1String("scroll")) {
         // 必须在宿主显示覆盖层之前记录前台窗口，完成或取消后据此恢复焦点。
         m_previousForeground = ShotWin::foregroundWindow();
         m_pendingFullscreen = invocation.commandId == QLatin1String("fullscreen");
+        m_pendingScroll = invocation.commandId == QLatin1String("scroll");
         m_pendingStart = true;
         return {Api::Status::Succeeded, Api::HostAction::OpenView};
     }
@@ -204,7 +213,9 @@ void ScreenshotPlugin::beginCapture()
     options.fullscreen = m_pendingFullscreen;
     options.magnifier = m_magnifier;
     options.magnifierZoom = m_magnifierZoom;
+    options.autoScroll = m_pendingScroll;
     m_pendingFullscreen = false;
+    m_pendingScroll = false;
 
     auto session = std::make_unique<ScreenshotSession>(m_previousForeground, options);
     session->setController(m_view);
@@ -212,6 +223,7 @@ void ScreenshotPlugin::beginCapture()
             [this](ScreenshotSession::Finish action, const QImage &image, const QRect &selection) {
                 onCompleted(action, image, selection);
             });
+    connect(session.get(), &ScreenshotSession::scrollFinished, this, &ScreenshotPlugin::onScrollFinished);
     connect(session.get(), &ScreenshotSession::failed, this, &ScreenshotPlugin::onFailed);
     m_session = std::move(session);
     m_session->start();
@@ -239,6 +251,15 @@ void ScreenshotPlugin::onCompleted(ScreenshotSession::Finish action, const QImag
     case ScreenshotSession::Finish::Cancel:
         break;
     }
+}
+
+void ScreenshotPlugin::onScrollFinished(const QImage &image)
+{
+    ScreenshotSession *session = m_session.release();
+    if (session) session->deleteLater();
+    if (!m_shuttingDown && m_host) m_host->closeView();
+    recordImage(image);
+    showScrollResult(image);
 }
 
 void ScreenshotPlugin::onFailed(const QString &message)
@@ -316,6 +337,26 @@ void ScreenshotPlugin::closePins()
         if (pin) pin->close();
 }
 
+void ScreenshotPlugin::showScrollResult(const QImage &image)
+{
+    if (image.isNull()) return;
+    auto *window = new ScrollResultWindow(image, QCursor::pos());
+    m_scrollResults.append(window);
+    connect(window, &ScrollResultWindow::closed, this,
+            [this, window]() { m_scrollResults.removeAll(window); });
+    window->show();
+    window->raise();
+    window->activateWindow();
+}
+
+void ScreenshotPlugin::closeScrollResults()
+{
+    const auto windows = m_scrollResults;
+    m_scrollResults.clear();
+    for (const QPointer<ScrollResultWindow> &window : windows)
+        if (window) window->close();
+}
+
 void ScreenshotPlugin::deactivate()
 {
     abandonSession();
@@ -328,6 +369,7 @@ Api::LeaveDecision ScreenshotPlugin::prepareToLeave(Api::LeaveReason reason, qui
         if (reason == Api::LeaveReason::Shutdown) m_shuttingDown = true;
         abandonSession();
         closePins();
+        closeScrollResults();
     }
     return Api::LeaveDecision::Ready;
 }
@@ -337,6 +379,7 @@ void ScreenshotPlugin::shutdown()
     m_shuttingDown = true;
     abandonSession();
     closePins();
+    closeScrollResults();
     m_store.reset();
     m_host = nullptr;
     QCoreApplication::removeTranslator(&m_translator);

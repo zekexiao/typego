@@ -18,6 +18,12 @@ QList<MonitorInfo> monitors();
 
 // 捕获虚拟桌面（所有屏幕的并集）。bounds 返回物理像素坐标。
 QImage captureVirtualDesktop(QRect *bounds, QString *error);
+// 只捕获指定物理像素区域，用于滚动截图逐帧采样。
+QImage captureRect(const QRect &physicalRect, QString *error);
+// 让窗口不进入屏幕捕获（Windows 10 2004+），避免长截图的控制条被拍进去。
+bool excludeFromCapture(quintptr window);
+// 把窗口放到置顶层最上方，压过其它常驻置顶窗口。
+void forceTopmost(quintptr window);
 
 quintptr foregroundWindow();
 bool isOwnProcess(quintptr window);

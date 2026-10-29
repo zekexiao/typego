@@ -136,10 +136,12 @@ CaptureToolbar::CaptureToolbar(QWidget *parent)
     divider3->setFixedHeight(22);
     actions->addWidget(divider3);
 
+    QToolButton *scroll = addAction(QStringLiteral("scroll"), tr("Scrolling capture (S)"));
     QToolButton *copy = addAction(QStringLiteral("copy"), tr("Copy (Enter / Ctrl+C)"));
     QToolButton *save = addAction(QStringLiteral("save"), tr("Save as (Ctrl+S)"));
     QToolButton *pin = addAction(QStringLiteral("pin"), tr("Pin to screen (Ctrl+P)"));
     QToolButton *close = addAction(QStringLiteral("close"), tr("Cancel (Esc)"));
+    connect(scroll, &QToolButton::clicked, this, &CaptureToolbar::scrollRequested);
     connect(copy, &QToolButton::clicked, this, &CaptureToolbar::copyRequested);
     connect(save, &QToolButton::clicked, this, &CaptureToolbar::saveRequested);
     connect(pin, &QToolButton::clicked, this, &CaptureToolbar::pinRequested);

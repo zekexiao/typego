@@ -194,6 +194,14 @@ QIcon shotActionIcon(const QString &name)
             p.setBrush(Ink);
             p.setPen(Qt::NoPen);
             p.drawRoundedRect(QRectF(7.5, 7, 7, 3), 1.2, 1.2);
+        } else if (name == QLatin1String("scroll")) {
+            p.drawRoundedRect(QRectF(7.5, 2.5, 7, 13), 1.4, 1.4);
+            p.drawLine(QPointF(11, 5), QPointF(11, 12));
+            QPolygonF arrow;
+            arrow << QPointF(11, 19.5) << QPointF(8, 15.5) << QPointF(14, 15.5);
+            p.setPen(Qt::NoPen);
+            p.setBrush(Ink);
+            p.drawPolygon(arrow);
         } else if (name == QLatin1String("close")) {
             p.drawLine(QPointF(6, 6), QPointF(16, 16));
             p.drawLine(QPointF(16, 6), QPointF(6, 16));
