@@ -1,5 +1,25 @@
 # TypeGo 更新日志
 
+## 1.9 - 2026-10-29
+
+### 中文
+
+- 新增剪贴板历史插件：记录复制的文字、图片和本地文件，输入 `clip`（`cb`、`paste`）搜索，回车重新复制；文字和文件显示 T / F 图标，图片显示缩略图
+- 剪贴板监听随 TypeGo 启动运行，设置页可调整历史条数、分别开关文字/图片/文件记录并清空历史；禁用插件或退出后停止监听
+- 新增 JSON / MessagePack 查看器插件，支持内嵌浏览、搜索、编辑与分离窗口
+- 插件支持随安装包分发的内置包和内嵌视图分离窗口，分离后保留编辑状态
+- 统一界面视觉基线：拆分强调色的描边、填充与文字角色以满足 WCAG AA，提高占位文字对比度，统一字号、间距与设置分组
+- 标题栏关闭、返回、分离图标改为代码绘制并居中窗口标题，修复快捷键输入框内边距与聚焦时的行高跳动
+
+### English
+
+- Added the clipboard history plugin: records copied text, images and local files; search with `clip` (`cb`, `paste`) and press Enter to copy again. Text and files show T / F icons, images show thumbnails
+- Clipboard monitoring starts with TypeGo; settings adjust the history size, toggle text/image/file recording and clear history, and disabling the plugin or exiting stops monitoring
+- Added a JSON / MessagePack viewer plugin with embedded browsing, search, editing and a detachable window
+- Plugins can now ship as bundled packages, and embedded views can detach into a separate window while keeping their state
+- Aligned the interface with a shared visual baseline: split accent colors into stroke, fill and text roles for WCAG AA, raised placeholder contrast, and unified type sizes, spacing and settings groups
+- Title bar close, back and detach glyphs are drawn in code with a centered window title; fixed shortcut field padding and row height shifts on focus
+
 ## 1.8 - 2026-10-28
 
 ### 中文
