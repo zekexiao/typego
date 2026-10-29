@@ -14,6 +14,7 @@ qt_add_translation(Clipboard_QM_FILES ${Clipboard_TS_FILES})
 
 typego_add_plugin(clipboard_plugin METADATA "${CMAKE_CURRENT_SOURCE_DIR}/plugin.json" SOURCES
     ClipboardPlugin.cpp ClipboardPlugin.h
+    ClipboardIcons.cpp ClipboardIcons.h
     ClipboardStore.cpp ClipboardStore.h
     ClipboardSettingsWidget.cpp ClipboardSettingsWidget.h
     ${Clipboard_QM_FILES})

@@ -1,4 +1,5 @@
 #include "ClipboardPlugin.h"
+#include "ClipboardIcons.h"
 #include "ClipboardSettingsWidget.h"
 
 #include <QClipboard>
@@ -142,6 +143,7 @@ Api::ResultItem ClipboardPlugin::resultItem(const ClipboardItem &item) const
         if (title.size() > 160) title = title.left(157) + QStringLiteral("...");
         result.title = title;
         result.subtitle = tr("Text · %1 characters · %2").arg(item.text.size()).arg(time);
+        result.icon = clipboardTypeIcon(item.type, m_store->cacheDir());
         break;
     }
     case ClipboardItem::Type::Files: {
@@ -155,6 +157,7 @@ Api::ResultItem ClipboardPlugin::resultItem(const ClipboardItem &item) const
         result.title = title;
         result.subtitle = (item.files.size() == 1 ? tr("1 file") : tr("%1 files").arg(item.files.size()))
             + QStringLiteral(" · ") + time;
+        result.icon = clipboardTypeIcon(item.type, m_store->cacheDir());
         break;
     }
     case ClipboardItem::Type::Image: {
@@ -163,6 +166,7 @@ Api::ResultItem ClipboardPlugin::resultItem(const ClipboardItem &item) const
         result.subtitle = tr("%1 KB · %2").arg(qMax<qint64>(1, bytes / 1024)).arg(time);
         const QString thumbnail = m_store->thumbnailPath(item);
         if (!thumbnail.isEmpty() && QFileInfo::exists(thumbnail)) result.icon = thumbnail;
+        else result.icon = clipboardTypeIcon(item.type, m_store->cacheDir());
         break;
     }
     }

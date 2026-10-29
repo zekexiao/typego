@@ -41,6 +41,7 @@ public:
     // 缩略图放在可清理的缓存目录，缺失时由 ensureThumbnail 重建。
     QString thumbnailPath(const ClipboardItem &item) const;
     bool ensureThumbnail(const ClipboardItem &item);
+    QString cacheDir() const { return m_cacheDir; }
     QString lastError() const { return m_lastError; }
 
     // 返回 true 表示历史内容有变化，需要调用 save()。
@@ -62,6 +63,7 @@ private:
 
     QString m_dataDir;
     QString m_imageDir;
+    QString m_cacheDir;
     QString m_thumbDir;
     QList<ClipboardItem> m_items;
     QString m_lastError;

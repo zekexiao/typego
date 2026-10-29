@@ -73,7 +73,8 @@ target_compile_definitions(tst_restart PRIVATE TYPEGO_RESTART_PARENT="$<TARGET_F
 
 typego_add_test(tst_json_tree_model tst_json_tree_model.cpp)
 
-# 剪贴板历史存储与缩略图只依赖 Qt Gui，不需要加载插件或访问系统剪贴板。
+# 剪贴板历史存储与图标只依赖 Qt Gui，不需要加载插件或访问系统剪贴板。
 typego_add_test(tst_clipboard_store tst_clipboard_store.cpp
-    ${CMAKE_SOURCE_DIR}/plugins/clipboard/ClipboardStore.cpp)
+    ${CMAKE_SOURCE_DIR}/plugins/clipboard/ClipboardStore.cpp
+    ${CMAKE_SOURCE_DIR}/plugins/clipboard/ClipboardIcons.cpp)
 target_include_directories(tst_clipboard_store PRIVATE "${CMAKE_SOURCE_DIR}/plugins/clipboard")

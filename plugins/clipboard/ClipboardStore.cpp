@@ -52,7 +52,8 @@ bool parseType(const QString &value, ClipboardItem::Type *type)
 
 ClipboardStore::ClipboardStore(QString dataDir, QString cacheDir)
     : m_dataDir(std::move(dataDir)), m_imageDir(QDir(m_dataDir).filePath(QStringLiteral("images"))),
-      m_thumbDir(cacheDir.isEmpty() ? QString() : QDir(cacheDir).filePath(QStringLiteral("thumbnails")))
+      m_cacheDir(std::move(cacheDir)),
+      m_thumbDir(m_cacheDir.isEmpty() ? QString() : QDir(m_cacheDir).filePath(QStringLiteral("thumbnails")))
 {
 }
 

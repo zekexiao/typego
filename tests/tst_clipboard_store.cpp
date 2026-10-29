@@ -3,8 +3,10 @@
 #include <QFile>
 #include <QFileInfo>
 #include <QImage>
+#include <QSet>
 #include <QTemporaryDir>
 
+#include "ClipboardIcons.h"
 #include "ClipboardStore.h"
 
 // 只验证历史存储与缩略图规则，不访问系统剪贴板或真实用户目录。
@@ -16,6 +18,7 @@ private slots:
     void evictionRemovesImageAndThumbnail();
     void clearRemovesImages();
     void tamperedIndexIsIgnored();
+    void typeIconsAreGenerated();
 };
 
 void TstClipboardStore::imageCaptureCreatesThumbnail()
@@ -120,6 +123,27 @@ void TstClipboardStore::tamperedIndexIsIgnored()
     ClipboardStore store(data, dir.filePath(QStringLiteral("cache")));
     store.load();
     QVERIFY(store.items().isEmpty());
+}
+
+void TstClipboardStore::typeIconsAreGenerated()
+{
+    QTemporaryDir dir;
+    QVERIFY(dir.isValid());
+    const QString cache = dir.filePath(QStringLiteral("cache"));
+    QSet<QString> paths;
+    for (const auto type : {ClipboardItem::Type::Text, ClipboardItem::Type::Files, ClipboardItem::Type::Image}) {
+        const QString path = clipboardTypeIcon(type, cache);
+        QVERIFY(!path.isEmpty());
+        QVERIFY(QFileInfo::exists(path));
+        const QImage icon(path);
+        QCOMPARE(icon.size(), QSize(64, 64));
+        QVERIFY(icon.pixelColor(32, 32).alpha() > 0);
+        paths.insert(path);
+    }
+    // 三种类型各自缓存一份，重复请求复用同一文件；无缓存目录时不生成。
+    QCOMPARE(paths.size(), 3);
+    QCOMPARE(clipboardTypeIcon(ClipboardItem::Type::Text, cache), clipboardTypeIcon(ClipboardItem::Type::Text, cache));
+    QCOMPARE(clipboardTypeIcon(ClipboardItem::Type::Text, QString()), QString());
 }
 
 QTEST_GUILESS_MAIN(TstClipboardStore)
