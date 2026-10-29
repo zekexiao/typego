@@ -16,14 +16,16 @@ const QColor Ink(242, 244, 247);
 
 QIcon makeIcon(const std::function<void(QPainter &)> &draw)
 {
+    // 先在物理像素画布上放大绘制，结束时再设置 DPR。
+    // 若提前设置 DPR 又手动 scale，QPainter 会再缩放一次，图标只剩左上角一块。
     QPixmap pixmap(Canvas * 2, Canvas * 2);
-    pixmap.setDevicePixelRatio(2.0);
     pixmap.fill(Qt::transparent);
     QPainter painter(&pixmap);
     painter.setRenderHint(QPainter::Antialiasing, true);
     painter.scale(2.0, 2.0);
     draw(painter);
     painter.end();
+    pixmap.setDevicePixelRatio(2.0);
     return QIcon(pixmap);
 }
 
