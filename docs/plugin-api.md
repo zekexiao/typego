@@ -171,3 +171,12 @@ prepareToLeave(reason, token) 的原因区分 Navigate、Hide、Disable 和 Shut
 仓库统一使用 test.bat 和 build.bat。测试会先安装 SDK，再以独立 CMake 工程编译示例，仅依赖已安装的 SDK 与 Qt，不包含宿主头文件或链接 typego_core。测试在 QTemporaryDir 与独立 ini 中发现并加载真实 DLL，覆盖元信息兼容、冲突、禁用、懒加载、参数限制、非法结果、过期回调、立即完成、重复操作、保存拒绝和退出等待。
 
 界面不在自动化覆盖内，需在本机通过 run.bat 检查 sdk-editor 的编辑、关闭、保存失败后保留内容、禁用与托盘退出，以及设置页、独立窗口和覆盖层交互。截图和笔记应用本身尚未加入。
+
+
+### 内嵌界面分离
+
+命令声明 `"presentation": "embedded", "detachable": true` 时，宿主显示分离按钮。
+分离和重新嵌入移动同一个 QWidget，保留编辑状态，不调用 deactivate 或重新创建界面。
+再次执行已分离的命令会激活独立窗口，不切走当前内嵌应用。
+插件应通过 `prepareToLeave` 处理关闭、禁用和退出时的未保存数据，返回 Refused 可取消离开。
+`Hide` 表示隐藏主窗口，插件可保留当前编辑状态。

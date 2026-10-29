@@ -148,10 +148,13 @@ int main(int argc, char *argv[])
     registerBuiltinPlugins(pluginManager, settings, hotkey, launcher, updater);
     // 扫描只读取 DLL 元数据；客户代码在首次使用时才加载。
     const QString localData = QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation);
-    ExternalPluginRegistry externalPlugins(pluginManager, {
+    PluginPaths pluginPaths{
         localData + QStringLiteral("/plugins"), localData + QStringLiteral("/plugin-data"),
         QStandardPaths::writableLocation(QStandardPaths::CacheLocation) + QStringLiteral("/plugins"),
-        QDir::tempPath() + QStringLiteral("/TypeGo/plugins")});
+        QDir::tempPath() + QStringLiteral("/TypeGo/plugins")};
+    pluginPaths.bundledPackages.append(QDir(QCoreApplication::applicationDirPath())
+        .filePath(QStringLiteral("plugins")));
+    ExternalPluginRegistry externalPlugins(pluginManager, std::move(pluginPaths));
     externalPlugins.discover();
 
     MainWindow window(&launcher, &pluginManager, &settings, &updater, &themeManager);

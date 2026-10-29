@@ -40,6 +40,7 @@ private slots:
     void parametersAllowOnlyBoundedScalarValues();
     void independentPackageIsLazyAndExecutesOwnedAction();
     void conflictAndMisnamedPackagesDoNotCreateInstances();
+    void bundledRootsAreDeduplicatedAndLazy();
     void asyncSearchCancelsAndFinishesOnce();
     void asyncExecutionRejectsDuplicatesAndShutdownWaits();
     void disabledPackageDoesNotLoad();
@@ -54,6 +55,32 @@ void TstPluginSdk::metadataMatchesConsumerToolchain()
     QCOMPARE(result.manifest.descriptor.id, QStringLiteral("org.typego.example"));
     QCOMPARE(result.manifest.descriptor.commands.size(), 3);
     QCOMPARE(result.manifest.abi, Api::nativeAbi());
+    QVERIFY(!result.manifest.descriptor.commands.first().supportsDetach);
+
+    auto metadataWithDetach = metadata();
+    auto data = metadataWithDetach.value(QStringLiteral("MetaData")).toObject();
+    auto commands = data.value(QStringLiteral("commands")).toArray();
+    auto command = commands.first().toObject();
+    command.insert(QStringLiteral("detachable"), true);
+    commands[0] = command;
+    data.insert(QStringLiteral("commands"), commands);
+    metadataWithDetach.insert(QStringLiteral("MetaData"), data);
+    const auto detachable = parsePluginManifest(metadataWithDetach);
+    QVERIFY2(!detachable.error, qPrintable(detachable.error.message));
+    QVERIFY(detachable.manifest.descriptor.commands.first().supportsDetach);
+    command.insert(QStringLiteral("presentation"), QStringLiteral("window"));
+    commands[0] = command;
+    data.insert(QStringLiteral("commands"), commands);
+    metadataWithDetach.insert(QStringLiteral("MetaData"), data);
+    QCOMPARE(parsePluginManifest(metadataWithDetach).error.code, Api::ErrorCode::InvalidArgument);
+    command.insert(QStringLiteral("presentation"), QStringLiteral("embedded"));
+
+
+    command.insert(QStringLiteral("detachable"), QStringLiteral("yes"));
+    commands[0] = command;
+    data.insert(QStringLiteral("commands"), commands);
+    metadataWithDetach.insert(QStringLiteral("MetaData"), data);
+    QCOMPARE(parsePluginManifest(metadataWithDetach).error.code, Api::ErrorCode::InvalidArgument);
 }
 
 void TstPluginSdk::rejectsIncompatibleAndMalformedMetadata()
@@ -250,6 +277,21 @@ void TstPluginSdk::inlineCompletionsAndRefusedSaveRespectLifecycle()
     manager.requestShutdown([&](bool value) { if (value) ++shutdowns; });
     QCOMPARE(shutdowns, 0);
     QTRY_COMPARE(shutdowns, 1);
+}
+
+void TstPluginSdk::bundledRootsAreDeduplicatedAndLazy()
+{
+    QTemporaryDir dir;
+    QVERIFY(dir.isValid());
+    auto locations = paths(dir);
+    QVERIFY(install(locations));
+    locations.bundledPackages = {locations.packages, locations.packages + QStringLiteral("/.")};
+    PluginManager manager;
+    ExternalPluginRegistry registry(manager, locations);
+    QCOMPARE(registry.discover(), 1);
+    QVERIFY(registry.diagnostics().isEmpty());
+    QVERIFY(!manager.isInstantiated(QStringLiteral("org.typego.example")));
+    QVERIFY(!QFileInfo::exists(locations.data));
 }
 
 QTEST_GUILESS_MAIN(TstPluginSdk)

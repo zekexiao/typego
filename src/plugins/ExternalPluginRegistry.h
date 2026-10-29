@@ -10,6 +10,7 @@ struct PluginPaths {
     QString data;
     QString cache;
     QString temporary;
+    QStringList bundledPackages;
 };
 
 struct PluginDiagnostic {

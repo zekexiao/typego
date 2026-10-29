@@ -12,6 +12,7 @@ struct PluginCommand {
     bool requiresArguments = false;
     bool supportsAutoEnter = false;
     bool directActivation = false;
+    bool supportsDetach = false;
     PluginPresentation presentation = PluginPresentation::Embedded;
 };
 

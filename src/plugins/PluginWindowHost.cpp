@@ -1,6 +1,8 @@
 #include "PluginWindowHost.h"
 #include "PluginManager.h"
 #include <QCloseEvent>
+#include <QHBoxLayout>
+#include <QPushButton>
 #include <QStackedWidget>
 #include <QVBoxLayout>
 #include <QWidget>
@@ -35,7 +37,9 @@ bool PluginWindowHost::open(const PluginInvocation &call)
 {
     const PluginCommand *command = m_manager->commandDescriptor(call.keyword);
     if (!command || !m_manager->isEnabled(call.keyword) || m_navigating) return false;
-    if (command->presentation != PluginPresentation::Embedded || m_embeddedCommand.isEmpty()) {
+    const auto existing = m_views.constFind(m_manager->pluginIdForCommand(call.keyword));
+    if ((existing != m_views.cend() && existing->detached)
+        || command->presentation != PluginPresentation::Embedded || m_embeddedCommand.isEmpty()) {
         return showView(call);
     }
     // 离开旧应用成功后才激活新应用，保存失败时保留旧编辑器。
@@ -51,6 +55,89 @@ bool PluginWindowHost::open(const PluginInvocation &call)
     return true;
 }
 
+bool PluginWindowHost::detachEmbedded()
+{
+    if (m_navigating || m_embeddedCommand.isEmpty()) return false;
+    const QString command = m_embeddedCommand;
+    const QString id = m_manager->pluginIdForCommand(command);
+    const PluginCommand *descriptor = m_manager->commandDescriptor(command);
+    if (!descriptor || !descriptor->supportsDetach) return false;
+    auto it = m_views.find(id);
+    if (it == m_views.end() || !it->content || it->detached) return false;
+
+    auto *window = new QWidget(nullptr, Qt::Window);
+    window->setWindowTitle(it->content->windowTitle().isEmpty()
+        ? m_manager->descriptor(id)->description : it->content->windowTitle());
+    connect(it->content, &QWidget::windowTitleChanged, window, &QWidget::setWindowTitle);
+    window->resize(960, 640);
+    auto *layout = new QVBoxLayout(window);
+    auto *bar = new QHBoxLayout;
+    auto *attach = new QPushButton(tr("Embed in TypeGo"), window);
+    bar->addStretch();
+    bar->addWidget(attach);
+    layout->addLayout(bar);
+    layout->setContentsMargins(8, 8, 8, 8);
+    m_pages->removeWidget(it->content);
+    it->content->setParent(window);
+    layout->addWidget(it->content, 1);
+    // 移出堆叠页面和重新设置父窗口都会隐藏控件，必须显式恢复显示。
+    it->content->show();
+    it->window = window;
+    it->detached = true;
+    it->command = command;
+    window->installEventFilter(this);
+    connect(attach, &QPushButton::clicked, this, [this, id]() { attachDetached(id); });
+
+    m_embeddedCommand.clear();
+    emit embeddedClosed();
+    window->show();
+    window->raise();
+    window->activateWindow();
+    return true;
+}
+
+bool PluginWindowHost::attachDetached(const QString &pluginId)
+{
+    auto it = m_views.find(pluginId);
+    if (m_navigating || it == m_views.end() || it->closing
+        || !it->detached || !it->window || !it->content) return false;
+    if (m_embeddedCommand.isEmpty()) {
+        attachDetachedNow(pluginId);
+        return true;
+    }
+    m_navigating = true;
+    const QString previous = m_embeddedCommand;
+    QPointer<PluginWindowHost> guard(this);
+    m_manager->requestLeave(previous, PluginLeaveReason::Navigate, [guard, pluginId, previous](bool accepted) {
+        if (!guard) return;
+        guard->m_navigating = false;
+        if (!accepted) { emit guard->operationFailed(); return; }
+        guard->deactivate(previous);
+        guard->m_embeddedCommand.clear();
+        emit guard->embeddedClosed();
+        guard->attachDetachedNow(pluginId);
+    });
+    return true;
+}
+
+void PluginWindowHost::attachDetachedNow(const QString &pluginId)
+{
+    auto it = m_views.find(pluginId);
+    if (it == m_views.end() || !it->detached || !it->window || !it->content) return;
+    QWidget *window = it->window;
+    window->removeEventFilter(this);
+    it->content->setParent(m_pages);
+    it->window = nullptr;
+    it->detached = false;
+    m_pages->addWidget(it->content);
+    m_embeddedCommand = it->command;
+    m_pages->setCurrentWidget(it->content);
+    it->content->show();
+    window->hide();
+    window->deleteLater();
+    emit embeddedOpened(m_embeddedCommand);
+}
+
 bool PluginWindowHost::showView(const PluginInvocation &call)
 {
     IPlugin *plugin = m_manager->plugin(call.keyword);
@@ -64,6 +151,13 @@ bool PluginWindowHost::showView(const PluginInvocation &call)
         it = m_views.end();
     }
     plugin->activate(call);
+    if (it != m_views.end() && it->detached && it->window) {
+        it->command = call.keyword;
+        it->window->show();
+        it->window->raise();
+        it->window->activateWindow();
+        return true;
+    }
     if (it == m_views.end() || !it->content) {
         View view;
         view.presentation = presentation;

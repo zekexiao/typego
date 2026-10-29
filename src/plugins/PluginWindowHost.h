@@ -17,6 +17,8 @@ public:
     PluginWindowHost(PluginManager *manager, QStackedWidget *pages, QObject *parent);
     ~PluginWindowHost() override;
     bool open(const PluginInvocation &invocation);
+    bool detachEmbedded();
+    bool attachDetached(const QString &pluginId);
     void closeEmbedded(PluginLeaveReason reason, std::function<void(bool)> completed = {});
     void prepareToHide(std::function<void(bool)> completed);
     QString embeddedCommand() const { return m_embeddedCommand; }
@@ -35,9 +37,11 @@ private:
         QPointer<QWidget> window;
         PluginPresentation presentation = PluginPresentation::Embedded;
         QString command;
+        bool detached = false;
         bool closing = false;
     };
     bool showView(const PluginInvocation &invocation);
+    void attachDetachedNow(const QString &pluginId);
     void discard(const QString &id);
     void deactivate(const QString &command);
 

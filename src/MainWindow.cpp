@@ -667,7 +667,7 @@ MainWindow::MainWindow(AppLauncher *launcher, PluginManager *pluginManager, Sett
     m_titleBackSlot = new QWidget(titleBar);
     m_titleBackSlot->setObjectName(QStringLiteral("titleBackSlot"));
     m_titleBackSlot->setAutoFillBackground(false);
-    m_titleBackSlot->setFixedWidth(32);
+    m_titleBackSlot->setFixedWidth(68);
     auto *backSlotLayout = new QHBoxLayout(m_titleBackSlot);
     backSlotLayout->setContentsMargins(0, 0, 0, 0);
     m_pluginBackButton = new QPushButton(QStringLiteral("‹"), m_titleBackSlot);
@@ -679,6 +679,15 @@ MainWindow::MainWindow(AppLauncher *launcher, PluginManager *pluginManager, Sett
     m_pluginBackButton->setAccessibleName(tr("Back"));
     m_pluginBackButton->hide();
     backSlotLayout->addWidget(m_pluginBackButton);
+    m_pluginDetachButton = new QPushButton(QStringLiteral("↗"), m_titleBackSlot);
+    m_pluginDetachButton->setObjectName(QStringLiteral("titleBackButton"));
+    m_pluginDetachButton->setFixedSize(32, 28);
+    m_pluginDetachButton->setFlat(true);
+    m_pluginDetachButton->setCursor(Qt::PointingHandCursor);
+    m_pluginDetachButton->setToolTip(tr("Detach plugin view to a window"));
+    m_pluginDetachButton->setAccessibleName(tr("Detach window"));
+    m_pluginDetachButton->hide();
+    backSlotLayout->addWidget(m_pluginDetachButton);
     auto *titleLabel = new QLabel(QStringLiteral("TypeGo"), titleBar);
     titleLabel->setObjectName(QStringLiteral("windowTitle"));
     titleLabel->setAlignment(Qt::AlignCenter);
@@ -694,6 +703,7 @@ MainWindow::MainWindow(AppLauncher *launcher, PluginManager *pluginManager, Sett
     windowAgent->setSystemButton(QWK::WindowAgentBase::Close, closeButton);
     windowAgent->setHitTestVisible(closeButton, true);
     windowAgent->setHitTestVisible(m_pluginBackButton, true);
+    windowAgent->setHitTestVisible(m_pluginDetachButton, true);
     connect(closeButton, &QPushButton::clicked, this, &QWidget::close);
     connect(m_pluginBackButton, &QPushButton::clicked, this, &MainWindow::openResults);
     layout->addWidget(titleBar);
@@ -766,6 +776,10 @@ MainWindow::MainWindow(AppLauncher *launcher, PluginManager *pluginManager, Sett
     pluginPageLayout->addWidget(m_pluginStack, 1);
     m_stack->addWidget(m_pluginPage);
     m_windowHost = new PluginWindowHost(m_pluginManager, m_pluginStack, this);
+    connect(m_pluginDetachButton, &QPushButton::clicked, this, [this]() {
+        if (!m_windowHost->detachEmbedded())
+            QMessageBox::warning(this, tr("Action failed"), tr("The plugin view could not be detached."));
+    });
     connect(m_windowHost, &PluginWindowHost::embeddedOpened, this, &MainWindow::showEmbedded);
     connect(m_windowHost, &PluginWindowHost::embeddedClosed, this, &MainWindow::showResults);
     connect(m_windowHost, &PluginWindowHost::operationFailed, this, [this]() {
@@ -1298,6 +1312,8 @@ void MainWindow::showEmbedded(const QString &command)
     m_commandLabel->hide();
     m_pinnedPanel->hide();
     m_pluginBackButton->show();
+    const PluginCommand *descriptor = m_pluginManager->commandDescriptor(command);
+    m_pluginDetachButton->setVisible(descriptor && descriptor->supportsDetach);
     if (height() != DefaultWindowHeight) resize(width(), DefaultWindowHeight);
     m_openPluginCmd = command;
     for (QShortcut *shortcut : m_resultShortcuts) shortcut->setEnabled(false);
@@ -1338,6 +1354,7 @@ void MainWindow::showResults()
     m_stack->updateGeometry();
     m_openPluginCmd.clear();
     m_pluginBackButton->hide();
+    m_pluginDetachButton->hide();
     for (QShortcut *shortcut : m_resultShortcuts) shortcut->setEnabled(true);
     m_searchEdit->show();
     if (wasPluginPage) {

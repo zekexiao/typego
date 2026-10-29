@@ -201,7 +201,7 @@ private:
             QString icon;
             if (!item.icon.isEmpty()) {
                 const QString root = QFileInfo(m_loader.fileName()).absolutePath();
-                const QString path = QFileInfo(QDir(root).filePath(item.icon)).canonicalFilePath();
+                  const QString path = QFileInfo(QDir(root).filePath(item.icon)).canonicalFilePath();
                 if (inside(path, root)) icon = path;
             }
             const QVariantMap action = item.actionId.isEmpty()
@@ -258,7 +258,7 @@ private:
     QSettings *config()
     {
         if (!m_config) {
-            const QString path = directory(Api::Directory::Data);
+              const QString path = directory(Api::Directory::Data);
             if (path.isEmpty()) return nullptr;
             m_config = std::make_unique<QSettings>(QDir(path).filePath(QStringLiteral("config.ini")), QSettings::IniFormat);
         }
@@ -334,35 +334,41 @@ ExternalPluginRegistry::ExternalPluginRegistry(PluginManager &manager, PluginPat
 int ExternalPluginRegistry::discover()
 {
     int registered = 0;
-    const QDir root(m_paths.packages);
-    if (m_paths.packages.isEmpty() || !root.exists()) return registered;
-    const QString canonicalRoot = root.canonicalPath();
-    for (const QFileInfo &package : root.entryInfoList(QDir::Dirs | QDir::NoDotAndDotDot, QDir::Name)) {
-        const QString path = QDir(package.absoluteFilePath()).filePath(QStringLiteral("plugin.dll"));
-        auto report = [&](const Api::Error &error, const QString &id = {}) { diagnose(m_diagnostics, path, id, error); };
-        if (!inside(QFileInfo(path).canonicalFilePath(), canonicalRoot)
-            || !inside(package.canonicalFilePath(), canonicalRoot)) {
-            report({Api::ErrorCode::InvalidArgument, QStringLiteral("Package must contain plugin.dll inside its installation directory")});
-            continue;
+    QStringList roots = m_paths.bundledPackages;
+    if (!m_paths.packages.isEmpty()) roots.append(m_paths.packages);
+    QSet<QString> visitedRoots;
+    for (const QString &rootPath : std::as_const(roots)) {
+        const QDir root(rootPath);
+        const QString canonicalRoot = root.canonicalPath();
+        if (canonicalRoot.isEmpty() || visitedRoots.contains(canonicalRoot)) continue;
+        visitedRoots.insert(canonicalRoot);
+        for (const QFileInfo &package : root.entryInfoList(QDir::Dirs | QDir::NoDotAndDotDot, QDir::Name)) {
+            const QString path = QDir(package.absoluteFilePath()).filePath(QStringLiteral("plugin.dll"));
+            auto report = [&](const Api::Error &error, const QString &id = {}) { diagnose(m_diagnostics, path, id, error); };
+            if (!inside(QFileInfo(path).canonicalFilePath(), canonicalRoot)
+                || !inside(package.canonicalFilePath(), canonicalRoot)) {
+                report({Api::ErrorCode::InvalidArgument, QStringLiteral("Package must contain plugin.dll inside its installation directory")});
+                continue;
+            }
+            QPluginLoader metadata(path);
+            auto result = parsePluginManifest(metadata.metaData());
+            if (result.error) { report(result.error); continue; }
+            const QString id = result.manifest.descriptor.id;
+            if (id != package.fileName()) {
+                report({Api::ErrorCode::InvalidArgument, QStringLiteral("Package directory must match the declared plugin ID")}, id);
+                continue;
+            }
+            const auto manifest = result.manifest;
+            const auto paths = m_paths;
+            const auto diagnostics = m_diagnostics;
+            if (!m_manager.registerPlugin(manifest.descriptor, [manifest, path, paths, diagnostics](QObject *parent) {
+                return new ExternalPluginAdapter(manifest, path, paths, diagnostics, parent);
+            })) {
+                report({Api::ErrorCode::Conflict, QStringLiteral("Plugin identity, command or alias conflicts with an installed plugin")}, id);
+                continue;
+            }
+            ++registered;
         }
-        QPluginLoader metadata(path);
-        auto result = parsePluginManifest(metadata.metaData());
-        if (result.error) { report(result.error); continue; }
-        const QString id = result.manifest.descriptor.id;
-        if (id != package.fileName()) {
-            report({Api::ErrorCode::InvalidArgument, QStringLiteral("Package directory must match the declared plugin ID")}, id);
-            continue;
-        }
-        const auto manifest = result.manifest;
-        const auto paths = m_paths;
-        const auto diagnostics = m_diagnostics;
-        if (!m_manager.registerPlugin(manifest.descriptor, [manifest, path, paths, diagnostics](QObject *parent) {
-            return new ExternalPluginAdapter(manifest, path, paths, diagnostics, parent);
-        })) {
-            report({Api::ErrorCode::Conflict, QStringLiteral("Plugin identity, command or alias conflicts with an installed plugin")}, id);
-            continue;
-        }
-        ++registered;
     }
     return registered;
 }

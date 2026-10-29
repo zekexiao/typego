@@ -166,6 +166,7 @@ private:
     PluginWindowHost *m_windowHost = nullptr;
     QList<QShortcut *> m_resultShortcuts;
     QPushButton *m_pluginBackButton;
+    QPushButton *m_pluginDetachButton;
     QWidget *m_titleBackSlot = nullptr;
     QProgressDialog *m_downloadDialog = nullptr;
     QTimer *m_searchDebounce;

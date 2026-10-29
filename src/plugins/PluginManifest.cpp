@@ -119,11 +119,15 @@ PluginManifestResult parsePluginManifest(const QJsonObject &root, const QString 
         else if (presentation == QLatin1String("window")) command.presentation = PluginPresentation::Window;
         else if (presentation == QLatin1String("overlay")) command.presentation = PluginPresentation::Overlay;
         else return fail(Api::ErrorCode::InvalidArgument, QStringLiteral("Unknown presentation"));
-        for (const QString &key : {QStringLiteral("requiresArguments"), QStringLiteral("autoEnter"), QStringLiteral("directActivation")})
+        for (const QString &key : {QStringLiteral("requiresArguments"), QStringLiteral("autoEnter"),
+                                   QStringLiteral("directActivation"), QStringLiteral("detachable")})
             if (!optionalBool(object, key)) return fail(Api::ErrorCode::InvalidArgument, QStringLiteral("Invalid command flag"));
         command.requiresArguments = object.value(QStringLiteral("requiresArguments")).toBool();
         command.supportsAutoEnter = object.value(QStringLiteral("autoEnter")).toBool();
         command.directActivation = object.value(QStringLiteral("directActivation")).toBool();
+        command.supportsDetach = object.value(QStringLiteral("detachable")).toBool();
+        if (command.supportsDetach && command.presentation != PluginPresentation::Embedded)
+            return fail(Api::ErrorCode::InvalidArgument, QStringLiteral("Only embedded views can be detached"));
         descriptor.commands.append(std::move(command));
     }
     return result;
