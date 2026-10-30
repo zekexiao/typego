@@ -6,36 +6,37 @@ const t = copy[lang];
 const zh = lang === "zh";
 const features = zh ? [
   ["毫秒级响应", "打开即用，输入即达，把等待时间留给更重要的事。"],
-  ["应用与文件搜索", "在一个入口中快速找到应用、文件和目录。"],
-  ["命令插件", "计算、目录与扩展插件都可通过命令直接调用。"],
-  ["全局快捷键", "使用自定义快捷键，从任何位置立即唤起。"],
-  ["灵活设置", "双击启动、固定应用、结果高度均可按习惯调整。"],
-  ["原生 Windows 体验", "轻量无边框界面，融入桌面而不打扰工作。"],
+  ["应用、文件与命令", "一个入口搜索应用、文件和目录，计算与插件命令同样直达。"],
+  ["截图与标注", "按 F1 框选、单击窗口或整屏截图，支持标注、长截图、贴图与历史。"],
+  ["剪贴板历史", "输入 clip 搜索复制过的文字、图片和文件，回车即可重新复制。"],
+  ["开发者小工具", "内置 JSON / MessagePack 查看器，提供插件 SDK 让你自建工具。"],
+  ["全局快捷键与插件", "用自定义快捷键从任何位置唤起，插件承载你常用的工作流。"],
 ] : [
   ["Instant response", "Open, type, and reach what you need without waiting."],
-  ["Apps and files", "Find apps, files, and folders from one focused entry point."],
-  ["Command plugins", "Run calculator, directory, and extensions with commands."],
-  ["Global hotkeys", "Open TypeGo instantly from anywhere with your own shortcut."],
-  ["Flexible settings", "Tune launch behavior, pinned apps, and result height."],
-  ["Native Windows feel", "A lightweight frameless interface that stays out of your way."],
+  ["Apps, files, and commands", "Find apps, files, and folders from one entry, with calculator and plugin commands on the same path."],
+  ["Screenshots and markup", "Press F1 for a region, window, or full-screen shot, with annotations, scrolling capture, pinning, and history."],
+  ["Clipboard history", "Type clip to search copied text, images, and files, then press Enter to copy again."],
+  ["Developer utilities", "A built-in JSON / MessagePack viewer plus a plugin SDK for tools of your own."],
+  ["Hotkeys and plugins", "Summon TypeGo from anywhere with your own shortcut, and extend it with plugins."],
 ];
 ---
 
-<Layout lang={lang} description={zh ? "TypeGo 是轻量、高效的 Windows 启动器，内存使用低至 35 MB。" : "TypeGo is a fast, lightweight Windows launcher using as little as 35 MB of memory."}>
-  <h1>{zh ? "轻快启动一切，内存低至 35 MB" : "Launch anything fast, from just 35 MB"}</h1>
-  <p>{zh ? "TypeGo 把应用、文件、命令与插件放进一个简洁入口。轻量驻留，随时响应，不打断你的思路。" : "TypeGo brings apps, files, commands, and plugins into one focused launcher. It stays light and responds the moment you need it."}</p>
+<Layout lang={lang} description={zh ? "TypeGo 是轻量的 Windows 快速工具集：启动器、截图、剪贴板历史与开发者小工具，常驻内存低至 35 MB。" : "TypeGo is a fast, lightweight Windows toolkit: launcher, screenshots, clipboard history, and developer utilities in as little as 35 MB of memory."}>
+  <h1>{zh ? "把内存拿回来" : "Take your memory back"}</h1>
+  <p>{zh ? "TypeGo 不只是一个启动器。它是一套常驻 35 MB 的快速工具：搜索应用与文件、截图标注、剪贴板历史、JSON 查看与命令插件，全部藏在同一个快捷键后面。别再为常驻工具浪费内存。" : "TypeGo is more than a launcher. It is a fast toolkit that lives in about 35 MB: app and file search, screenshot markup, clipboard history, a JSON viewer, and command plugins behind a single hotkey. Stop spending memory on tools that just sit there."}</p>
   <ul>
     <li><a href={site.downloadUrl}>{t.download}</a></li>
     <li><a href={lang === "zh" ? "/download#changelog" : "/en/download#changelog"}>{zh ? "查看更新日志" : "View changelog"}</a></li>
   </ul>
   <p><small>{t.requirements}</small></p>
 
-  <h2>{zh ? "核心能力" : "Core features"}</h2>
-  <p>{zh ? "每一项能力都围绕更快找到、更快执行而设计。" : "Every capability is designed to help you find and act faster."}</p>
+  <h2>{zh ? "一个快捷键，一整套工具" : "One hotkey, a whole toolbox"}</h2>
+  <p>{zh ? "启动器只是入口，真正省下的是切换窗口和等待的时间。" : "The launcher is only the entry point; what it really saves is switching windows and waiting."}</p>
   <ul>
     {features.map(([title, desc]) => <li><b>{title}</b> — {desc}</li>)}
   </ul>
 
-  <h2>{zh ? "更轻的常驻，更快的抵达。" : "A lighter footprint. A faster way there."}</h2>
+  <h2>{zh ? "更快，也更轻。" : "Faster, and lighter."}</h2>
+  <p>{zh ? "同样的工作，用更少的内存和更短的等待完成：这就是 TypeGo 的取舍。" : "Same work, less memory and less waiting: that is the trade TypeGo makes."}</p>
   <p><a href={site.downloadUrl}>{t.download}</a></p>
 </Layout>
