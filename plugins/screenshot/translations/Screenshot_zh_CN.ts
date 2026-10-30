@@ -116,24 +116,8 @@
             <translation>复制</translation>
         </message>
         <message>
-            <source>Edit annotations (double-click)</source>
-            <translation>编辑标注（双击）</translation>
-        </message>
-        <message>
             <source>Edit annotations</source>
             <translation>编辑标注</translation>
-        </message>
-        <message>
-            <source>Copy (Ctrl+C)</source>
-            <translation>复制 (Ctrl+C)</translation>
-        </message>
-        <message>
-            <source>Save as... (Ctrl+S)</source>
-            <translation>另存为... (Ctrl+S)</translation>
-        </message>
-        <message>
-            <source>Always on top</source>
-            <translation>窗口置顶</translation>
         </message>
         <message>
             <location filename="../PinWindow.cpp" line="119" />

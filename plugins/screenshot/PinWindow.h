@@ -2,17 +2,14 @@
 
 #include <QImage>
 #include <QPoint>
-#include <QRectF>
 #include <QSizeF>
 #include <QVector>
 #include <QWidget>
 
 #include "Annotation.h"
 
-class QToolButton;
-class QHideEvent;
-
-// 贴图窗口：把截图钉在桌面上，可拖动、滚轮或拖角缩放、继续标注、复制、另存和删除。
+// 贴图窗口：把截图钉在桌面上，可拖动、滚轮缩放、右键复制/另存/关闭，
+// 双击进入标注编辑（修改已画的箭头、矩形等）。
 class PinWindow final : public QWidget {
     Q_OBJECT
 public:
@@ -32,17 +29,9 @@ protected:
     void contextMenuEvent(QContextMenuEvent *event) override;
     void keyPressEvent(QKeyEvent *event) override;
     void closeEvent(QCloseEvent *event) override;
-    void showEvent(QShowEvent *event) override;
     void hideEvent(QHideEvent *event) override;
-    void moveEvent(QMoveEvent *event) override;
-    void resizeEvent(QResizeEvent *event) override;
 
 private:
-    enum class DragMode { None, Move, Resize };
-    enum class Corner { None, TopLeft, TopRight, BottomLeft, BottomRight };
-
-    void buildHoverBar();
-    void updateBarGeometry();
     QSizeF imageLogicalSize() const;
     const QImage &composedImage();
     void applyZoom(qreal zoom, const QPoint &anchorGlobal);
@@ -50,25 +39,14 @@ private:
     void copyImage();
     void saveAs();
     void editAnnotations();
-    void setTopmost(bool on);
     void setAnnotations(const QVector<ShotAnnotation> &annotations);
-    Corner cornerAt(const QPoint &local) const;
-    void updateCursorShape(const QPoint &local);
 
     QImage m_base;
     QVector<ShotAnnotation> m_annotations;
     QImage m_composed;
     bool m_composedDirty = true;
 
-    QWidget *m_bar = nullptr;
-    QToolButton *m_topmostButton = nullptr;
-
     QPoint m_dragOffset;
-    DragMode m_drag = DragMode::None;
-    Corner m_resizeCorner = Corner::None;
-    QPoint m_resizeAnchor;
-    bool m_anchorAtLeft = true;
-    bool m_anchorAtTop = true;
-
+    bool m_dragging = false;
     qreal m_zoom = 1.0;
 };
