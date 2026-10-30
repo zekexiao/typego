@@ -246,6 +246,18 @@
             <translation>截图失败</translation>
         </message>
         <message>
+            <source>Screenshot in progress</source>
+            <translation>截图进行中</translation>
+        </message>
+        <message>
+            <source>A screenshot or annotation edit is still in progress.</source>
+            <translation>当前还有截图或标注编辑没有完成。</translation>
+        </message>
+        <message>
+            <source>Start over and discard the current one?</source>
+            <translation>要重新开始并放弃当前内容吗？</translation>
+        </message>
+        <message>
             <location filename="../ScreenshotPlugin.cpp" line="306" />
             <source>Save screenshot</source>
             <translation>保存截图</translation>
@@ -287,6 +299,18 @@
             <location filename="../ScreenshotSession.cpp" line="271" />
             <source>The selected area is empty</source>
             <translation>选区为空</translation>
+        </message>
+        <message>
+            <source>Discard annotations?</source>
+            <translation>放弃标注？</translation>
+        </message>
+        <message>
+            <source>The current screenshot has annotations.</source>
+            <translation>当前截图已经有标注。</translation>
+        </message>
+        <message>
+            <source>Discard them and start over?</source>
+            <translation>要放弃这些标注重新开始吗？</translation>
         </message>
     </context>
     <context>

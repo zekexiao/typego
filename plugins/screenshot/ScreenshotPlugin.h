@@ -44,6 +44,9 @@ private:
     void saveImageAs(const QImage &image);
     void addPin(const QImage &base, const QVector<ShotAnnotation> &annotations, const QPoint &position);
     void closePins();
+    // 截图或标注编辑尚未结束时，重新触发截图前先确认。
+    bool hasEditingInProgress() const;
+    bool confirmRestartCapture();
     void showScrollResult(const QImage &image);
     void closeScrollResults();
     QString defaultSaveDir() const;

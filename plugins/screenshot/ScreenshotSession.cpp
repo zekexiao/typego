@@ -9,6 +9,7 @@
 #include <QCursor>
 #include <QGuiApplication>
 #include <QKeyEvent>
+#include <QMessageBox>
 #include <QPainter>
 #include <QPointer>
 #include <QScreen>
@@ -509,6 +510,8 @@ void ScreenshotSession::onPress(ScreenOverlay *overlay, const QPointF &globalPos
                 return;
             }
         }
+        // 重新框选会丢弃已画标注，先确认。
+        if (!confirmDiscardAnnotations()) return;
         m_dragMode = DragMode::Select;
         m_selection = QRect(globalPosition.toPoint(), QSize(0, 0));
         m_annotations.clear();
@@ -797,6 +800,7 @@ void ScreenshotSession::applyResize(const QPointF &globalPosition)
 
 void ScreenshotSession::clearSelection()
 {
+    if (!confirmDiscardAnnotations()) return;
     m_selection = {};
     m_annotations.clear();
     m_selectedAnnotation = -1;
@@ -926,6 +930,24 @@ void ScreenshotSession::deleteSelectedAnnotation()
     m_annotationHandle = -1;
     pushHistory();
     refresh();
+}
+
+bool ScreenshotSession::confirmDiscardAnnotations()
+{
+    if (m_annotations.isEmpty()) return true;
+    // 覆盖层是置顶全屏窗口，对话框也必须置顶。
+    QMessageBox box;
+    box.setIcon(QMessageBox::Question);
+    box.setWindowTitle(tr("Discard annotations?"));
+    box.setText(tr("The current screenshot has annotations."));
+    box.setInformativeText(tr("Discard them and start over?"));
+    box.setStandardButtons(QMessageBox::Yes | QMessageBox::No);
+    box.setDefaultButton(QMessageBox::No);
+    box.setWindowFlag(Qt::WindowStaysOnTopHint, true);
+    box.show();
+    box.raise();
+    box.activateWindow();
+    return box.exec() == QMessageBox::Yes;
 }
 
 void ScreenshotSession::beginMouseGrab(ScreenOverlay *overlay)

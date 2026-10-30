@@ -81,6 +81,8 @@ public:
     void restoreHistory(int index);
     void resetHistory();
     void deleteSelectedAnnotation();
+    // 丢弃当前选区标注前先确认，避免误触 Esc 或重新框选造成丢失。
+    bool confirmDiscardAnnotations();
     void finish(Finish action);
 
     QImage composeImage(bool includeAnnotations = true) const;
