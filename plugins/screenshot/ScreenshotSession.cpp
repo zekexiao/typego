@@ -922,6 +922,15 @@ void ScreenshotSession::resetHistory()
     updateToolbar();
 }
 
+QWidget *ScreenshotSession::dialogParent()
+{
+    if (m_activeOverlay) return m_activeOverlay;
+    if (!m_selection.isEmpty()) {
+        if (ScreenOverlay *overlay = overlayFor(QPointF(m_selection.center()))) return overlay;
+    }
+    return m_overlays.isEmpty() ? nullptr : m_overlays.first();
+}
+
 void ScreenshotSession::deleteSelectedAnnotation()
 {
     if (m_selectedAnnotation < 0 || m_selectedAnnotation >= m_annotations.size()) return;
@@ -935,19 +944,25 @@ void ScreenshotSession::deleteSelectedAnnotation()
 bool ScreenshotSession::confirmDiscardAnnotations()
 {
     if (m_annotations.isEmpty()) return true;
-    // 覆盖层是置顶全屏窗口，对话框也必须置顶。
-    QMessageBox box;
+    // 覆盖层是置顶全屏窗口，对话框必须以它为父窗口才能盖在它上面。
+    QMessageBox box(dialogParent());
     box.setIcon(QMessageBox::Question);
     box.setWindowTitle(tr("Discard annotations?"));
     box.setText(tr("The current screenshot has annotations."));
     box.setInformativeText(tr("Discard them and start over?"));
     box.setStandardButtons(QMessageBox::Yes | QMessageBox::No);
     box.setDefaultButton(QMessageBox::No);
-    box.setWindowFlag(Qt::WindowStaysOnTopHint, true);
     box.show();
     box.raise();
     box.activateWindow();
-    return box.exec() == QMessageBox::Yes;
+    const bool accepted = box.exec() == QMessageBox::Yes;
+    // 关闭对话框后把焦点还给覆盖层，恢复快捷键。
+    if (QWidget *owner = dialogParent()) {
+        owner->raise();
+        owner->activateWindow();
+        owner->setFocus(Qt::OtherFocusReason);
+    }
+    return accepted;
 }
 
 void ScreenshotSession::beginMouseGrab(ScreenOverlay *overlay)

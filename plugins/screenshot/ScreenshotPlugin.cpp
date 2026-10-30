@@ -374,19 +374,36 @@ bool ScreenshotPlugin::hasEditingInProgress() const
 
 bool ScreenshotPlugin::confirmRestartCapture()
 {
-    // 覆盖层本身是置顶窗口，对话框也要置顶才能盖过它。
-    QMessageBox box;
+    // 截图覆盖层是置顶全屏窗口，对话框必须挂到它（或贴图编辑窗口）上才不会被盖住。
+    QWidget *parent = nullptr;
+    if (m_session) {
+        parent = m_session->dialogParent();
+    } else {
+        for (const QPointer<PinWindow> &pin : m_pins) {
+            if (!pin) continue;
+            if (auto *editor = pin->findChild<PinEditor *>(QString(), Qt::FindDirectChildrenOnly)) {
+                parent = editor;
+                break;
+            }
+        }
+    }
+    QMessageBox box(parent);
     box.setIcon(QMessageBox::Question);
     box.setWindowTitle(tr("Screenshot in progress"));
     box.setText(tr("A screenshot or annotation edit is still in progress."));
     box.setInformativeText(tr("Start over and discard the current one?"));
     box.setStandardButtons(QMessageBox::Yes | QMessageBox::No);
     box.setDefaultButton(QMessageBox::No);
-    box.setWindowFlag(Qt::WindowStaysOnTopHint, true);
     box.show();
     box.raise();
     box.activateWindow();
-    return box.exec() == QMessageBox::Yes;
+    const bool accepted = box.exec() == QMessageBox::Yes;
+    if (parent) {
+        parent->raise();
+        parent->activateWindow();
+        parent->setFocus(Qt::OtherFocusReason);
+    }
+    return accepted;
 }
 
 void ScreenshotPlugin::showScrollResult(const QImage &image)

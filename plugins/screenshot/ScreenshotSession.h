@@ -58,6 +58,8 @@ public:
     const QRect &hoverWindow() const { return m_hoverWindow; }
     const QString &hoverTitle() const { return m_hoverTitle; }
     int selectedAnnotation() const { return m_selectedAnnotation; }
+    // 确认对话框的父窗口：覆盖层是置顶全屏窗口，对话框必须挂到它上面才不会被盖住。
+    QWidget *dialogParent();
     ScreenInfo *screenAt(const QPointF &globalPosition);
     ScreenInfo *activeScreen() const { return m_activeScreen; }
     ScreenOverlay *activeOverlay() const { return m_activeOverlay; }
