@@ -32,9 +32,9 @@ protected:
     void contextMenuEvent(QContextMenuEvent *event) override;
     void keyPressEvent(QKeyEvent *event) override;
     void closeEvent(QCloseEvent *event) override;
-    void enterEvent(QEnterEvent *event) override;
-    void leaveEvent(QEvent *event) override;
+    void showEvent(QShowEvent *event) override;
     void hideEvent(QHideEvent *event) override;
+    void moveEvent(QMoveEvent *event) override;
     void resizeEvent(QResizeEvent *event) override;
 
 private:
@@ -42,8 +42,7 @@ private:
     enum class Corner { None, TopLeft, TopRight, BottomLeft, BottomRight };
 
     void buildHoverBar();
-    void updateHoverBarGeometry();
-    void setBarVisible(bool visible);
+    void updateBarGeometry();
     QSizeF imageLogicalSize() const;
     const QImage &composedImage();
     void applyZoom(qreal zoom, const QPoint &anchorGlobal);
@@ -72,5 +71,4 @@ private:
     bool m_anchorAtTop = true;
 
     qreal m_zoom = 1.0;
-    bool m_hovered = false;
 };

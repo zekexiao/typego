@@ -47,7 +47,7 @@ PinWindow::PinWindow(const QImage &base, const QVector<ShotAnnotation> &annotati
     setWindowTitle(tr("Pinned screenshot"));
     updateWindowSize();
     buildHoverBar();
-    updateHoverBarGeometry();
+    updateBarGeometry();
 
     QScreen *screen = QGuiApplication::screenAt(position);
     if (!screen) screen = QGuiApplication::primaryScreen();
@@ -89,12 +89,15 @@ void PinWindow::updateWindowSize()
 
 void PinWindow::buildHoverBar()
 {
-    m_bar = new QWidget(this);
+    // 操作条放在贴图外面，作为独立的置顶小窗跟随贴图移动，不遮挡截图内容。
+    m_bar = new QWidget(this, Qt::Tool | Qt::FramelessWindowHint | Qt::WindowDoesNotAcceptFocus);
     m_bar->setObjectName(QStringLiteral("pinBar"));
     m_bar->setAttribute(Qt::WA_StyledBackground, true);
+    m_bar->setAttribute(Qt::WA_TranslucentBackground, true);
+    m_bar->setAttribute(Qt::WA_ShowWithoutActivating, true);
     m_bar->setStyleSheet(QStringLiteral(
-        "QWidget#pinBar { background: rgba(26, 28, 32, 220); border: 1px solid rgba(255,255,255,30);"
-        " border-radius: 8px; }"
+        "QWidget#pinBar { background: rgba(26, 28, 32, 238); border: 1px solid rgba(255,255,255,34);"
+        " border-radius: 9px; }"
         "QToolButton { background: transparent; border: none; border-radius: 5px; padding: 0; }"
         "QToolButton:hover { background: rgba(255,255,255,32); }"
         "QToolButton:pressed { background: rgba(255,255,255,55); }"
@@ -140,24 +143,26 @@ void PinWindow::buildHoverBar()
     m_bar->hide();
 }
 
-void PinWindow::updateHoverBarGeometry()
+void PinWindow::updateBarGeometry()
 {
     if (!m_bar) return;
     m_bar->adjustSize();
-    const int margin = 6;
-    const int x = qMax(margin, width() - m_bar->width() - margin);
-    const int y = height() >= m_bar->height() + margin * 2
-        ? margin : qMax(0, (height() - m_bar->height()) / 2);
-    m_bar->move(x, y);
-}
 
-void PinWindow::setBarVisible(bool visible)
-{
-    if (!m_bar) return;
-    // 贴图比操作条还窄时隐藏按钮条，右键菜单和双击仍然可用。
-    const bool fits = width() >= m_bar->sizeHint().width() + 12;
-    m_bar->setVisible(visible && fits);
-    if (m_bar->isVisible()) m_bar->raise();
+    const QRect frame = frameGeometry();
+    QScreen *screen = QGuiApplication::screenAt(frame.center());
+    const QRect available = screen ? screen->availableGeometry() : QRect();
+
+    int x = frame.center().x() - m_bar->width() / 2;
+    // 默认放在贴图上方，上方放不下时改放下方。
+    int y = frame.top() - m_bar->height() - 2;
+    if (!available.isNull()) {
+        if (y < available.top() + 2) y = frame.bottom() + 3;
+        x = qBound(available.left() + 2, x,
+                   qMax(available.left() + 2, available.right() - m_bar->width() - 2));
+        if (y + m_bar->height() > available.bottom())
+            y = qMax(available.top() + 2, frame.top() - m_bar->height() - 2);
+    }
+    m_bar->move(x, y);
 }
 
 void PinWindow::paintEvent(QPaintEvent *)
@@ -170,8 +175,8 @@ void PinWindow::paintEvent(QPaintEvent *)
     painter.setBrush(Qt::NoBrush);
     painter.drawRect(rect().adjusted(0, 0, -1, -1));
 
-    // 悬停时在四角提示可拖拽缩放。
-    if (m_hovered && width() > 28 && height() > 28) {
+    // 鼠标悬停时在四角提示可拖拽缩放。
+    if ((underMouse() || m_drag != DragMode::None) && width() > 28 && height() > 28) {
         painter.setPen(QPen(QColor(22, 119, 255), 1.2));
         painter.setBrush(QColor(255, 255, 255, 230));
         const QPoint corners[] = {QPoint(0, 0), QPoint(width() - 1, 0),
@@ -324,36 +329,25 @@ void PinWindow::applyZoom(qreal zoom, const QPoint &anchorGlobal)
     move(anchorGlobal - newLocal);
 }
 
-void PinWindow::enterEvent(QEnterEvent *event)
+void PinWindow::showEvent(QShowEvent *event)
 {
-    m_hovered = true;
-    setBarVisible(true);
-    update();
-    QWidget::enterEvent(event);
+    QWidget::showEvent(event);
+    if (!m_bar) return;
+    updateBarGeometry();
+    if (findChild<PinEditor *>(QString(), Qt::FindDirectChildrenOnly)) return;
+    m_bar->show();
+    m_bar->raise();
 }
 
-void PinWindow::leaveEvent(QEvent *event)
+void PinWindow::moveEvent(QMoveEvent *event)
 {
-    m_hovered = false;
-    update();
-    QWidget::leaveEvent(event);
-    // 鼠标移到按钮条上时父窗口也会收到离开事件，延后确认再隐藏。
-    QTimer::singleShot(200, this, [this]() {
-        if (!m_bar || m_drag != DragMode::None) return;
-        const QPoint global = QCursor::pos();
-        const bool insideBar = m_bar->isVisible()
-            && m_bar->rect().contains(m_bar->mapFromGlobal(global));
-        if (insideBar || frameGeometry().contains(global)) return;
-        m_hovered = false;
-        setBarVisible(false);
-        update();
-    });
+    updateBarGeometry();
+    QWidget::moveEvent(event);
 }
 
 void PinWindow::resizeEvent(QResizeEvent *event)
 {
-    updateHoverBarGeometry();
-    setBarVisible(m_hovered);
+    updateBarGeometry();
     QWidget::resizeEvent(event);
 }
 
@@ -362,6 +356,7 @@ void PinWindow::hideEvent(QHideEvent *event)
     // 截图前宿主会隐藏所有顶层窗口；编辑窗口随贴图一起关闭，避免恢复时错位。
     if (PinEditor *editor = findChild<PinEditor *>(QString(), Qt::FindDirectChildrenOnly))
         editor->close();
+    if (m_bar) m_bar->hide();
     QWidget::hideEvent(event);
 }
 
@@ -383,10 +378,18 @@ void PinWindow::editAnnotations()
         existing->activateWindow();
         return;
     }
+    if (m_bar) m_bar->hide();
     auto *editor = new PinEditor(m_base, m_annotations, this);
     connect(editor, &PinEditor::annotationsChanged, this, &PinWindow::setAnnotations);
     connect(editor, &PinEditor::closed, this, [this]() {
-        if (m_hovered) setBarVisible(true);
+        // 编辑窗口关闭后恢复操作条；期间若又打开了新编辑窗口则不显示。
+        QTimer::singleShot(0, this, [this]() {
+            if (!isVisible() || !m_bar) return;
+            if (findChild<PinEditor *>(QString(), Qt::FindDirectChildrenOnly)) return;
+            updateBarGeometry();
+            m_bar->show();
+            m_bar->raise();
+        });
     });
     QScreen *screen = QGuiApplication::screenAt(frameGeometry().center());
     if (!screen) screen = QGuiApplication::primaryScreen();
@@ -402,7 +405,6 @@ void PinWindow::editAnnotations()
     editor->show();
     editor->raise();
     editor->activateWindow();
-    setBarVisible(false);
 }
 
 void PinWindow::setAnnotations(const QVector<ShotAnnotation> &annotations)
