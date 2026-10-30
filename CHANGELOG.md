@@ -1,5 +1,23 @@
 # TypeGo 更新日志
 
+## 1.10 - 2026-10-30
+
+### 中文
+
+- 新增截图插件：按 F1 框选区域、单击高亮窗口或使用 `shot-full` 整屏截图，支持多屏与混合 DPI；提供矩形、椭圆、箭头、直线、画笔、文字、高亮、马赛克、模糊和序号标注，以及撤销/重做、放大镜、颜色与粗细调整
+- 截图支持复制到剪贴板、另存为、贴图到桌面和历史记录；贴图可拖动、滚轮缩放，历史可用 `shot-history` 浏览
+- 新增滚动长截图：使用 `shot-scroll`、截图工具栏的长截图按钮或按 S，自动拼接上下/横向滚动内容并尽量排除固定标题栏与页脚；长图可在预览窗口复制或另存
+- 截图默认快捷键为 F1，可在「设置 > 插件」修改；新增长截图、保存目录、历史条数和放大镜设置
+- 修复截图工具栏图标在高 DPI 下被重复缩放裁切，以及文字标注输入时字号、基线与最终结果不一致的问题
+
+### English
+
+- Added the screenshot plugin: press F1 to select a region, click a highlighted window, or use `shot-full` for the current display, with multi-monitor and mixed-DPI support. Annotations include rectangle, ellipse, arrow, line, pen, text, highlight, mosaic, blur and step numbers, plus undo/redo, magnifier and color/width controls
+- Screenshots can be copied, saved, pinned to the screen and kept in history; pinned images can be dragged and zoomed with the wheel, and history is available through `shot-history`
+- Added scrolling capture via `shot-scroll`, the toolbar button or S. It stitches vertical or horizontal scrolling while excluding fixed headers and footers, and opens a preview that can be copied or saved
+- The default screenshot shortcut is F1 and can be changed in Settings > Plugins; added scrolling, save folder, history size and magnifier settings
+- Fixed screenshot toolbar icons being clipped by double DPI scaling, and text annotation input using a different font size and baseline from the committed text
+
 ## 1.9 - 2026-10-29
 
 ### 中文
