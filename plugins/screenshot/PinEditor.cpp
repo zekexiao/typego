@@ -265,22 +265,28 @@ void PinEditor::mousePressEvent(QMouseEvent *event)
     update();
 }
 
-void PinEditor::mouseMoveEvent(QMouseEvent *event)
+void PinEditor::applyAnnotationDrag(const QPointF &point)
 {
-    const QPointF point = clampToImage(toLogical(event->position()));
-
-    if (m_drag == DragMode::Move && m_selected >= 0 && m_selected < m_annotations.size()) {
-        ShotAnnotation &annotation = m_annotations[m_selected];
+    if (m_selected < 0 || m_selected >= m_annotations.size()) return;
+    ShotAnnotation &annotation = m_annotations[m_selected];
+    if (m_drag == DragMode::Move) {
         annotation = m_dragOriginal;
         shotAnnotationTranslate(annotation, point - m_dragStart);
+    } else if (m_drag == DragMode::Resize) {
+        shotAnnotationResize(annotation, m_dragOriginal, m_selectedHandle, point);
+    }
+}
+
+void PinEditor::mouseMoveEvent(QMouseEvent *event)
+{
+    if (m_drag == DragMode::Move || m_drag == DragMode::Resize) {
+        // 拖动中用未裁剪的坐标，标注才能一直跟在光标下。
+        applyAnnotationDrag(toLogical(event->position()));
         update();
         return;
     }
-    if (m_drag == DragMode::Resize && m_selected >= 0 && m_selected < m_annotations.size()) {
-        shotAnnotationResize(m_annotations[m_selected], m_dragOriginal, m_selectedHandle, point);
-        update();
-        return;
-    }
+
+    const QPointF point = clampToImage(toLogical(event->position()));
     if (m_drag == DragMode::Draw && m_hasPending) {
         if (m_pending.tool == ShotTool::Pen) {
             if (m_pending.points.isEmpty()
@@ -301,6 +307,8 @@ void PinEditor::mouseReleaseEvent(QMouseEvent *event)
     const QPointF point = clampToImage(toLogical(event->position()));
 
     if (m_drag == DragMode::Move || m_drag == DragMode::Resize) {
+        // 松手位置可能比最后一次移动事件更接近光标，用它补齐避免落后一段。
+        applyAnnotationDrag(toLogical(event->position()));
         m_drag = DragMode::None;
         m_selectedHandle = -1;
         // 位置没有变化时不产生空的历史记录。

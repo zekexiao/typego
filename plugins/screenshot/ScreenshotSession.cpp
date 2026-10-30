@@ -652,6 +652,18 @@ void ScreenshotSession::onRelease(ScreenOverlay *overlay, const QPointF &globalP
         return;
     }
     if (m_dragMode == DragMode::EditMove || m_dragMode == DragMode::EditResize) {
+        // 松手位置可能比最后一次移动事件更靠近光标，必须用它补齐，
+        // 否则快速拖动时标注会停在光标后面一段。
+        if (m_selectedAnnotation >= 0 && m_selectedAnnotation < m_annotations.size()) {
+            ShotAnnotation &annotation = m_annotations[m_selectedAnnotation];
+            if (m_dragMode == DragMode::EditMove) {
+                annotation = m_originalAnnotation;
+                shotAnnotationTranslate(annotation, globalPosition - m_editStart);
+            } else {
+                shotAnnotationResize(annotation, m_originalAnnotation, m_annotationHandle,
+                                     globalPosition);
+            }
+        }
         m_dragMode = DragMode::None;
         m_annotationHandle = -1;
         pushHistory();

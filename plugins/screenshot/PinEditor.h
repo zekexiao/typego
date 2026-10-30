@@ -65,6 +65,7 @@ private:
     QVector<QPointF> handlePoints(const ShotAnnotation &annotation) const;
     int handleAt(const ShotAnnotation &annotation, const QPointF &logical) const;
     void deleteSelected();
+    void applyAnnotationDrag(const QPointF &point);
     void applyColorToSelection(const QColor &color);
     void applyWidthToSelection(int width);
     void updateCursorFor(const QPointF &logical);
