@@ -1,6 +1,7 @@
 #pragma once
 
 #include <QImage>
+#include <QRectF>
 #include <QString>
 #include <QVector>
 #include <QWidget>
@@ -10,7 +11,7 @@
 class CaptureToolbar;
 class QLineEdit;
 
-// 贴图编辑窗口：复用截图标注工具，修改贴图上的矢量标注。
+// 贴图编辑窗口：复用截图标注工具，既能继续添加标注，也能选中并修改已有标注。
 // 编辑结果实时回传给贴图窗口，关闭即保留当前标注。
 class PinEditor final : public QWidget {
     Q_OBJECT
@@ -27,34 +28,54 @@ protected:
     void mousePressEvent(QMouseEvent *event) override;
     void mouseMoveEvent(QMouseEvent *event) override;
     void mouseReleaseEvent(QMouseEvent *event) override;
+    void mouseDoubleClickEvent(QMouseEvent *event) override;
     void keyPressEvent(QKeyEvent *event) override;
     void closeEvent(QCloseEvent *event) override;
     void showEvent(QShowEvent *event) override;
     bool eventFilter(QObject *watched, QEvent *event) override;
 
 private:
+    enum class DragMode { None, Draw, Move, Resize };
+
     QSizeF imageLogicalSize() const;
     QPointF toLogical(const QPointF &local) const;
+    QPointF clampToImage(const QPointF &logical) const;
     void setTool(ShotTool tool);
     void undo();
     void redo();
+    void pushHistory();
+    void restoreHistory(int index);
+    void refreshToolbarHistory();
     void commitAnnotation(const ShotAnnotation &annotation);
     void notifyChanged();
-    void beginTextInput(const QPointF &logicalPosition);
+    void beginTextInput(const QPointF &logicalPosition, const QString &initial = QString(),
+                        int editIndex = -1);
     void cancelTextInput();
     void commitTextInput();
     QImage composedImage() const;
     void copyImage();
     void saveAs();
     void paintPendingAnnotation(QPainter &painter);
+    void paintSelection(QPainter &painter);
+
+    int hitTest(const QPointF &logical) const;
+    QVector<QPointF> handlePoints(const ShotAnnotation &annotation) const;
+    int handleAt(const ShotAnnotation &annotation, const QPointF &logical) const;
+    void deleteSelected();
+    void applyColorToSelection(const QColor &color);
+    void applyWidthToSelection(int width);
+    void updateCursorFor(const QPointF &logical);
 
     QImage m_base;
     QVector<ShotAnnotation> m_annotations;
-    QVector<ShotAnnotation> m_redo;
     QImage m_composed;
     QRect m_canvasRect;
     qreal m_scale = 1.0;
     CaptureToolbar *m_toolbar = nullptr;
+
+    // 标注历史采用快照，移动、缩放、改字、删除都能统一撤销。
+    QVector<QVector<ShotAnnotation>> m_history;
+    int m_historyIndex = 0;
 
     ShotTool m_tool = ShotTool::Select;
     QColor m_color = QColor(255, 77, 79);
@@ -63,6 +84,13 @@ private:
 
     ShotAnnotation m_pending;
     bool m_hasPending = false;
+    DragMode m_drag = DragMode::None;
+    int m_selected = -1;
+    int m_selectedHandle = -1;
+    QPointF m_dragStart;
+    ShotAnnotation m_dragOriginal;
+
     QLineEdit *m_textEdit = nullptr;
     QPointF m_textOrigin;
+    int m_textEditIndex = -1;
 };
