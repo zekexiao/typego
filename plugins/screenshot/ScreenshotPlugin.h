@@ -6,7 +6,9 @@
 #include <QPointer>
 #include <QTranslator>
 #include <memory>
+#include <utility>
 
+#include "Annotation.h"
 #include "ScreenshotSession.h"
 #include "ScreenshotStore.h"
 
@@ -40,7 +42,7 @@ private:
     void recordImage(const QImage &image);
     void copyImage(const QImage &image);
     void saveImageAs(const QImage &image);
-    void addPin(const QImage &image, const QPoint &position);
+    void addPin(const QImage &base, const QVector<ShotAnnotation> &annotations, const QPoint &position);
     void closePins();
     void showScrollResult(const QImage &image);
     void closeScrollResults();

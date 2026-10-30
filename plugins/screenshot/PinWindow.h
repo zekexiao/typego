@@ -2,13 +2,22 @@
 
 #include <QImage>
 #include <QPoint>
+#include <QRectF>
+#include <QSizeF>
+#include <QVector>
 #include <QWidget>
 
-// 贴图窗口：把截图钉在桌面上，可拖动、滚轮缩放、复制或另存。
+#include "Annotation.h"
+
+class QToolButton;
+class QHideEvent;
+
+// 贴图窗口：把截图钉在桌面上，可拖动、滚轮或拖角缩放、继续标注、复制、另存和删除。
 class PinWindow final : public QWidget {
     Q_OBJECT
 public:
-    PinWindow(const QImage &image, const QPoint &position, QWidget *parent = nullptr);
+    PinWindow(const QImage &base, const QVector<ShotAnnotation> &annotations,
+              const QPoint &position, QWidget *parent = nullptr);
 
 signals:
     void closed();
@@ -23,14 +32,45 @@ protected:
     void contextMenuEvent(QContextMenuEvent *event) override;
     void keyPressEvent(QKeyEvent *event) override;
     void closeEvent(QCloseEvent *event) override;
+    void enterEvent(QEnterEvent *event) override;
+    void leaveEvent(QEvent *event) override;
+    void hideEvent(QHideEvent *event) override;
+    void resizeEvent(QResizeEvent *event) override;
 
 private:
-    void applyZoom(qreal zoom);
-    void updateWindowSize();
-    void saveAs();
+    enum class DragMode { None, Move, Resize };
+    enum class Corner { None, TopLeft, TopRight, BottomLeft, BottomRight };
 
-    QImage m_image;
+    void buildHoverBar();
+    void updateHoverBarGeometry();
+    void setBarVisible(bool visible);
+    QSizeF imageLogicalSize() const;
+    const QImage &composedImage();
+    void applyZoom(qreal zoom, const QPoint &anchorGlobal);
+    void updateWindowSize();
+    void copyImage();
+    void saveAs();
+    void editAnnotations();
+    void setTopmost(bool on);
+    void setAnnotations(const QVector<ShotAnnotation> &annotations);
+    Corner cornerAt(const QPoint &local) const;
+    void updateCursorShape(const QPoint &local);
+
+    QImage m_base;
+    QVector<ShotAnnotation> m_annotations;
+    QImage m_composed;
+    bool m_composedDirty = true;
+
+    QWidget *m_bar = nullptr;
+    QToolButton *m_topmostButton = nullptr;
+
     QPoint m_dragOffset;
-    bool m_dragging = false;
+    DragMode m_drag = DragMode::None;
+    Corner m_resizeCorner = Corner::None;
+    QPoint m_resizeAnchor;
+    bool m_anchorAtLeft = true;
+    bool m_anchorAtTop = true;
+
     qreal m_zoom = 1.0;
+    bool m_hovered = false;
 };

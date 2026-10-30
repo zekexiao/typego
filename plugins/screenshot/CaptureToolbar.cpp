@@ -23,8 +23,9 @@ const int kWidths[] = {2, 4, 6, 10};
 
 } // namespace
 
-CaptureToolbar::CaptureToolbar(QWidget *parent)
+CaptureToolbar::CaptureToolbar(QWidget *parent, Mode mode)
     : QWidget(parent)
+    , m_mode(mode)
 {
     setObjectName(QStringLiteral("shotToolbar"));
     setAttribute(Qt::WA_StyledBackground, true);
@@ -140,7 +141,12 @@ CaptureToolbar::CaptureToolbar(QWidget *parent)
     QToolButton *copy = addAction(QStringLiteral("copy"), tr("Copy (Enter / Ctrl+C)"));
     QToolButton *save = addAction(QStringLiteral("save"), tr("Save as (Ctrl+S)"));
     QToolButton *pin = addAction(QStringLiteral("pin"), tr("Pin to screen (Ctrl+P)"));
-    QToolButton *close = addAction(QStringLiteral("close"), tr("Cancel (Esc)"));
+    QToolButton *close = addAction(QStringLiteral("close"),
+        m_mode == Mode::Pin ? tr("Done (Esc)") : tr("Cancel (Esc)"));
+    if (m_mode == Mode::Pin) {
+        scroll->hide();
+        pin->hide();
+    }
     connect(scroll, &QToolButton::clicked, this, &CaptureToolbar::scrollRequested);
     connect(copy, &QToolButton::clicked, this, &CaptureToolbar::copyRequested);
     connect(save, &QToolButton::clicked, this, &CaptureToolbar::saveRequested);

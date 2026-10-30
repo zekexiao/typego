@@ -29,6 +29,18 @@ QString formatSize(qint64 bytes)
     if (bytes >= 1024 * 1024) return QStringLiteral("%1 MB").arg(bytes / (1024.0 * 1024.0), 0, 'f', 1);
     return QStringLiteral("%1 KB").arg(qMax<qint64>(1, bytes / 1024));
 }
+
+// 把全局逻辑坐标的标注平移到以选区左上角为原点的贴图坐标系。
+QVector<ShotAnnotation> offsetAnnotations(const QVector<ShotAnnotation> &annotations, const QPointF &offset)
+{
+    QVector<ShotAnnotation> result = annotations;
+    for (ShotAnnotation &annotation : result) {
+        annotation.start += offset;
+        annotation.end += offset;
+        for (QPointF &point : annotation.points) point += offset;
+    }
+    return result;
+}
 } // namespace
 
 Api::Error ScreenshotPlugin::initialize(Api::Host *host)
@@ -144,7 +156,7 @@ Api::ExecutionResult ScreenshotPlugin::execute(const Api::Invocation &invocation
         if (image.isNull())
             return {Api::Status::Failed, Api::HostAction::Keep,
                     {Api::ErrorCode::IoError, tr("Cannot read the saved screenshot")}};
-        addPin(image, QCursor::pos());
+        addPin(image, {}, QCursor::pos());
         // 隐藏启动器，让贴图直接出现在刚选中的位置。
         return {Api::Status::Succeeded, Api::HostAction::Hide};
     }
@@ -233,6 +245,14 @@ void ScreenshotPlugin::onCompleted(ScreenshotSession::Finish action, const QImag
                                    const QRect &selection)
 {
     ScreenshotSession *session = m_session.release();
+    // 贴图保留未标注的底图和矢量标注，方便之后继续修改。
+    QImage pinBase;
+    QVector<ShotAnnotation> pinAnnotations;
+    if (session && action == ScreenshotSession::Finish::Pin) {
+        pinBase = session->composeImage(false);
+        pinAnnotations = offsetAnnotations(session->annotations(),
+                                           QPointF(-selection.x(), -selection.y()));
+    }
     if (session) session->deleteLater();
     if (!m_shuttingDown && m_host) m_host->closeView();
     switch (action) {
@@ -246,7 +266,8 @@ void ScreenshotPlugin::onCompleted(ScreenshotSession::Finish action, const QImag
         break;
     case ScreenshotSession::Finish::Pin:
         recordImage(image);
-        addPin(image, selection.topLeft());
+        if (pinBase.isNull()) pinBase = image;
+        addPin(pinBase, pinAnnotations, selection.topLeft());
         break;
     case ScreenshotSession::Finish::Cancel:
         break;
@@ -318,10 +339,11 @@ void ScreenshotPlugin::saveImageAs(const QImage &image)
     if (m_host) m_host->setConfigValue(QStringLiteral("saveDir"), m_saveDir);
 }
 
-void ScreenshotPlugin::addPin(const QImage &image, const QPoint &position)
+void ScreenshotPlugin::addPin(const QImage &base, const QVector<ShotAnnotation> &annotations,
+                              const QPoint &position)
 {
-    if (image.isNull()) return;
-    auto *pin = new PinWindow(image, position);
+    if (base.isNull()) return;
+    auto *pin = new PinWindow(base, annotations, position);
     m_pins.append(pin);
     connect(pin, &PinWindow::closed, this, [this, pin]() { m_pins.removeAll(pin); });
     pin->show();

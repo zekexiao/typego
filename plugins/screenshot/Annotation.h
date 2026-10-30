@@ -48,5 +48,10 @@ void paintShotAnnotation(QPainter &painter, const ShotAnnotation &annotation);
 // 对目标图像中的区域做马赛克或模糊处理。block 为马赛克块大小（像素）。
 void applyShotEffect(QImage &image, const QRect &target, ShotTool tool, int block);
 
+// 把原图与矢量标注合成为物理像素图像，标注坐标基于原图逻辑像素。
+// pending 非空时一并绘制，用于拖拽中的实时预览；贴图、贴图编辑和截图导出共用同一实现。
+QImage composeShotImage(const QImage &base, const QVector<ShotAnnotation> &annotations,
+                        const ShotAnnotation *pending = nullptr);
+
 int shotToolCount();
 ShotTool shotToolAt(int index);

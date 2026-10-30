@@ -43,6 +43,11 @@
             <translation>取消 (Esc)</translation>
         </message>
         <message>
+            <location filename="../CaptureToolbar.cpp" line="144" />
+            <source>Done (Esc)</source>
+            <translation>完成 (Esc)</translation>
+        </message>
+        <message>
             <location filename="../CaptureToolbar.cpp" line="174" />
             <source>Select</source>
             <translation>选择</translation>
@@ -111,6 +116,26 @@
             <translation>复制</translation>
         </message>
         <message>
+            <source>Edit annotations (double-click)</source>
+            <translation>编辑标注（双击）</translation>
+        </message>
+        <message>
+            <source>Edit annotations</source>
+            <translation>编辑标注</translation>
+        </message>
+        <message>
+            <source>Copy (Ctrl+C)</source>
+            <translation>复制 (Ctrl+C)</translation>
+        </message>
+        <message>
+            <source>Save as... (Ctrl+S)</source>
+            <translation>另存为... (Ctrl+S)</translation>
+        </message>
+        <message>
+            <source>Always on top</source>
+            <translation>窗口置顶</translation>
+        </message>
+        <message>
             <location filename="../PinWindow.cpp" line="119" />
             <source>Save as...</source>
             <translation>另存为...</translation>
@@ -137,6 +162,29 @@
         </message>
         <message>
             <location filename="../PinWindow.cpp" line="162" />
+            <source>Cannot save the image to %1</source>
+            <translation>无法把图片保存到 %1</translation>
+        </message>
+    </context>
+    <context>
+        <name>PinEditor</name>
+        <message>
+            <source>Edit pinned screenshot</source>
+            <translation>编辑贴图</translation>
+        </message>
+        <message>
+            <source>Save screenshot</source>
+            <translation>保存截图</translation>
+        </message>
+        <message>
+            <source>PNG image (*.png);;JPEG image (*.jpg *.jpeg)</source>
+            <translation>PNG 图片 (*.png);;JPEG 图片 (*.jpg *.jpeg)</translation>
+        </message>
+        <message>
+            <source>Save failed</source>
+            <translation>保存失败</translation>
+        </message>
+        <message>
             <source>Cannot save the image to %1</source>
             <translation>无法把图片保存到 %1</translation>
         </message>

@@ -228,6 +228,50 @@ void applyShotEffect(QImage &image, const QRect &target, ShotTool tool, int bloc
     painter.drawImage(area.topLeft(), patch);
 }
 
+QImage composeShotImage(const QImage &base, const QVector<ShotAnnotation> &annotations,
+                        const ShotAnnotation *pending)
+{
+    if (base.isNull()) return {};
+    const qreal dpr = base.devicePixelRatio() > 0 ? base.devicePixelRatio() : 1.0;
+    QImage image = base.format() == QImage::Format_ARGB32_Premultiplied
+        ? base : base.convertToFormat(QImage::Format_ARGB32_Premultiplied);
+    if (image.isNull()) return {};
+    image.setDevicePixelRatio(dpr);
+
+    QPainter painter(&image);
+    painter.setRenderHint(QPainter::Antialiasing, true);
+    painter.setRenderHint(QPainter::SmoothPixmapTransform, false);
+    painter.setClipRect(image.rect());
+
+    auto drawOne = [&](const ShotAnnotation &annotation) {
+        if (annotation.isEffect()) {
+            const QRectF logical = annotation.rect();
+            const QRect target = QRectF(logical.x() * dpr, logical.y() * dpr,
+                                        logical.width() * dpr, logical.height() * dpr)
+                                     .toAlignedRect().intersected(image.rect());
+            if (target.width() < 2 || target.height() < 2) return;
+            // 效果标注直接改像素，需要临时结束绘制器。
+            painter.end();
+            applyShotEffect(image, target, annotation.tool, qMax(3, qRound(8 * dpr)));
+            painter.begin(&image);
+            painter.setRenderHint(QPainter::Antialiasing, true);
+            painter.setRenderHint(QPainter::SmoothPixmapTransform, false);
+            painter.setClipRect(image.rect());
+            return;
+        }
+        painter.save();
+        painter.scale(dpr, dpr);
+        paintShotAnnotation(painter, annotation);
+        painter.restore();
+    };
+
+    for (const ShotAnnotation &annotation : annotations) drawOne(annotation);
+    if (pending) drawOne(*pending);
+    painter.end();
+    image.setDevicePixelRatio(dpr);
+    return image;
+}
+
 int shotToolCount()
 {
     return 11;

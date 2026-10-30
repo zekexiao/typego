@@ -24,6 +24,7 @@ typego_add_plugin(screenshot_plugin METADATA "${CMAKE_CURRENT_SOURCE_DIR}/plugin
     Annotation.cpp Annotation.h
     ShotIcons.cpp ShotIcons.h
     PinWindow.cpp PinWindow.h
+    PinEditor.cpp PinEditor.h
     ScreenshotStore.cpp ScreenshotStore.h
     ScreenshotSettingsWidget.cpp ScreenshotSettingsWidget.h
     WinCapture.cpp WinCapture.h

@@ -828,7 +828,7 @@ void ScreenshotSession::endMouseGrab()
     }
 }
 
-QImage ScreenshotSession::composeImage() const
+QImage ScreenshotSession::composeImage(bool includeAnnotations) const
 {
     const QRect selection = m_selection.normalized().intersected(m_virtualLogical);
     if (selection.width() < 1 || selection.height() < 1) return {};
@@ -841,13 +841,13 @@ QImage ScreenshotSession::composeImage() const
           }();
     const QSize size(qMax(1, qRound(selection.width() * scale)),
                      qMax(1, qRound(selection.height() * scale)));
-    QImage image(size, QImage::Format_ARGB32_Premultiplied);
-    image.fill(Qt::transparent);
+    QImage base(size, QImage::Format_ARGB32_Premultiplied);
+    base.fill(Qt::transparent);
 
-    QPainter painter(&image);
+    QPainter painter(&base);
     painter.setRenderHint(QPainter::Antialiasing, true);
     painter.setRenderHint(QPainter::SmoothPixmapTransform, false);
-    painter.setClipRect(image.rect());
+    painter.setClipRect(base.rect());
 
     for (const ScreenInfo &screen : std::as_const(m_screens)) {
         const QRect intersection = selection.intersected(screen.logical);
@@ -862,29 +862,10 @@ QImage ScreenshotSession::composeImage() const
                             intersection.width() * scale, intersection.height() * scale);
         painter.drawImage(target, m_virtualImage, source);
     }
-
-    QTransform transform;
-    transform.scale(scale, scale);
-    transform.translate(-selection.x(), -selection.y());
-    painter.setTransform(transform);
-
-    for (const ShotAnnotation &annotation : std::as_const(m_annotations)) {
-        if (annotation.isEffect()) {
-            const QRectF mapped = transform.mapRect(annotation.rect());
-            const QRect target = mapped.toAlignedRect().intersected(image.rect());
-            if (target.isEmpty()) continue;
-            painter.end();
-            applyShotEffect(image, target, annotation.tool, qMax(3, qRound(8 * scale)));
-            painter.begin(&image);
-            painter.setRenderHint(QPainter::Antialiasing, true);
-            painter.setRenderHint(QPainter::SmoothPixmapTransform, false);
-            painter.setClipRect(image.rect());
-            painter.setTransform(transform);
-        } else {
-            paintShotAnnotation(painter, annotation);
-        }
-    }
     painter.end();
-    image.setDevicePixelRatio(scale);
-    return image;
+    base.setDevicePixelRatio(scale);
+
+    // 贴图需要保留未标注的底图，方便之后继续编辑矢量标注。
+    if (!includeAnnotations) return base;
+    return composeShotImage(base, m_annotations);
 }

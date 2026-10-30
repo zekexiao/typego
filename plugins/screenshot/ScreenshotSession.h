@@ -78,7 +78,7 @@ public:
     void redo();
     void finish(Finish action);
 
-    QImage composeImage() const;
+    QImage composeImage(bool includeAnnotations = true) const;
 
 signals:
     void completed(ScreenshotSession::Finish action, const QImage &image, const QRect &selection);

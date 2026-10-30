@@ -204,6 +204,21 @@ QIcon shotActionIcon(const QString &name)
             p.setPen(Qt::NoPen);
             p.setBrush(Ink);
             p.drawPolygon(arrow);
+        } else if (name == QLatin1String("edit")) {
+            // 铅笔：用于重新标注贴图。
+            QPolygonF tip;
+            tip << QPointF(4.5, 16.5) << QPointF(5.5, 12.5) << QPointF(14, 4)
+                << QPointF(17.5, 7.5) << QPointF(9, 16) ;
+            p.setBrush(Qt::NoBrush);
+            p.drawPolygon(tip);
+            p.drawLine(QPointF(5.5, 12.5), QPointF(9, 16));
+            p.drawLine(QPointF(12.5, 5.5), QPointF(16, 9));
+        } else if (name == QLatin1String("delete")) {
+            p.drawRoundedRect(QRectF(6, 6.5, 10, 11), 1.5, 1.5);
+            p.drawLine(QPointF(4.5, 6), QPointF(17.5, 6));
+            p.drawLine(QPointF(9, 3.5), QPointF(13, 3.5));
+            p.drawLine(QPointF(9.5, 9.5), QPointF(9.5, 14.5));
+            p.drawLine(QPointF(12.5, 9.5), QPointF(12.5, 14.5));
         } else if (name == QLatin1String("close")) {
             p.drawLine(QPointF(6, 6), QPointF(16, 16));
             p.drawLine(QPointF(16, 6), QPointF(6, 16));
