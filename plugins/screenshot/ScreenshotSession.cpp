@@ -47,6 +47,7 @@ ScreenshotSession::ScreenshotSession(quintptr previousForeground, Options option
     , m_previousForeground(previousForeground)
     , m_options(options)
 {
+    m_history.append(QVector<ShotAnnotation>());
 }
 
 ScreenshotSession::~ScreenshotSession()
@@ -349,7 +350,7 @@ void ScreenshotSession::positionToolbar()
 void ScreenshotSession::updateToolbar()
 {
     if (!m_toolbar) return;
-    m_toolbar->setUndoRedo(!m_annotations.isEmpty(), !m_redo.isEmpty());
+    m_toolbar->setUndoRedo(m_historyIndex > 0, m_historyIndex + 1 < m_history.size());
 }
 
 void ScreenshotSession::refresh()
@@ -406,6 +407,18 @@ Qt::CursorShape ScreenshotSession::cursorFor(const QPointF &globalPosition)
     case Handle::Right: return Qt::SizeHorCursor;
     case Handle::None: break;
     }
+    // 标注手柄与命中优先于选区拖动，方便直接调整已画的箭头、矩形等。
+    if (m_selectedAnnotation >= 0 && m_selectedAnnotation < m_annotations.size()) {
+        const int handle = shotAnnotationHandleAt(m_annotations.at(m_selectedAnnotation),
+                                                  globalPosition, 8.0);
+        if (handle >= 0) {
+            if (m_annotations.at(m_selectedAnnotation).tool == ShotTool::Line
+                || m_annotations.at(m_selectedAnnotation).tool == ShotTool::Arrow)
+                return Qt::SizeAllCursor;
+            return handle == 0 || handle == 3 ? Qt::SizeFDiagCursor : Qt::SizeBDiagCursor;
+        }
+    }
+    if (shotAnnotationHitTest(m_annotations, globalPosition, 4.0) >= 0) return Qt::OpenHandCursor;
     if (m_selection.contains(globalPosition.toPoint())) return Qt::SizeAllCursor;
     return Qt::CrossCursor;
 }
@@ -462,6 +475,32 @@ void ScreenshotSession::onPress(ScreenOverlay *overlay, const QPointF &globalPos
                 beginMouseGrab(overlay);
                 return;
             }
+            // 标注编辑：先判已选标注的缩放手柄，再按层级命中已画标注。
+            if (m_selectedAnnotation >= 0 && m_selectedAnnotation < m_annotations.size()) {
+                const int annotationHandle = shotAnnotationHandleAt(
+                    m_annotations.at(m_selectedAnnotation), globalPosition, 8.0);
+                if (annotationHandle >= 0) {
+                    m_annotationHandle = annotationHandle;
+                    m_originalAnnotation = m_annotations.at(m_selectedAnnotation);
+                    m_dragMode = DragMode::EditResize;
+                    hideToolbar();
+                    beginMouseGrab(overlay);
+                    return;
+                }
+            }
+            const int index = shotAnnotationHitTest(m_annotations, globalPosition, 4.0);
+            if (index >= 0) {
+                m_selectedAnnotation = index;
+                m_annotationHandle = -1;
+                m_originalAnnotation = m_annotations.at(index);
+                m_editStart = globalPosition;
+                m_dragMode = DragMode::EditMove;
+                hideToolbar();
+                beginMouseGrab(overlay);
+                refresh();
+                return;
+            }
+            m_selectedAnnotation = -1;
             if (m_selection.contains(globalPosition.toPoint())) {
                 m_dragMode = DragMode::Move;
                 m_originalSelection = m_selection;
@@ -473,8 +512,10 @@ void ScreenshotSession::onPress(ScreenOverlay *overlay, const QPointF &globalPos
         m_dragMode = DragMode::Select;
         m_selection = QRect(globalPosition.toPoint(), QSize(0, 0));
         m_annotations.clear();
-        m_redo.clear();
+        m_selectedAnnotation = -1;
+        m_annotationHandle = -1;
         m_nextNumber = 1;
+        resetHistory();
         hideToolbar();
         beginMouseGrab(overlay);
         for (ScreenOverlay *item : std::as_const(m_overlays)) item->update();
@@ -496,7 +537,7 @@ void ScreenshotSession::onPress(ScreenOverlay *overlay, const QPointF &globalPos
         annotation.start = globalPosition;
         annotation.number = m_nextNumber++;
         m_annotations.append(annotation);
-        m_redo.clear();
+        pushHistory();
         refresh();
         return;
     }
@@ -547,6 +588,20 @@ void ScreenshotSession::onMove(ScreenOverlay *overlay, const QPointF &globalPosi
         }
         for (ScreenOverlay *item : std::as_const(m_overlays)) item->update();
         return;
+    case DragMode::EditMove:
+        if (m_selectedAnnotation >= 0 && m_selectedAnnotation < m_annotations.size()) {
+            ShotAnnotation &annotation = m_annotations[m_selectedAnnotation];
+            annotation = m_originalAnnotation;
+            shotAnnotationTranslate(annotation, globalPosition - m_editStart);
+        }
+        for (ScreenOverlay *item : std::as_const(m_overlays)) item->update();
+        return;
+    case DragMode::EditResize:
+        if (m_selectedAnnotation >= 0 && m_selectedAnnotation < m_annotations.size())
+            shotAnnotationResize(m_annotations[m_selectedAnnotation], m_originalAnnotation,
+                                 m_annotationHandle, globalPosition);
+        for (ScreenOverlay *item : std::as_const(m_overlays)) item->update();
+        return;
     case DragMode::None:
         break;
     }
@@ -593,17 +648,22 @@ void ScreenshotSession::onRelease(ScreenOverlay *overlay, const QPointF &globalP
         refresh();
         return;
     }
+    if (m_dragMode == DragMode::EditMove || m_dragMode == DragMode::EditResize) {
+        m_dragMode = DragMode::None;
+        m_annotationHandle = -1;
+        pushHistory();
+        refresh();
+        return;
+    }
     if (m_dragMode == DragMode::Annotate) {
         bool add = true;
         if (m_pending.tool == ShotTool::Pen) add = m_pending.points.size() > 1;
         else if (m_pending.tool == ShotTool::Number) add = true;
         else add = QLineF(m_pending.start, m_pending.end).length() > 2.0;
-        if (add) {
-            m_annotations.append(m_pending);
-            m_redo.clear();
-        }
+        if (add) m_annotations.append(m_pending);
         m_pending = ShotAnnotation{};
         m_dragMode = DragMode::None;
+        if (add) pushHistory();
         refresh();
         return;
     }
@@ -629,11 +689,22 @@ void ScreenshotSession::onKeyPress(QKeyEvent *event)
     const bool control = modifiers & Qt::ControlModifier;
 
     if (key == Qt::Key_Escape) {
-        if (m_tool != ShotTool::Select) setTool(ShotTool::Select);
+        if (m_selectedAnnotation >= 0) {
+            m_selectedAnnotation = -1;
+            m_annotationHandle = -1;
+            refresh();
+        } else if (m_tool != ShotTool::Select) setTool(ShotTool::Select);
         else if (!m_selection.isEmpty()) clearSelection();
         else finish(Finish::Cancel);
         event->accept();
         return;
+    }
+    if (key == Qt::Key_Delete || key == Qt::Key_Backspace) {
+        if (m_selectedAnnotation >= 0) {
+            deleteSelectedAnnotation();
+            event->accept();
+            return;
+        }
     }
     if ((key == Qt::Key_Return || key == Qt::Key_Enter) && !m_selection.isEmpty()) {
         finish(Finish::Copy);
@@ -651,8 +722,10 @@ void ScreenshotSession::onKeyPress(QKeyEvent *event)
         else if (key == Qt::Key_A) {
             m_selection = m_virtualLogical;
             m_annotations.clear();
-            m_redo.clear();
+            m_selectedAnnotation = -1;
+            m_annotationHandle = -1;
             m_nextNumber = 1;
+            resetHistory();
             refresh();
         }
         event->accept();
@@ -726,12 +799,14 @@ void ScreenshotSession::clearSelection()
 {
     m_selection = {};
     m_annotations.clear();
-    m_redo.clear();
+    m_selectedAnnotation = -1;
+    m_annotationHandle = -1;
     m_pending = ShotAnnotation{};
     m_nextNumber = 1;
     m_hoverWindow = {};
     m_hoverTitle.clear();
     m_dragMode = DragMode::None;
+    resetHistory();
     hideToolbar();
     setTool(ShotTool::Select);
     for (ScreenOverlay *overlay : std::as_const(m_overlays)) overlay->update();
@@ -771,7 +846,7 @@ void ScreenshotSession::commitText(const QPointF &globalPosition, const QString 
     annotation.start = globalPosition;
     annotation.text = text;
     m_annotations.append(annotation);
-    m_redo.clear();
+    pushHistory();
     refresh();
 }
 
@@ -779,6 +854,8 @@ void ScreenshotSession::setTool(ShotTool tool)
 {
     if (m_tool == tool) return;
     m_tool = tool;
+    m_selectedAnnotation = -1;
+    m_annotationHandle = -1;
     if (m_toolbar) m_toolbar->setTool(tool);
     setCursorForOverlays();
     for (ScreenOverlay *overlay : std::as_const(m_overlays)) overlay->update();
@@ -801,15 +878,53 @@ void ScreenshotSession::setWidth(int width)
 
 void ScreenshotSession::undo()
 {
-    if (m_finished || m_annotations.isEmpty()) return;
-    m_redo.prepend(m_annotations.takeLast());
-    refresh();
+    if (m_finished || m_historyIndex <= 0) return;
+    restoreHistory(m_historyIndex - 1);
 }
 
 void ScreenshotSession::redo()
 {
-    if (m_finished || m_redo.isEmpty()) return;
-    m_annotations.append(m_redo.takeFirst());
+    if (m_finished || m_historyIndex + 1 >= m_history.size()) return;
+    restoreHistory(m_historyIndex + 1);
+}
+
+void ScreenshotSession::pushHistory()
+{
+    if (m_historyIndex + 1 < m_history.size()) m_history.resize(m_historyIndex + 1);
+    m_history.append(m_annotations);
+    // 历史只存矢量数据；超过上限时丢弃最旧的一条。
+    if (m_history.size() > 100) m_history.removeFirst();
+    m_historyIndex = m_history.size() - 1;
+    updateToolbar();
+}
+
+void ScreenshotSession::restoreHistory(int index)
+{
+    if (index < 0 || index >= m_history.size() || index == m_historyIndex) return;
+    m_historyIndex = index;
+    m_annotations = m_history.at(index);
+    m_selectedAnnotation = -1;
+    m_annotationHandle = -1;
+    m_pending = ShotAnnotation{};
+    m_dragMode = DragMode::None;
+    refresh();
+}
+
+void ScreenshotSession::resetHistory()
+{
+    m_history.clear();
+    m_history.append(m_annotations);
+    m_historyIndex = 0;
+    updateToolbar();
+}
+
+void ScreenshotSession::deleteSelectedAnnotation()
+{
+    if (m_selectedAnnotation < 0 || m_selectedAnnotation >= m_annotations.size()) return;
+    m_annotations.removeAt(m_selectedAnnotation);
+    m_selectedAnnotation = -1;
+    m_annotationHandle = -1;
+    pushHistory();
     refresh();
 }
 

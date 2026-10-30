@@ -1,6 +1,7 @@
 #include "Annotation.h"
 
 #include <QFontMetricsF>
+#include <QLineF>
 #include <QPainter>
 #include <QPainterPath>
 #include <QPolygonF>
@@ -16,6 +17,17 @@ QPointF normalize(const QPointF &value)
 {
     const qreal length = std::hypot(value.x(), value.y());
     return length < 0.0001 ? QPointF(1, 0) : value / length;
+}
+
+qreal pointSegmentDistance(const QPointF &point, const QPointF &a, const QPointF &b)
+{
+    const QPointF ab = b - a;
+    const qreal lengthSquared = ab.x() * ab.x() + ab.y() * ab.y();
+    if (lengthSquared < 0.0001) return QLineF(point, a).length();
+    qreal t = ((point.x() - a.x()) * ab.x() + (point.y() - a.y()) * ab.y()) / lengthSquared;
+    t = qBound(0.0, t, 1.0);
+    const QPointF projection = a + ab * t;
+    return QLineF(point, projection).length();
 }
 
 QPointF arrowBase(const ShotAnnotation &a, qreal head)
@@ -270,6 +282,141 @@ QImage composeShotImage(const QImage &base, const QVector<ShotAnnotation> &annot
     painter.end();
     image.setDevicePixelRatio(dpr);
     return image;
+}
+
+bool shotAnnotationIsRectTool(ShotTool tool)
+{
+    return tool == ShotTool::Rect || tool == ShotTool::Ellipse
+        || tool == ShotTool::Highlight || tool == ShotTool::Mosaic || tool == ShotTool::Blur;
+}
+
+QVector<QPointF> shotAnnotationHandles(const ShotAnnotation &annotation)
+{
+    QVector<QPointF> points;
+    switch (annotation.tool) {
+    case ShotTool::Rect:
+    case ShotTool::Ellipse:
+    case ShotTool::Highlight:
+    case ShotTool::Mosaic:
+    case ShotTool::Blur: {
+        const QRectF rect = annotation.rect();
+        points << rect.topLeft() << rect.topRight() << rect.bottomLeft() << rect.bottomRight();
+        break;
+    }
+    case ShotTool::Line:
+    case ShotTool::Arrow:
+        points << annotation.start << annotation.end;
+        break;
+    default:
+        break;
+    }
+    return points;
+}
+
+int shotAnnotationHandleAt(const ShotAnnotation &annotation, const QPointF &point, qreal tolerance)
+{
+    const QVector<QPointF> handles = shotAnnotationHandles(annotation);
+    for (int index = 0; index < handles.size(); ++index)
+        if (QLineF(handles.at(index), point).length() <= tolerance) return index;
+    return -1;
+}
+
+int shotAnnotationHitTest(const QVector<ShotAnnotation> &annotations, const QPointF &point,
+                          qreal padding)
+{
+    // 后画的标注在上层，优先命中。
+    for (int index = annotations.size() - 1; index >= 0; --index) {
+        const ShotAnnotation &annotation = annotations.at(index);
+        const qreal tolerance = qMax(4.0, annotation.width * 1.3) + padding;
+        switch (annotation.tool) {
+        case ShotTool::Select:
+            continue;
+        case ShotTool::Rect:
+        case ShotTool::Ellipse: {
+            const QRectF rect = annotation.rect();
+            const QRectF outer = rect.adjusted(-tolerance, -tolerance, tolerance, tolerance);
+            const QRectF inner = rect.adjusted(tolerance, tolerance, -tolerance, -tolerance);
+            // 命中边框附近；细小的图形允许点中内部。
+            if (outer.contains(point) && !inner.contains(point)) return index;
+            if (rect.width() < 12 && rect.height() < 12 && outer.contains(point)) return index;
+            break;
+        }
+        case ShotTool::Line:
+        case ShotTool::Arrow:
+            if (pointSegmentDistance(point, annotation.start, annotation.end) <= tolerance)
+                return index;
+            break;
+        case ShotTool::Pen: {
+            const QVector<QPointF> &points = annotation.points;
+            if (points.size() == 1 && QLineF(points.first(), point).length() <= tolerance)
+                return index;
+            for (int i = 1; i < points.size(); ++i)
+                if (pointSegmentDistance(point, points.at(i - 1), points.at(i)) <= tolerance)
+                    return index;
+            break;
+        }
+        case ShotTool::Highlight:
+        case ShotTool::Mosaic:
+        case ShotTool::Blur:
+        case ShotTool::Text:
+        case ShotTool::Number:
+            if (shotAnnotationBounds(annotation).adjusted(-2, -2, 2, 2).contains(point)) return index;
+            break;
+        }
+    }
+    return -1;
+}
+
+void shotAnnotationTranslate(ShotAnnotation &annotation, const QPointF &delta)
+{
+    annotation.start += delta;
+    annotation.end += delta;
+    for (QPointF &point : annotation.points) point += delta;
+}
+
+void shotAnnotationResize(ShotAnnotation &annotation, const ShotAnnotation &original, int handle,
+                          const QPointF &point)
+{
+    if (shotAnnotationIsRectTool(annotation.tool)) {
+        const QRectF rect = original.rect();
+        QPointF topLeft = rect.topLeft();
+        QPointF bottomRight = rect.bottomRight();
+        switch (handle) {
+        case 0: topLeft = point; break;
+        case 1: topLeft.setY(point.y()); bottomRight.setX(point.x()); break;
+        case 2: topLeft.setX(point.x()); bottomRight.setY(point.y()); break;
+        case 3: bottomRight = point; break;
+        default: return;
+        }
+        const QRectF next = QRectF(topLeft, bottomRight).normalized();
+        annotation.start = next.topLeft();
+        annotation.end = next.bottomRight();
+        return;
+    }
+    if (annotation.tool == ShotTool::Line || annotation.tool == ShotTool::Arrow) {
+        if (handle == 0) annotation.start = point;
+        else if (handle == 1) annotation.end = point;
+    }
+}
+
+void paintShotSelection(QPainter &painter, const ShotAnnotation &annotation, qreal lineScale)
+{
+    painter.save();
+    painter.setRenderHint(QPainter::Antialiasing, true);
+    const qreal lineWidth = 1.2 * lineScale;
+    painter.setPen(QPen(QColor(22, 119, 255), lineWidth, Qt::DashLine));
+    painter.setBrush(Qt::NoBrush);
+    painter.drawRect(shotAnnotationBounds(annotation));
+
+    const qreal handleSize = 9.0 * lineScale;
+    for (const QPointF &center : shotAnnotationHandles(annotation)) {
+        const QRectF rect(center.x() - handleSize / 2, center.y() - handleSize / 2,
+                          handleSize, handleSize);
+        painter.setPen(QPen(QColor(22, 119, 255), lineWidth));
+        painter.setBrush(QColor(255, 255, 255));
+        painter.drawRect(rect);
+    }
+    painter.restore();
 }
 
 int shotToolCount()

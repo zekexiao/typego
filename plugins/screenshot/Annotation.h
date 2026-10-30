@@ -53,5 +53,21 @@ void applyShotEffect(QImage &image, const QRect &target, ShotTool tool, int bloc
 QImage composeShotImage(const QImage &base, const QVector<ShotAnnotation> &annotations,
                         const ShotAnnotation *pending = nullptr);
 
+// 标注命中与几何调整：坐标为标注坐标（原图逻辑像素），贴图和贴图编辑器共用。
+// 返回最上层命中的标注下标，未命中返回 -1；padding 为额外的逻辑像素容差。
+int shotAnnotationHitTest(const QVector<ShotAnnotation> &annotations, const QPointF &point,
+                          qreal padding = 0);
+// 返回可缩放标注的手柄中心（矩形四角或直线/箭头两端）。
+QVector<QPointF> shotAnnotationHandles(const ShotAnnotation &annotation);
+// 返回命中的手柄下标，未命中返回 -1。
+int shotAnnotationHandleAt(const ShotAnnotation &annotation, const QPointF &point, qreal tolerance);
+bool shotAnnotationIsRectTool(ShotTool tool);
+void shotAnnotationTranslate(ShotAnnotation &annotation, const QPointF &delta);
+// 按原标注和手柄拖拽点更新尺寸。
+void shotAnnotationResize(ShotAnnotation &annotation, const ShotAnnotation &original, int handle,
+                          const QPointF &point);
+// 绘制选中框和手柄；lineScale 为屏幕像素到标注坐标的换算（1 / 显示缩放）。
+void paintShotSelection(QPainter &painter, const ShotAnnotation &annotation, qreal lineScale);
+
 int shotToolCount();
 ShotTool shotToolAt(int index);

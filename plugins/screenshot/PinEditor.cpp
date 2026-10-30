@@ -27,23 +27,6 @@ namespace {
 
 const qreal kMinScale = 0.05;
 
-qreal pointSegmentDistance(const QPointF &point, const QPointF &a, const QPointF &b)
-{
-    const QPointF ab = b - a;
-    const qreal lengthSquared = ab.x() * ab.x() + ab.y() * ab.y();
-    if (lengthSquared < 0.0001) return QLineF(point, a).length();
-    qreal t = ((point.x() - a.x()) * ab.x() + (point.y() - a.y()) * ab.y()) / lengthSquared;
-    t = qBound(0.0, t, 1.0);
-    const QPointF projection = a + ab * t;
-    return QLineF(point, projection).length();
-}
-
-bool rectLikeTool(ShotTool tool)
-{
-    return tool == ShotTool::Rect || tool == ShotTool::Ellipse
-        || tool == ShotTool::Highlight || tool == ShotTool::Mosaic || tool == ShotTool::Blur;
-}
-
 } // namespace
 
 PinEditor::PinEditor(const QImage &base, const QVector<ShotAnnotation> &annotations, QWidget *parent)
@@ -144,28 +127,11 @@ void PinEditor::paintSelection(QPainter &painter)
 {
     if (m_tool != ShotTool::Select) return;
     if (m_selected < 0 || m_selected >= m_annotations.size()) return;
-    const ShotAnnotation &annotation = m_annotations.at(m_selected);
     painter.save();
     painter.setClipRect(m_canvasRect);
     painter.translate(m_canvasRect.topLeft());
     painter.scale(m_scale, m_scale);
-    painter.setRenderHint(QPainter::Antialiasing, true);
-
-    const QRectF bounds = shotAnnotationBounds(annotation);
-    const qreal lineWidth = 1.2 / qMax(m_scale, kMinScale);
-    painter.setPen(QPen(QColor(22, 119, 255), lineWidth, Qt::DashLine));
-    painter.setBrush(Qt::NoBrush);
-    painter.drawRect(bounds);
-
-    const qreal handleSize = 9.0 / qMax(m_scale, kMinScale);
-    const QVector<QPointF> handles = handlePoints(annotation);
-    for (const QPointF &center : handles) {
-        const QRectF rect(center.x() - handleSize / 2, center.y() - handleSize / 2,
-                          handleSize, handleSize);
-        painter.setPen(QPen(QColor(22, 119, 255), lineWidth));
-        painter.setBrush(QColor(255, 255, 255));
-        painter.drawRect(rect);
-    }
+    paintShotSelection(painter, m_annotations.at(m_selected), 1.0 / qMax(m_scale, kMinScale));
     painter.restore();
 }
 
@@ -199,77 +165,17 @@ void PinEditor::paintPendingAnnotation(QPainter &painter)
 
 QVector<QPointF> PinEditor::handlePoints(const ShotAnnotation &annotation) const
 {
-    QVector<QPointF> points;
-    switch (annotation.tool) {
-    case ShotTool::Rect:
-    case ShotTool::Ellipse:
-    case ShotTool::Highlight:
-    case ShotTool::Mosaic:
-    case ShotTool::Blur: {
-        const QRectF rect = annotation.rect();
-        points << rect.topLeft() << rect.topRight() << rect.bottomLeft() << rect.bottomRight();
-        break;
-    }
-    case ShotTool::Line:
-    case ShotTool::Arrow:
-        points << annotation.start << annotation.end;
-        break;
-    default:
-        break;
-    }
-    return points;
+    return shotAnnotationHandles(annotation);
 }
 
 int PinEditor::handleAt(const ShotAnnotation &annotation, const QPointF &logical) const
 {
-    const QVector<QPointF> handles = handlePoints(annotation);
-    const qreal tolerance = 8.0 / qMax(m_scale, kMinScale);
-    for (int index = 0; index < handles.size(); ++index)
-        if (QLineF(handles.at(index), logical).length() <= tolerance) return index;
-    return -1;
+    return shotAnnotationHandleAt(annotation, logical, 8.0 / qMax(m_scale, kMinScale));
 }
 
 int PinEditor::hitTest(const QPointF &logical) const
 {
-    // 后画的标注在上层，优先命中。
-    for (int index = m_annotations.size() - 1; index >= 0; --index) {
-        const ShotAnnotation &annotation = m_annotations.at(index);
-        const qreal tolerance = qMax(4.0, annotation.width * 1.3);
-        switch (annotation.tool) {
-        case ShotTool::Select:
-            continue;
-        case ShotTool::Rect:
-        case ShotTool::Ellipse: {
-            const QRectF rect = annotation.rect();
-            const QRectF outer = rect.adjusted(-tolerance, -tolerance, tolerance, tolerance);
-            const QRectF inner = rect.adjusted(tolerance, tolerance, -tolerance, -tolerance);
-            // 命中边框附近；细小的图形允许点中内部。
-            if (outer.contains(logical) && !inner.contains(logical)) return index;
-            if (rect.width() < 12 && rect.height() < 12 && outer.contains(logical)) return index;
-            break;
-        }
-        case ShotTool::Line:
-        case ShotTool::Arrow:
-            if (pointSegmentDistance(logical, annotation.start, annotation.end) <= tolerance) return index;
-            break;
-        case ShotTool::Pen: {
-            const QVector<QPointF> &points = annotation.points;
-            if (points.size() == 1 && QLineF(points.first(), logical).length() <= tolerance) return index;
-            for (int i = 1; i < points.size(); ++i)
-                if (pointSegmentDistance(logical, points.at(i - 1), points.at(i)) <= tolerance)
-                    return index;
-            break;
-        }
-        case ShotTool::Highlight:
-        case ShotTool::Mosaic:
-        case ShotTool::Blur:
-        case ShotTool::Text:
-        case ShotTool::Number:
-            if (shotAnnotationBounds(annotation).adjusted(-2, -2, 2, 2).contains(logical)) return index;
-            break;
-        }
-    }
-    return -1;
+    return shotAnnotationHitTest(m_annotations, logical, 4.0 / qMax(m_scale, kMinScale));
 }
 
 void PinEditor::updateCursorFor(const QPointF &logical)
@@ -364,35 +270,14 @@ void PinEditor::mouseMoveEvent(QMouseEvent *event)
     const QPointF point = clampToImage(toLogical(event->position()));
 
     if (m_drag == DragMode::Move && m_selected >= 0 && m_selected < m_annotations.size()) {
-        const QPointF delta = point - m_dragStart;
         ShotAnnotation &annotation = m_annotations[m_selected];
         annotation = m_dragOriginal;
-        annotation.start += delta;
-        annotation.end += delta;
-        for (QPointF &item : annotation.points) item += delta;
+        shotAnnotationTranslate(annotation, point - m_dragStart);
         update();
         return;
     }
     if (m_drag == DragMode::Resize && m_selected >= 0 && m_selected < m_annotations.size()) {
-        ShotAnnotation &annotation = m_annotations[m_selected];
-        if (rectLikeTool(annotation.tool)) {
-            const QRectF rect = m_dragOriginal.rect();
-            QPointF topLeft = rect.topLeft();
-            QPointF bottomRight = rect.bottomRight();
-            switch (m_selectedHandle) {
-            case 0: topLeft = point; break;
-            case 1: topLeft.setY(point.y()); bottomRight.setX(point.x()); break;
-            case 2: topLeft.setX(point.x()); bottomRight.setY(point.y()); break;
-            case 3: bottomRight = point; break;
-            default: break;
-            }
-            const QRectF next = QRectF(topLeft, bottomRight).normalized();
-            annotation.start = next.topLeft();
-            annotation.end = next.bottomRight();
-        } else if (annotation.tool == ShotTool::Line || annotation.tool == ShotTool::Arrow) {
-            if (m_selectedHandle == 0) annotation.start = point;
-            else if (m_selectedHandle == 1) annotation.end = point;
-        }
+        shotAnnotationResize(m_annotations[m_selected], m_dragOriginal, m_selectedHandle, point);
         update();
         return;
     }

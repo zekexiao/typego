@@ -57,6 +57,7 @@ public:
     bool draggingSelection() const { return m_dragMode == DragMode::Select; }
     const QRect &hoverWindow() const { return m_hoverWindow; }
     const QString &hoverTitle() const { return m_hoverTitle; }
+    int selectedAnnotation() const { return m_selectedAnnotation; }
     ScreenInfo *screenAt(const QPointF &globalPosition);
     ScreenInfo *activeScreen() const { return m_activeScreen; }
     ScreenOverlay *activeOverlay() const { return m_activeOverlay; }
@@ -76,6 +77,10 @@ public:
     void setWidth(int width);
     void undo();
     void redo();
+    void pushHistory();
+    void restoreHistory(int index);
+    void resetHistory();
+    void deleteSelectedAnnotation();
     void finish(Finish action);
 
     QImage composeImage(bool includeAnnotations = true) const;
@@ -87,7 +92,7 @@ signals:
 
 private:
     enum class Handle { None, TopLeft, Top, TopRight, Right, BottomRight, Bottom, BottomLeft, Left };
-    enum class DragMode { None, Select, Move, Resize, Annotate };
+    enum class DragMode { None, Select, Move, Resize, Annotate, EditMove, EditResize };
 
     void capture();
     void createOverlays();
@@ -135,7 +140,13 @@ private:
 
     QRect m_selection;
     QVector<ShotAnnotation> m_annotations;
-    QVector<ShotAnnotation> m_redo;
+    // 标注历史采用快照，移动、缩放、改字、删除都能统一撤销。
+    QVector<QVector<ShotAnnotation>> m_history;
+    int m_historyIndex = 0;
+    int m_selectedAnnotation = -1;
+    int m_annotationHandle = -1;
+    ShotAnnotation m_originalAnnotation;
+    QPointF m_editStart;
     ShotAnnotation m_pending;
     QRect m_hoverWindow;
     QString m_hoverTitle;

@@ -132,6 +132,14 @@ void ScreenOverlay::paintAnnotations(QPainter &painter, const QRect &selectionLo
             painter.restore();
         }
     }
+    // 选中标注的虚线框和手柄。
+    const int selected = m_session->selectedAnnotation();
+    if (selected >= 0 && selected < annotations.size()) {
+        painter.save();
+        painter.translate(-m_info.logical.topLeft());
+        paintShotSelection(painter, annotations.at(selected), 1.0);
+        painter.restore();
+    }
     painter.restore();
 }
 
