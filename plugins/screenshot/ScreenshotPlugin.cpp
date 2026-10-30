@@ -138,6 +138,9 @@ Api::ExecutionResult ScreenshotPlugin::execute(const Api::Invocation &invocation
     if (invocation.commandId == QLatin1String("capture")
         || invocation.commandId == QLatin1String("fullscreen")
         || invocation.commandId == QLatin1String("scroll")) {
+        // 已在截图或标注编辑中时，重新触发截图会丢掉当前内容，先让用户确认。
+        if (hasEditingInProgress() && !confirmRestartCapture())
+            return {Api::Status::Succeeded, Api::HostAction::Keep};
         // 必须在宿主显示覆盖层之前记录前台窗口，完成或取消后据此恢复焦点。
         m_previousForeground = ShotWin::foregroundWindow();
         m_pendingFullscreen = invocation.commandId == QLatin1String("fullscreen");

@@ -19,6 +19,9 @@ public:
     PinEditor(const QImage &base, const QVector<ShotAnnotation> &annotations,
               QWidget *parent = nullptr);
 
+    // 编辑区在窗口内的位置，用于让编辑时画面与原贴图重合。
+    QRect canvasRect() const { return m_canvasRect; }
+
 signals:
     void annotationsChanged(const QVector<ShotAnnotation> &annotations);
     void closed();

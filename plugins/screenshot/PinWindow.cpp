@@ -216,15 +216,16 @@ void PinWindow::editAnnotations()
     }
     auto *editor = new PinEditor(m_base, m_annotations, this);
     connect(editor, &PinEditor::annotationsChanged, this, &PinWindow::setAnnotations);
+    // 让编辑区居中到贴图上：1:1 时正好重合，缩小显示时也围绕贴图展开，减少跳位感。
     QScreen *screen = QGuiApplication::screenAt(frameGeometry().center());
     if (!screen) screen = QGuiApplication::primaryScreen();
-    QPoint target = frameGeometry().center() - QPoint(editor->width() / 2, editor->height() / 2);
+    QPoint target = frameGeometry().center() - editor->canvasRect().center();
     if (screen) {
         const QRect available = screen->availableGeometry();
         target.setX(qBound(available.left(), target.x(),
-                           qMax(available.left(), available.right() - editor->width())));
+                           qMax(available.left(), available.right() - editor->width() + 1)));
         target.setY(qBound(available.top(), target.y(),
-                           qMax(available.top(), available.bottom() - editor->height())));
+                           qMax(available.top(), available.bottom() - editor->height() + 1)));
     }
     editor->move(target);
     editor->show();
