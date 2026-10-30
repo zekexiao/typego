@@ -4,11 +4,11 @@ import { type Language } from "../config";
 const { lang } = Astro.props as { lang: Language }; const zh = lang === "zh";
 const values = zh ? [["性能优先", "每个功能都从启动速度、内存占用和响应延迟出发。"], ["保持专注", "界面只在需要时出现，完成操作后立即回到工作。"], ["工具在一起", "启动、截图、剪贴板和开发者小工具共用一个入口，少开几个常驻程序。"]] : [["Performance first", "Every feature starts with launch speed, memory use, and response latency."], ["Stay focused", "The interface appears only when needed and gets out of the way after."], ["Tools together", "Launcher, screenshots, clipboard, and developer utilities share one entry point, so fewer resident apps are needed."]];
 ---
-<Layout lang={lang} title={zh ? "关于" : "About"} description={zh ? "了解 TypeGo 的设计理念：把内存拿回来。" : "Learn about TypeGo's design principles: take your memory back."}>
+<Layout lang={lang} title={zh ? "关于" : "About"} description={zh ? "了解 TypeGo 的设计理念：一套工具，27 MB。" : "Learn TypeGo's design principles: a whole toolbox in 27 MB."}>
   <h1>{zh ? "关于 TypeGo" : "About TypeGo"}</h1>
   <p>{zh ? "TypeGo 是一款专注 Windows 的快速工具集。它从一个启动器出发，逐渐容纳截图、剪贴板历史和开发者小工具。我们相信高频工具应该足够快、足够轻，也足够安静。" : "TypeGo is a fast Windows toolkit. It started as a launcher and grew to include screenshots, clipboard history, and developer utilities. We believe frequently used tools should be fast, lightweight, and quiet."}</p>
   <h2>{zh ? "轻量不是附加项，是设计起点" : "Lightweight is the starting point"}</h2>
-  <p>{zh ? "常驻工具会陪伴用户整个工作日，因此每一兆内存、每一次分配和每一段等待都值得认真对待。与其为一个功能装一个后台程序，不如把它们收进同一个进程：这就是「把内存拿回来」的意思。" : "A resident tool stays with you all day, so every megabyte, allocation, and pause matters. Rather than installing one background app per feature, TypeGo gathers them into a single process: that is what \"take your memory back\" means."}</p>
+  <p>{zh ? "常驻工具会陪伴用户整个工作日，因此每一兆内存、每一次分配和每一段等待都值得认真对待。与其为一个功能装一个后台程序，不如把它们收进同一个进程：27 MB 常驱，剩下的内存留给工作。" : "A resident tool stays with you all day, so every megabyte, allocation, and pause matters. Rather than installing one background app per feature, TypeGo gathers them into a single process: 27 MB resident, with the rest of your memory left for work."}</p>
   <ul>
     {values.map(([title, desc]) => <li><b>{title}</b> — {desc}</li>)}
   </ul>

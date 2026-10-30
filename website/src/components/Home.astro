@@ -21,9 +21,9 @@ const features = zh ? [
 ];
 ---
 
-<Layout lang={lang} description={zh ? "TypeGo 是轻量的 Windows 快速工具集：启动器、截图、剪贴板历史与开发者小工具，常驻内存低至 35 MB。" : "TypeGo is a fast, lightweight Windows toolkit: launcher, screenshots, clipboard history, and developer utilities in as little as 35 MB of memory."}>
-  <h1>{zh ? "把内存拿回来" : "Take your memory back"}</h1>
-  <p>{zh ? "TypeGo 不只是一个启动器。它是一套常驻 35 MB 的快速工具：搜索应用与文件、截图标注、剪贴板历史、JSON 查看与命令插件，全部藏在同一个快捷键后面。别再为常驻工具浪费内存。" : "TypeGo is more than a launcher. It is a fast toolkit that lives in about 35 MB: app and file search, screenshot markup, clipboard history, a JSON viewer, and command plugins behind a single hotkey. Stop spending memory on tools that just sit there."}</p>
+<Layout lang={lang} description={zh ? "TypeGo 是一套装在 27 MB 里的 Windows 快速工具：启动器、截图标注、剪贴板历史与开发者小工具。" : "TypeGo is a Windows toolbox in 27 MB: launcher, screenshot markup, clipboard history, and developer utilities."}>
+  <h1>{zh ? "一套工具，27 MB" : "A whole toolbox in 27 MB"}</h1>
+  <p>{zh ? "TypeGo 把启动器、截图标注、剪贴板历史和开发者小工具收进同一个进程。常驻约 27 MB：内存留给你的工作，而不是留给后台程序。" : "TypeGo puts the launcher, screenshot markup, clipboard history, and developer utilities into one process. It sits at about 27 MB, so memory goes to your work instead of background apps."}</p>
   <ul>
     <li><a href={site.downloadUrl}>{t.download}</a></li>
     <li><a href={lang === "zh" ? "/download#changelog" : "/en/download#changelog"}>{zh ? "查看更新日志" : "View changelog"}</a></li>
