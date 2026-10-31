@@ -74,6 +74,18 @@ static AppItem makeAppItem(const QString &name, const QString &path, const QStri
     return item;
 }
 
+AppLauncher::AppLauncher(Settings *settings, const QString &dataDirectory,
+                         QList<AppItem> apps, QObject *parent)
+    : QObject(parent), m_apps(std::move(apps)), m_scanReady(true)
+    , m_iconCacheDir(QDir(dataDirectory).filePath(QStringLiteral("icons")))
+    , m_pins(QDir(dataDirectory).filePath(QStringLiteral("pins.json")))
+    , m_settings(settings)
+    , m_usage(QDir(dataDirectory).filePath(QStringLiteral("usage.json")))
+{
+    QDir().mkpath(m_iconCacheDir);
+    m_pins.load();
+}
+
 void AppLauncher::addBuiltinApps()
 {
     m_apps.append(makeAppItem(tr("Notepad"), "notepad", tr("Windows Notepad")));

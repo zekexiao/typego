@@ -133,6 +133,7 @@ private slots:
     void moveSelection(int delta);
 
 private:
+    friend class UiSnapshotRunner;
     // Esc 分层退出：插件视图回到结果页 -> 清空输入 -> 隐藏窗口。
     void handleEscape();
 

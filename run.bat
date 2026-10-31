@@ -18,4 +18,10 @@ if not exist "%APP_PATH%" (
 )
 
 "%APP_PATH%" %*
-exit /b %errorlevel%
+set "APP_EXIT_CODE=%errorlevel%"
+if "%~1"=="--ui-snapshots" if not "%APP_EXIT_CODE%"=="0" (
+    echo UI snapshots failed with code %APP_EXIT_CODE%.
+    echo Codes: 2=temp directory, 3=translations, 4=output directory already exists or is unwritable,
+    echo 5=rendering or writing files - see FAILED.txt, 6=LATEST.txt, 7=fonts.
+)
+exit /b %APP_EXIT_CODE%

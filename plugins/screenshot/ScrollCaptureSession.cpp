@@ -83,6 +83,23 @@ void ScrollCaptureSession::start()
     m_frame->raise();
     ShotWin::forceTopmost(static_cast<quintptr>(m_frame->winId()));
 
+    createPanel();
+    m_panel->adjustSize();
+    m_panel->show();
+    m_panel->raise();
+    positionPanel();
+    ShotWin::excludeFromCapture(static_cast<quintptr>(m_panel->winId()));
+    ShotWin::forceTopmost(static_cast<quintptr>(m_panel->winId()));
+
+    // 先让桌面完成一次重绘，再抓第一帧，避免把刚隐藏的覆盖层拍进去。
+    m_timer = new QTimer(this);
+    m_timer->setInterval(160);
+    connect(m_timer, &QTimer::timeout, this, &ScrollCaptureSession::captureFrame);
+    m_timer->start();
+}
+
+void ScrollCaptureSession::createPanel()
+{
     m_panel = new QWidget(nullptr, Qt::Tool | Qt::FramelessWindowHint | Qt::WindowStaysOnTopHint);
     m_panel->setObjectName(QStringLiteral("scrollPanel"));
     m_panel->setAttribute(Qt::WA_StyledBackground, true);
@@ -128,19 +145,6 @@ void ScrollCaptureSession::start()
 
     connect(cancelButton, &QPushButton::clicked, this, &ScrollCaptureSession::cancel);
     connect(doneButton, &QPushButton::clicked, this, &ScrollCaptureSession::finishNow);
-
-    m_panel->adjustSize();
-    m_panel->show();
-    m_panel->raise();
-    positionPanel();
-    ShotWin::excludeFromCapture(static_cast<quintptr>(m_panel->winId()));
-    ShotWin::forceTopmost(static_cast<quintptr>(m_panel->winId()));
-
-    // 先让桌面完成一次重绘，再抓第一帧，避免把刚隐藏的覆盖层拍进去。
-    m_timer = new QTimer(this);
-    m_timer->setInterval(160);
-    connect(m_timer, &QTimer::timeout, this, &ScrollCaptureSession::captureFrame);
-    m_timer->start();
 }
 
 void ScrollCaptureSession::positionPanel()

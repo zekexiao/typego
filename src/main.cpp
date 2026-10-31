@@ -34,6 +34,7 @@
 #include "Settings.h"
 #include "ThemeManager.h"
 #include "Updater.h"
+#include "UiSnapshots.h"
 #include "utils/Restart.h"
 #include "utils/ScreenPosition.h"
 #include "plugins/BuiltinPlugins.h"
@@ -62,6 +63,11 @@ static void applyConfiguredFont(QApplication &app, const Settings &settings, con
 
 int main(int argc, char *argv[])
 {
+    // 截图模式必须先于日志、单实例、自启、热键和后台服务初始化。
+    for (int i = 1; i < argc; ++i) {
+        if (qstrcmp(argv[i], "--ui-snapshots") == 0)
+            return runUiSnapshots(argc, argv);
+    }
     for (int i = 1; i < argc; ++i) {
         if (qstrcmp(argv[i], "--restart-parent") != 0) continue;
         bool valid = false;

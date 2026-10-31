@@ -27,6 +27,9 @@ class AppLauncher : public QObject {
     Q_PROPERTY(QVariantList pinnedApps READ pinnedApps NOTIFY pinsChanged)
 public:
     explicit AppLauncher(Settings *settings = nullptr, QObject *parent = nullptr);
+    // 离线界面预览使用隔离目录和固定数据，不扫描本机应用。
+    AppLauncher(Settings *settings, const QString &dataDirectory,
+                QList<AppItem> apps, QObject *parent = nullptr);
 
     Q_INVOKABLE QVariantList search(const QString &query);
     Q_INVOKABLE bool launch(const QString &path);

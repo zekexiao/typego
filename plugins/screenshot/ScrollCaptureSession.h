@@ -28,6 +28,8 @@ signals:
     void failed(const QString &message);
 
 private:
+    friend class UiSnapshotRunner;
+    void createPanel();
     void captureFrame();
     void finishNow();
     void updateStatus(const QString &text);

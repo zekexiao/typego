@@ -19,3 +19,11 @@ cmake --build "%BUILD_DIR%" --config Release
 if not "%errorlevel%"=="0" exit /b 1
 
 echo Build completed successfully!
+
+call "%PROJECT_DIR%/run.bat" --ui-snapshots
+if not "%errorlevel%"=="0" (
+    echo UI snapshot generation failed. See the exit code and build/ui-snapshots.
+    exit /b 1
+)
+echo UI snapshots completed. See build/ui-snapshots/LATEST.txt.
+exit /b 0

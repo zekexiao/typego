@@ -5,6 +5,7 @@
 
 #include <QEvent>
 #include <QFontMetrics>
+#include <QGuiApplication>
 #include <QKeyEvent>
 #include <QLineEdit>
 #include <QMouseEvent>
@@ -57,6 +58,8 @@ void ScreenOverlay::start()
 void ScreenOverlay::forceTopmost()
 {
 #ifdef Q_OS_WIN
+    // 离屏预览没有原生 HWND，不能把其窗口编号传给 Win32。
+    if (QGuiApplication::platformName() != QLatin1String("windows")) return;
     SetWindowPos(reinterpret_cast<HWND>(winId()), HWND_TOPMOST, 0, 0, 0, 0,
                  SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE | SWP_NOOWNERZORDER | SWP_SHOWWINDOW);
 #endif

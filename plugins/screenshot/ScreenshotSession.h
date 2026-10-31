@@ -99,6 +99,7 @@ signals:
     void failed(const QString &message);
 
 private:
+    friend class UiSnapshotRunner;
     enum class Handle { None, TopLeft, Top, TopRight, Right, BottomRight, Bottom, BottomLeft, Left };
     enum class DragMode { None, Select, Move, Resize, Annotate, EditMove, EditResize };
 

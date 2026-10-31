@@ -93,6 +93,7 @@ target_link_libraries(typego_core PUBLIC neo_json_model)
 
 qt_add_executable(TypeGo
     src/main.cpp
+    src/UiSnapshots.cpp
     src/plugins/IntegratedFeatures.cpp
     src/MainWindow.cpp
     src/SettingsView.cpp
