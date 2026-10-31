@@ -190,7 +190,8 @@ bool windowAt(const QPoint &physicalPoint, QRect *rect, QString *title)
     struct Search {
         POINT point;
         HWND found = nullptr;
-    } search{{physicalPoint.x(), physicalPoint.y()}, nullptr};
+        RECT bounds = {};
+    } search{{physicalPoint.x(), physicalPoint.y()}};
 
     EnumWindows([](HWND window, LPARAM data) -> BOOL {
         auto *search = reinterpret_cast<Search *>(data);
@@ -198,18 +199,21 @@ bool windowAt(const QPoint &physicalPoint, QRect *rect, QString *title)
             || isOwnProcess(reinterpret_cast<quintptr>(window)) || isShellWindow(window))
             return TRUE;
         RECT bounds = {};
-        if (!GetWindowRect(window, &bounds)) return TRUE;
+        // 可见边框不包含 GetWindowRect 返回的透明缩放区域。
+        if (FAILED(DwmGetWindowAttribute(window, DWMWA_EXTENDED_FRAME_BOUNDS,
+                                         &bounds, sizeof(bounds)))
+            && !GetWindowRect(window, &bounds)) return TRUE;
         if (search->point.x < bounds.left || search->point.x >= bounds.right
             || search->point.y < bounds.top || search->point.y >= bounds.bottom)
             return TRUE;
         if (bounds.right - bounds.left < 32 || bounds.bottom - bounds.top < 32) return TRUE;
         search->found = window;
+        search->bounds = bounds;
         return FALSE;
     }, reinterpret_cast<LPARAM>(&search));
 
     if (!search.found) return false;
-    RECT bounds = {};
-    if (!GetWindowRect(search.found, &bounds)) return false;
+    const RECT &bounds = search.bounds;
     const QRect area(bounds.left, bounds.top, bounds.right - bounds.left, bounds.bottom - bounds.top);
     if (rect) *rect = area;
     if (title) *title = windowTitleOf(search.found);
