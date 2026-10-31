@@ -3,7 +3,7 @@ project(NeoJsonViewerPlugin LANGUAGES C CXX)
 if(NOT TARGET TypeGoPlugin::SDK)
     find_package(TypeGoPluginSDK 1.0 REQUIRED CONFIG)
 endif()
-find_package(Qt6 REQUIRED COMPONENTS LinguistTools)
+find_package(Qt6 REQUIRED COMPONENTS LinguistTools Concurrent)
 
 set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTORCC ON)
@@ -29,7 +29,7 @@ typego_add_plugin(neo_json_viewer METADATA "${CMAKE_CURRENT_SOURCE_DIR}/plugin.j
     resources.qrc ${NeoJsonViewer_QM_FILES})
 target_compile_options(neo_json_viewer PRIVATE $<$<CXX_COMPILER_ID:MSVC>:/utf-8>)
 target_include_directories(neo_json_viewer PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}")
-target_link_libraries(neo_json_viewer PRIVATE Qt6::Gui neo_json_model)
+target_link_libraries(neo_json_viewer PRIVATE Qt6::Gui Qt6::Concurrent neo_json_model)
 set(NEO_JSON_VIEWER_PACKAGE_DIR "${CMAKE_BINARY_DIR}/bin/plugins/json-viewer")
 set_target_properties(neo_json_viewer PROPERTIES
     LIBRARY_OUTPUT_DIRECTORY "${NEO_JSON_VIEWER_PACKAGE_DIR}"

@@ -15,11 +15,57 @@
 #include <QRegularExpression>
 #include <QFileInfo>
 #include <QElapsedTimer>
+#include <QFutureWatcher>
+#include <QtConcurrent/QtConcurrentRun>
 #include <functional>
+
+#ifdef Q_OS_WIN
+#define NOMINMAX
+#include <windows.h>
+#endif
 
 namespace {
 constexpr qint64 kAutoExpandThresholdBytes = 8LL * 1024 * 1024;   // 8 MiB
 constexpr int kLargeFileKeyColumnWidth = 260;
+// 打开一个 JSON 的内存放大倍数：文件缓冲 + yyjson 解析树 + 物化后的节点树。
+constexpr qint64 kMemoryAmplification = 5;
+// 单次搜索的最长耗时：树可能很大，正则还可能触发回溯，不能让界面一直卡着。
+constexpr int kSearchTimeBudgetMs = 2000;
+// 正则匹配的主体长度上限，避免在超长文本上做无意义的匹配。
+constexpr int kRegexSubjectLimit = 64 * 1024;
+
+// 可用物理内存；取不到时返回 0，表示不做判断。
+qint64 availablePhysicalMemory()
+{
+#ifdef Q_OS_WIN
+    MEMORYSTATUSEX status;
+    status.dwLength = sizeof(status);
+    if (!GlobalMemoryStatusEx(&status)) return 0;
+    return qint64(status.ullAvailPhys);
+#else
+    return 0;
+#endif
+}
+
+// 后台线程读文件并建树；不碰界面线程的对象。
+std::shared_ptr<JsonTreeItem> loadTreeInBackground(const QString &filePath, qint64 *parseMs)
+{
+    QElapsedTimer timer;
+    timer.start();
+    QFile file(filePath);
+    if (!file.open(QIODevice::ReadOnly)) return {};
+    const QByteArray data = file.readAll();
+    if (file.error() != QFile::NoError) return {};
+    std::shared_ptr<JsonTreeItem> tree(JsonTreeModel::buildTree(data, true));
+    if (parseMs) *parseMs = timer.elapsed();
+    return tree;
+}
+
+// 后台加载的结果；用 shared_ptr 兜底，窗口提前销毁时树也会被释放。
+struct LoadOutcome {
+    std::shared_ptr<JsonTreeItem> tree;
+    qint64 parseMs = 0;
+};
 }
 
 MainWindow::MainWindow(QWidget *parent, const QString &settingsPath)
@@ -43,7 +89,10 @@ MainWindow::MainWindow(QWidget *parent, const QString &settingsPath)
     connect(m_model, &QAbstractItemModel::rowsRemoved, this, [this]{ setDirty(true); });
 }
 
-MainWindow::~MainWindow() = default;
+MainWindow::~MainWindow() {
+    // 加载途中窗口被销毁时，光标状态要还原。
+    if (m_loading) QApplication::restoreOverrideCursor();
+}
 
 void MainWindow::setupUI() {
     updateWindowTitle();
@@ -180,42 +229,90 @@ void MainWindow::onOpen() {
         return;
 
     const QFileInfo info(filePath);
+    // 不设硬上限：yyjson 本来就是为兼容大 JSON 准备的，大文件照常打开。
+    // 只有估算要用的内存超过可用内存时才提醒一句。
+    const qint64 available = availablePhysicalMemory();
+    if (available > 0) {
+        const qint64 needed = info.size() * kMemoryAmplification;
+        if (needed > available) {
+            QMessageBox::warning(this, tr("Warning"),
+                tr("This file may not fit in memory: about %1 MB is needed, %2 MB is available.")
+                    .arg(needed / 1024 / 1024)
+                    .arg(available / 1024 / 1024));
+        }
+    }
+
+    // 读取和解析都放到后台线程，大文件不会把界面卡住。
+    setBusy(true);
+    const quint64 generation = ++m_loadGeneration;
     QElapsedTimer timer;
     timer.start();
-    QApplication::setOverrideCursor(Qt::WaitCursor);
-
-    if (m_model->loadJson(filePath)) {
-        m_contextIndex = {};
-        const qint64 loadMs = timer.elapsed();
-        m_currentFile = filePath;
-        setDirty(false);
-
-        // 大文件禁用自动展开和全列测量，避免布局阻塞。
-        const bool enableAutoExpand = info.size() <= kAutoExpandThresholdBytes;
-        if (enableAutoExpand) {
-            m_treeView->header()->setSectionResizeMode(0, QHeaderView::ResizeToContents);
-            m_treeView->expandToDepth(1);
-        } else {
-            m_treeView->collapseAll();
-            m_treeView->header()->setSectionResizeMode(0, QHeaderView::Interactive);
-            m_treeView->header()->resizeSection(0, kLargeFileKeyColumnWidth);
+    auto *watcher = new QFutureWatcher<LoadOutcome>(this);
+    connect(watcher, &QFutureWatcherBase::finished, this, [this, watcher, filePath, timer, generation]() {
+        const LoadOutcome outcome = watcher->result();
+        watcher->deleteLater();
+        // 期间又打开了别的文件，这次结果作废。
+        if (generation != m_loadGeneration) return;
+        finishLoad(filePath, outcome.tree, outcome.parseMs, timer.elapsed());
+    });
+    watcher->setFuture(QtConcurrent::run([filePath]() {
+        LoadOutcome outcome;
+        // 异常不能带到界面线程，失败按解析不成功处理。
+        try {
+            outcome.tree = loadTreeInBackground(filePath, &outcome.parseMs);
+        } catch (...) {
+            outcome.tree.reset();
         }
+        return outcome;
+    }));
+}
 
-        const qint64 totalMs = timer.elapsed();
-        if (enableAutoExpand) {
-            m_statusLabel->setText(tr("Loaded: %1 (%2 ms)").arg(filePath).arg(totalMs));
-        } else {
-            auto mb = info.size() / 1024/ 1024.0;
-            m_statusLabel->setText(tr("Loaded: %1 (filesize: %2mb, parse %3 ms, total %4 ms)")
-                                       .arg(filePath)
-                                       .arg(mb, 0, 'f', 2)
-                                       .arg(loadMs)
-                                       .arg(totalMs));
-        }
-        QApplication::restoreOverrideCursor();
-    } else {
-        QApplication::restoreOverrideCursor();
+void MainWindow::finishLoad(const QString &filePath, std::shared_ptr<JsonTreeItem> tree, qint64 parseMs, qint64 totalMs) {
+    setBusy(false);
+    if (!tree) {
         QMessageBox::critical(this, tr("Error"), tr("Failed to load file. Check that it contains valid JSON or MessagePack data."));
+        return;
+    }
+    // 所有权交给模型，之后由模型负责释放。
+    m_model->setRootTree(std::move(tree));
+    m_contextIndex = {};
+    m_currentFile = filePath;
+    setDirty(false);
+
+    const QFileInfo info(filePath);
+    // 大文件禁用自动展开和全列测量，避免布局阻塞。
+    const bool enableAutoExpand = info.size() <= kAutoExpandThresholdBytes;
+    if (enableAutoExpand) {
+        m_treeView->header()->setSectionResizeMode(0, QHeaderView::ResizeToContents);
+        m_treeView->expandToDepth(1);
+    } else {
+        m_treeView->collapseAll();
+        m_treeView->header()->setSectionResizeMode(0, QHeaderView::Interactive);
+        m_treeView->header()->resizeSection(0, kLargeFileKeyColumnWidth);
+    }
+
+    if (enableAutoExpand) {
+        m_statusLabel->setText(tr("Loaded: %1 (%2 ms)").arg(filePath).arg(totalMs));
+    } else {
+        auto mb = info.size() / 1024/ 1024.0;
+        m_statusLabel->setText(tr("Loaded: %1 (filesize: %2mb, parse %3 ms, total %4 ms)")
+                                   .arg(filePath)
+                                   .arg(mb, 0, 'f', 2)
+                                   .arg(parseMs)
+                                   .arg(totalMs));
+    }
+}
+
+void MainWindow::setBusy(bool busy) {
+    if (busy) {
+        if (m_loading) return;
+        m_loading = true;
+        QApplication::setOverrideCursor(Qt::WaitCursor);
+        m_statusLabel->setText(tr("Loading..."));
+    } else {
+        if (!m_loading) return;
+        m_loading = false;
+        QApplication::restoreOverrideCursor();
     }
 }
 
@@ -317,15 +414,20 @@ bool MainWindow::indexMatchesSearch(const QModelIndex &baseIndex, const SearchOp
     QString valueText = m_model->data(valueIndex, Qt::EditRole).toString();
 
     if (regex) {
-        if (regex->match(keyText).hasMatch()) {
+        // 限制匹配主体长度：PCRE2 单次匹配有上限，但长文本上反复匹配仍会拖垮界面。
+        const QString keySubject = keyText.left(kRegexSubjectLimit);
+        if (regex->match(keySubject).hasMatch()) {
             if (matchedIndex != nullptr)
                 *matchedIndex = keyIndex;
             return true;
         }
-        if (options.searchInValue && regex->match(valueText).hasMatch()) {
-            if (matchedIndex != nullptr)
-                *matchedIndex = valueIndex;
-            return true;
+        if (options.searchInValue) {
+            const QString valueSubject = valueText.left(kRegexSubjectLimit);
+            if (regex->match(valueSubject).hasMatch()) {
+                if (matchedIndex != nullptr)
+                    *matchedIndex = valueIndex;
+                return true;
+            }
         }
         return false;
     }
@@ -382,7 +484,14 @@ bool MainWindow::findAndSelect(const SearchOptions &options) {
     QModelIndex node = next(current);
     QModelIndex first;
     bool wrapped = false;
+    // 搜索要遍历整棵树，大文件上耗时可能很长；到预算就停下来，别把界面锁死。
+    QElapsedTimer budget;
+    budget.start();
     while (true) {
+        if (budget.elapsed() > kSearchTimeBudgetMs) {
+            m_statusLabel->setText(tr("Search stopped: it took too long. Try a more specific keyword."));
+            return false;
+        }
         if (!node.isValid()) {
             if (!options.wrapAround || wrapped) break;
             wrapped = true;
@@ -439,7 +548,9 @@ void MainWindow::onCustomContextMenu(const QPoint &pos) {
     menu.addAction(tr("Copy Value"), this, &MainWindow::onCopyValue);
     menu.addAction(tr("Paste"), this, &MainWindow::onPaste);
 
-    menu.addAction(tr("Delete"), this, &MainWindow::onDeleteItem);
+    // 顶层节点就是整个文档，删掉等于把内容换成 null，只能逐个删子项。
+    const bool isRootNode = !parentItem || parentItem->nodeType() == JsonNodeType::Root;
+    if (!isRootNode) menu.addAction(tr("Delete"), this, &MainWindow::onDeleteItem);
 
     menu.exec(m_treeView->viewport()->mapToGlobal(pos));
 }
@@ -479,9 +590,13 @@ void MainWindow::onDeleteItem() {
     if (!m_contextIndex.isValid())
         return;
 
-    if (!m_contextIndex.parent().isValid())
-        m_model->replaceItem(m_contextIndex, new JsonTreeItem({}, {}, JsonNodeType::Null));
-    else m_model->removeRows(m_contextIndex.row(), 1, m_contextIndex.parent());
+    // 顶层节点代表整个文档，替换成 null 会把内容整体清掉，这里直接拒绝。
+    if (!m_model->canRemove(m_contextIndex)) {
+        QMessageBox::warning(this, tr("Warning"),
+                             tr("The root node cannot be deleted. Delete its child items instead."));
+        return;
+    }
+    m_model->removeRows(m_contextIndex.row(), 1, m_contextIndex.parent());
 }
 
 void MainWindow::onCopy() {

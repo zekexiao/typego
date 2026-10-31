@@ -305,18 +305,32 @@ bool JsonTreeModel::loadFromString(const QString &jsonStr) {
     return loadData(jsonStr.toUtf8(), false);
 }
 
-bool JsonTreeModel::loadData(const QByteArray &data, bool allowMessagePack) {
+JsonTreeItem *JsonTreeModel::buildTree(const QByteArray &data, bool allowMessagePack) {
     yyjson_doc *doc = yyjson_read(data.constData(), size_t(data.size()), 0);
     if (!doc && allowMessagePack) doc = MessagePackReader(data).decode();
-    if (!doc) return false;
+    if (!doc) return nullptr;
     auto *item = createItemFromJsonImpl(yyjson_doc_get_root(doc), QString());
     yyjson_doc_free(doc);
-    if (!item) return false;
+    return item;
+}
+
+void JsonTreeModel::setRootTree(std::shared_ptr<JsonTreeItem> tree) {
     beginResetModel();
     delete m_rootItem;
     m_rootItem = new JsonTreeItem(QStringLiteral("root"), {}, JsonNodeType::Root);
-    m_rootItem->appendChild(item);
+    if (tree) {
+        // 所有权交给模型，m_rootItem 不再释放这棵树。
+        tree->setExternallyOwned(true);
+        m_rootItem->appendChild(tree.get());
+    }
+    m_documentTree = std::move(tree);
     endResetModel();
+}
+
+bool JsonTreeModel::loadData(const QByteArray &data, bool allowMessagePack) {
+    std::shared_ptr<JsonTreeItem> tree(buildTree(data, allowMessagePack));
+    if (!tree) return false;
+    setRootTree(std::move(tree));
     return true;
 }
 
@@ -545,6 +559,17 @@ QModelIndex JsonTreeModel::indexForItem(JsonTreeItem *item) const {
     if (!item || item == m_rootItem)
         return QModelIndex();
     return createIndex(item->row(), 0, item);
+}
+
+bool JsonTreeModel::canRemove(const QModelIndex &index) const {
+    if (!index.isValid())
+        return false;
+    JsonTreeItem *item = static_cast<JsonTreeItem *>(index.internalPointer());
+    if (!item)
+        return false;
+    JsonTreeItem *parentItem = item->parentItem();
+    // 顶层节点的父节点就是 Root 容器，删掉它等于把整份文档替换成 null。
+    return parentItem && parentItem->nodeType() != JsonNodeType::Root;
 }
 
 bool JsonTreeModel::replaceItem(const QModelIndex &index, JsonTreeItem *newItem) {

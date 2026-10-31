@@ -6,7 +6,10 @@ JsonTreeItem::JsonTreeItem(const QString &key, const QVariant &value,
 }
 
 JsonTreeItem::~JsonTreeItem() {
-    qDeleteAll(m_children);
+    // 外部持有的子树由它的所有者释放，这里不能重复 delete。
+    for (JsonTreeItem *child : m_children) {
+        if (!child->isExternallyOwned()) delete child;
+    }
 }
 
 void JsonTreeItem::appendChild(JsonTreeItem *child) {

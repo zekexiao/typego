@@ -39,6 +39,10 @@ public:
     JsonNodeType nodeType() const;
     void setNodeType(JsonNodeType type);
 
+    // 外部持有的树不随父节点释放，避免与外部的 shared_ptr 重复删除。
+    void setExternallyOwned(bool owned) { m_externallyOwned = owned; }
+    bool isExternallyOwned() const { return m_externallyOwned; }
+
     JsonTreeItem *clone(JsonTreeItem *parent = nullptr) const;
 
 private:
@@ -48,4 +52,5 @@ private:
     QString m_key;
     QVariant m_value;
     JsonNodeType m_type;
+    bool m_externallyOwned = false;
 };

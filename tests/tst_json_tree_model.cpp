@@ -72,6 +72,29 @@ private slots:
         }
         QVERIFY(!model.saveJson(dir.path()));
     }
+    void treeCanBeBuiltAheadOfTime() {
+        JsonTreeModel model;
+        model.setPrettyPrint(false);
+        JsonTreeItem *tree = JsonTreeModel::buildTree(QByteArray("{\"a\":1}"), true);
+        QVERIFY(tree);
+        model.setRootTree(std::shared_ptr<JsonTreeItem>(tree));
+        QCOMPARE(model.toJsonString(), QStringLiteral("{\"a\":1}"));
+        // 解析失败不能动当前内容。
+        QVERIFY(JsonTreeModel::buildTree(QByteArray("{oops"), true) == nullptr);
+        QCOMPARE(model.toJsonString(), QStringLiteral("{\"a\":1}"));
+    }
+    void rootNodeCannotBeRemoved() {
+        JsonTreeModel model;
+        model.setPrettyPrint(false);
+        QVERIFY(model.loadFromString(QStringLiteral("{\"a\":1,\"b\":2}")));
+        const auto root = model.index(0, 0);
+        // 顶层节点就是整份文档，删掉等于把内容换成 null。
+        QVERIFY(!model.canRemove(root));
+        // 顶层节点的子项可以正常删除。
+        QVERIFY(model.canRemove(model.index(0, 0, root)));
+        QVERIFY(model.removeRows(0, 1, root));
+        QCOMPARE(model.toJsonString(), QStringLiteral("{\"b\":2}"));
+    }
 };
 QTEST_GUILESS_MAIN(JsonTreeModelTest)
 #include "tst_json_tree_model.moc"

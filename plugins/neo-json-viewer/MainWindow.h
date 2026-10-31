@@ -5,6 +5,7 @@
 #include <QLabel>
 #include <QSettings>
 #include <QVector>
+#include <memory>
 #include "JsonTreeModel.h"
 #include "SettingsDialog.h"
 #include "SearchDialog.h"
@@ -55,6 +56,9 @@ private:
     void selectIndex(const QModelIndex &index);
     bool indexMatchesSearch(const QModelIndex &baseIndex, const SearchOptions &options, QModelIndex *matchedIndex, const QRegularExpression *regex) const;
     bool findAndSelect(const SearchOptions &options);
+    // 后台加载：解析完成后在界面线程接管结果。
+    void finishLoad(const QString &filePath, std::shared_ptr<JsonTreeItem> tree, qint64 parseMs, qint64 totalMs);
+    void setBusy(bool busy);
 
     QTreeView *m_treeView;
     JsonTreeModel *m_model;
@@ -66,4 +70,7 @@ private:
     SearchOptions m_lastSearch;
     bool m_hasLastSearch;
     bool m_isDirty;
+    bool m_loading = false;
+    // 后台加载的批次号，只有最新一次的结果会被采用。
+    quint64 m_loadGeneration = 0;
 };

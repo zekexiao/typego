@@ -363,6 +363,26 @@
         <translation>删除</translation>
     </message>
     <message>
+        <location filename="../MainWindow.cpp" line="497"/>
+        <source>The root node cannot be deleted. Delete its child items instead.</source>
+        <translation>根节点不能删除，请逐个删除它的子项。</translation>
+    </message>
+    <message>
+        <location filename="../MainWindow.cpp" line="217"/>
+        <source>This file may not fit in memory: about %1 MB is needed, %2 MB is available.</source>
+        <translation>该文件可能超出可用内存：预计需要约 %1 MB，可用 %2 MB。</translation>
+    </message>
+    <message>
+        <location filename="../MainWindow.cpp" line="217"/>
+        <source>Loading...</source>
+        <translation>正在加载……</translation>
+    </message>
+    <message>
+        <location filename="../MainWindow.cpp" line="437"/>
+        <source>Search stopped: it took too long. Try a more specific keyword.</source>
+        <translation>搜索已停止：耗时过长，请换更精确的关键字。</translation>
+    </message>
+    <message>
         <location filename="../MainWindow.cpp" line="473"/>
         <source>Warning</source>
         <translation>警告</translation>
