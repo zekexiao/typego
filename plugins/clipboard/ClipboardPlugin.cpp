@@ -58,7 +58,7 @@ Api::Error ClipboardPlugin::initialize(Api::Host *host)
 
     const QString dataDir = host->directory(Api::Directory::Data);
     if (dataDir.isEmpty())
-        return {Api::ErrorCode::IoError, QStringLiteral("Clipboard data directory is unavailable")};
+        return {Api::ErrorCode::IoError, tr("Clipboard data directory is unavailable")};
     m_store = std::make_unique<ClipboardStore>(dataDir, host->directory(Api::Directory::Cache));
     applyConfig();
     m_store->load();
@@ -222,7 +222,7 @@ Api::ResultItem ClipboardPlugin::resultItem(const ClipboardItem &item) const
 Api::QueryResult ClipboardPlugin::query(const Api::QueryRequest &request)
 {
     if (!m_store)
-        return {request.id, {}, false, {Api::ErrorCode::Internal, QStringLiteral("Clipboard is not initialized")}};
+        return {request.id, {}, false, {Api::ErrorCode::Internal, tr("Clipboard is not initialized")}};
     const QString filter = request.invocation.arguments.trimmed();
     QList<Api::ResultItem> items;
     const int limit = qMin(request.limit, Api::MaxResults);
@@ -247,15 +247,15 @@ Api::ExecutionResult ClipboardPlugin::execute(const Api::Invocation &invocation)
 {
     if (invocation.actionId != QLatin1String("copy"))
         return {Api::Status::Failed, Api::HostAction::Keep,
-                {Api::ErrorCode::InvalidArgument, QStringLiteral("Select a clipboard item first")}};
+                {Api::ErrorCode::InvalidArgument, tr("Select a clipboard item first")}};
     const ClipboardItem *entry = m_store ? m_store->find(invocation.parameters.value(QStringLiteral("id")).toString()) : nullptr;
     if (!entry)
         return {Api::Status::Failed, Api::HostAction::Keep,
-                {Api::ErrorCode::InvalidArgument, QStringLiteral("Clipboard item is no longer available")}};
+                {Api::ErrorCode::InvalidArgument, tr("Clipboard item is no longer available")}};
     QClipboard *clipboard = QGuiApplication::clipboard();
     if (!clipboard)
         return {Api::Status::Failed, Api::HostAction::Keep,
-                {Api::ErrorCode::Internal, QStringLiteral("Cannot access the system clipboard")}};
+                {Api::ErrorCode::Internal, tr("Cannot access the system clipboard")}};
 
     // 粘贴自身内容会再次触发 dataChanged；记下写入内容，回声到达时按内容比对跳过。
     m_echo = ClipboardEcho{};
@@ -271,7 +271,7 @@ Api::ExecutionResult ClipboardPlugin::execute(const Api::Invocation &invocation)
         if (image.isNull()) {
             m_echo = ClipboardEcho{};
             return {Api::Status::Failed, Api::HostAction::Keep,
-                    {Api::ErrorCode::IoError, QStringLiteral("Cannot read the saved clipboard image")}};
+                    {Api::ErrorCode::IoError, tr("Cannot read the saved clipboard image")}};
         }
         m_echo.type = ClipboardItem::Type::Image;
         m_echo.imageSignature = imageSignature(image);

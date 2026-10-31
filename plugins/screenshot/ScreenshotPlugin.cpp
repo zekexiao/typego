@@ -43,7 +43,7 @@ Api::Error ScreenshotPlugin::initialize(Api::Host *host)
     const QString dataDir = host->directory(Api::Directory::Data);
     const QString cacheDir = host->directory(Api::Directory::Cache);
     if (dataDir.isEmpty())
-        return {Api::ErrorCode::IoError, QStringLiteral("Screenshot data directory is unavailable")};
+        return {Api::ErrorCode::IoError, tr("Screenshot data directory is unavailable")};
     m_store = std::make_unique<ScreenshotStore>(dataDir, cacheDir);
     applyConfig();
     return {};
@@ -153,7 +153,7 @@ Api::ExecutionResult ScreenshotPlugin::execute(const Api::Invocation &invocation
         return {Api::Status::Succeeded, Api::HostAction::Hide};
     }
     return {Api::Status::Failed, Api::HostAction::Keep,
-            {Api::ErrorCode::InvalidArgument, QStringLiteral("Unsupported action")}};
+            {Api::ErrorCode::InvalidArgument, tr("Unsupported action")}};
 }
 
 QWidget *ScreenshotPlugin::createView(const Api::Invocation &, QWidget *parent)

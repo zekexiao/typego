@@ -24,7 +24,7 @@ ClipboardSettingsWidget::ClipboardSettingsWidget(const Values &values, QWidget *
     m_maxItems = new QSpinBox(this);
     m_maxItems->setRange(10, 200);
     m_maxItems->setValue(qBound(10, values.maxItems, 200));
-    form->addRow(tr("History size:"), m_maxItems);
+    form->addRow(tr("History size"), m_maxItems);
 
     m_captureText = new QCheckBox(tr("Record copied text"), this);
     m_captureText->setChecked(values.captureText);

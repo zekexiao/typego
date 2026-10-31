@@ -42,7 +42,7 @@ ScreenOverlay::ScreenOverlay(ScreenshotSession *session, const ScreenInfo &info)
     setMouseTracking(true);
     setFocusPolicy(Qt::StrongFocus);
     setCursor(Qt::CrossCursor);
-    setWindowTitle(QStringLiteral("TypeGo Screenshot"));
+    setWindowTitle(tr("TypeGo Screenshot"));
     setGeometry(info.logical);
 }
 

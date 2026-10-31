@@ -1,5 +1,6 @@
 #include "WinCapture.h"
 
+#include <QCoreApplication>
 #include <QGuiApplication>
 #include <QProcess>
 #include <QStringList>
@@ -73,12 +74,12 @@ QRect virtualScreenRect()
 QImage grabScreenRect(const QRect &rect, QString *error)
 {
     if (rect.width() <= 0 || rect.height() <= 0) {
-        if (error) *error = QStringLiteral("Invalid screen capture rectangle");
+        if (error) *error = QCoreApplication::translate("WinCapture", "Invalid screen capture rectangle");
         return {};
     }
     HDC screenDc = GetDC(nullptr);
     if (!screenDc) {
-        if (error) *error = QStringLiteral("Cannot access the screen device context");
+        if (error) *error = QCoreApplication::translate("WinCapture", "Cannot access the screen device context");
         return {};
     }
     HDC memoryDc = CreateCompatibleDC(screenDc);
@@ -86,7 +87,7 @@ QImage grabScreenRect(const QRect &rect, QString *error)
     if (!memoryDc || !bitmap) {
         if (memoryDc) DeleteDC(memoryDc);
         ReleaseDC(nullptr, screenDc);
-        if (error) *error = QStringLiteral("Cannot allocate the screen bitmap");
+        if (error) *error = QCoreApplication::translate("WinCapture", "Cannot allocate the screen bitmap");
         return {};
     }
 
@@ -116,7 +117,7 @@ QImage grabScreenRect(const QRect &rect, QString *error)
     ReleaseDC(nullptr, screenDc);
 
     if (image.isNull()) {
-        if (error) *error = QStringLiteral("Screen capture failed");
+        if (error) *error = QCoreApplication::translate("WinCapture", "Screen capture failed");
         return {};
     }
     return image;
@@ -128,7 +129,7 @@ QImage captureVirtualDesktop(QRect *bounds, QString *error)
 {
     const QRect rect = virtualScreenRect();
     if (rect.isEmpty()) {
-        if (error) *error = QStringLiteral("Cannot read the virtual screen bounds");
+        if (error) *error = QCoreApplication::translate("WinCapture", "Cannot read the virtual screen bounds");
         return {};
     }
     const QImage image = grabScreenRect(rect, error);
@@ -140,7 +141,7 @@ QImage captureRect(const QRect &physicalRect, QString *error)
 {
     const QRect rect = physicalRect.intersected(virtualScreenRect());
     if (rect.isEmpty()) {
-        if (error) *error = QStringLiteral("The capture area is outside the screen");
+        if (error) *error = QCoreApplication::translate("WinCapture", "The capture area is outside the screen");
         return {};
     }
     return grabScreenRect(rect, error);
@@ -225,12 +226,12 @@ bool windowAt(const QPoint &physicalPoint, QRect *rect, QString *title)
 QList<MonitorInfo> monitors() { return {}; }
 QImage captureVirtualDesktop(QRect *, QString *error)
 {
-    if (error) *error = QStringLiteral("Screen capture is only supported on Windows");
+    if (error) *error = QCoreApplication::translate("WinCapture", "Screen capture is only supported on Windows");
     return {};
 }
 QImage captureRect(const QRect &, QString *error)
 {
-    if (error) *error = QStringLiteral("Screen capture is only supported on Windows");
+    if (error) *error = QCoreApplication::translate("WinCapture", "Screen capture is only supported on Windows");
     return {};
 }
 bool excludeFromCapture(quintptr) { return false; }

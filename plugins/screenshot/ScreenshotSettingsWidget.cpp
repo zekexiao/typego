@@ -34,13 +34,13 @@ ScreenshotSettingsWidget::ScreenshotSettingsWidget(const Values &values, QWidget
     auto *browse = new QPushButton(tr("Browse..."), this);
     dirRow->addWidget(m_saveDir, 1);
     dirRow->addWidget(browse);
-    form->addRow(tr("Save folder:"), dirRow);
+    form->addRow(tr("Save folder"), dirRow);
 
     m_historyLimit = new QSpinBox(this);
     m_historyLimit->setRange(0, 200);
     m_historyLimit->setValue(qBound(0, values.historyLimit, 200));
     m_historyLimit->setToolTip(tr("0 disables screenshot history"));
-    form->addRow(tr("History size:"), m_historyLimit);
+    form->addRow(tr("History size"), m_historyLimit);
 
     m_magnifier = new QCheckBox(tr("Show magnifier while selecting"), this);
     m_magnifier->setChecked(values.magnifier);
@@ -50,7 +50,7 @@ ScreenshotSettingsWidget::ScreenshotSettingsWidget(const Values &values, QWidget
     m_magnifierZoom->setRange(2, 20);
     m_magnifierZoom->setValue(qBound(2, values.magnifierZoom, 20));
     m_magnifierZoom->setSuffix(tr("x"));
-    form->addRow(tr("Magnifier zoom:"), m_magnifierZoom);
+    form->addRow(tr("Magnifier zoom"), m_magnifierZoom);
     layout->addLayout(form);
 
     auto *historyRow = new QHBoxLayout;

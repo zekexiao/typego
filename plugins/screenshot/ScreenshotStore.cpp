@@ -1,5 +1,6 @@
 #include "ScreenshotStore.h"
 
+#include <QCoreApplication>
 #include <QDateTime>
 #include <QDir>
 #include <QFile>
@@ -30,12 +31,12 @@ QString ScreenshotStore::record(const QImage &image, QString *error)
 {
     m_lastError.clear();
     if (image.isNull()) {
-        m_lastError = QStringLiteral("The screenshot is empty");
+        m_lastError = QCoreApplication::translate("ScreenshotStore", "The screenshot is empty");
         if (error) *error = m_lastError;
         return {};
     }
     if (!QDir().mkpath(m_historyDir)) {
-        m_lastError = QStringLiteral("Cannot create the screenshot history directory");
+        m_lastError = QCoreApplication::translate("ScreenshotStore", "Cannot create the screenshot history directory");
         if (error) *error = m_lastError;
         return {};
     }

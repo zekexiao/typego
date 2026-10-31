@@ -1,6 +1,7 @@
 #include "ClipboardStore.h"
 
 #include <QBuffer>
+#include <QCoreApplication>
 #include <QCryptographicHash>
 #include <QDir>
 #include <QFile>
@@ -82,7 +83,7 @@ void ClipboardStore::load()
     QFile file(dataPath(QString::fromLatin1(IndexFileName)));
     if (file.exists()) {
         if (!file.open(QIODevice::ReadOnly)) {
-            m_lastError = QStringLiteral("Cannot read clipboard history index");
+            m_lastError = QCoreApplication::translate("ClipboardStore", "Cannot read clipboard history index");
             m_indexCorrupted = true;
             // 索引读不出来时原样保留磁盘文件，不清理图片，避免把还能抢救的历史删掉。
             return;
@@ -92,7 +93,7 @@ void ClipboardStore::load()
         QJsonParseError error;
         const QJsonDocument document = QJsonDocument::fromJson(raw, &error);
         if (error.error != QJsonParseError::NoError) {
-            m_lastError = QStringLiteral("Cannot parse clipboard history index");
+            m_lastError = QCoreApplication::translate("ClipboardStore", "Cannot parse clipboard history index");
             m_indexCorrupted = true;
             return;
         }
@@ -136,13 +137,13 @@ void ClipboardStore::load()
 bool ClipboardStore::save()
 {
     if (m_dataDir.isEmpty()) {
-        m_lastError = QStringLiteral("Clipboard data directory is unavailable");
+        m_lastError = QCoreApplication::translate("ClipboardStore", "Clipboard data directory is unavailable");
         return false;
     }
     // 索引损坏时先备份原文件再重建，避免把还能抢救的历史直接覆盖掉。
     if (m_indexCorrupted) {
         if (!backupCorruptedIndex()) {
-            m_lastError = QStringLiteral("Cannot back up the damaged clipboard history index");
+            m_lastError = QCoreApplication::translate("ClipboardStore", "Cannot back up the damaged clipboard history index");
             return false;
         }
         m_indexCorrupted = false;
@@ -158,7 +159,7 @@ bool ClipboardStore::save()
         if (item.type == ClipboardItem::Type::Text) {
             // 正文单独存文件，索引只留长度：重写索引的开销与正文总大小无关。
             if (!QFileInfo::exists(textPath(item)) && !writeTextPayload(item)) {
-                m_lastError = QStringLiteral("Cannot save clipboard history text");
+                m_lastError = QCoreApplication::translate("ClipboardStore", "Cannot save clipboard history text");
                 return false;
             }
             object.insert(QStringLiteral("size"), item.text.size());
@@ -173,14 +174,14 @@ bool ClipboardStore::save()
     }
     QSaveFile file(dataPath(QString::fromLatin1(IndexFileName)));
     if (!file.open(QIODevice::WriteOnly)) {
-        m_lastError = QStringLiteral("Cannot open clipboard history index for writing");
+        m_lastError = QCoreApplication::translate("ClipboardStore", "Cannot open clipboard history index for writing");
         return false;
     }
     const QByteArray data = QJsonDocument(QJsonObject{{QStringLiteral("version"), IndexVersion},
                                                         {QStringLiteral("items"), array}})
                                 .toJson(QJsonDocument::Compact);
     if (file.write(data) != data.size() || !file.commit()) {
-        m_lastError = QStringLiteral("Cannot save clipboard history index");
+        m_lastError = QCoreApplication::translate("ClipboardStore", "Cannot save clipboard history index");
         return false;
     }
     m_lastError.clear();
@@ -264,7 +265,7 @@ bool ClipboardStore::captureText(const QString &text, qint64 now)
     item.timestamp = now;
     // 正文先落盘；索引只存元数据，写失败就不收这条。
     if (!writeTextPayload(item)) {
-        m_lastError = QStringLiteral("Cannot save clipboard history text");
+        m_lastError = QCoreApplication::translate("ClipboardStore", "Cannot save clipboard history text");
         return false;
     }
     m_items.prepend(std::move(item));
@@ -302,7 +303,7 @@ bool ClipboardStore::captureImage(const QImage &image, qint64 now)
     QByteArray png;
     QBuffer buffer(&png);
     if (!buffer.open(QIODevice::WriteOnly) || !image.save(&buffer, "PNG")) {
-        m_lastError = QStringLiteral("Cannot encode clipboard image");
+        m_lastError = QCoreApplication::translate("ClipboardStore", "Cannot encode clipboard image");
         return false;
     }
     const QByteArray hash = hashOf("image", png);
@@ -317,12 +318,12 @@ bool ClipboardStore::captureImage(const QImage &image, qint64 now)
     item.hash = hash;
     item.timestamp = now;
     if (!QDir().mkpath(m_imageDir)) {
-        m_lastError = QStringLiteral("Cannot create clipboard image directory");
+        m_lastError = QCoreApplication::translate("ClipboardStore", "Cannot create clipboard image directory");
         return false;
     }
     QSaveFile file(imagePath(item));
     if (!file.open(QIODevice::WriteOnly) || file.write(png) != png.size() || !file.commit()) {
-        m_lastError = QStringLiteral("Cannot save clipboard image");
+        m_lastError = QCoreApplication::translate("ClipboardStore", "Cannot save clipboard image");
         return false;
     }
     // 缩略图失败不影响历史，查询时会重试。
