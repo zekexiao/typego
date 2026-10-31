@@ -74,6 +74,10 @@ target_compile_definitions(tst_restart PRIVATE TYPEGO_RESTART_PARENT="$<TARGET_F
 
 typego_add_test(tst_json_tree_model tst_json_tree_model.cpp)
 
+# 翻译完整性：所有 .ts 的译文必须非空，否则界面会直接露出英文原文。
+typego_add_test(tst_translations tst_translations.cpp)
+target_compile_definitions(tst_translations PRIVATE TYPEGO_SOURCE_DIR="${CMAKE_SOURCE_DIR}")
+
 # 剪贴板历史存储与图标只依赖 Qt Gui，不需要加载插件或访问系统剪贴板。
 typego_add_test(tst_clipboard_store tst_clipboard_store.cpp
     ${CMAKE_SOURCE_DIR}/plugins/clipboard/ClipboardStore.cpp
