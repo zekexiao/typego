@@ -1,5 +1,23 @@
 # TypeGo 更新日志
 
+## 1.11 - 2026-10-31
+
+### 中文
+
+- 截图和贴图支持选中、移动、缩放及编辑已有标注；贴图可再次打开编辑器进行标注
+- 放弃未完成的截图或贴图编辑前增加确认，避免意外丢失标注
+- 修复标注拖动结束位置、贴图编辑器位置及确认对话框显示问题
+- 修复自动识别窗口时选区包含不可见边框，导致高亮位置偏移的问题
+- 更新官网介绍，突出快速启动和工具集
+
+### English
+
+- Select, move, resize and edit existing annotations in captures and pinned images; reopen pinned images in the editor to annotate them
+- Added confirmation before discarding an unfinished capture or pinned-image edit to prevent accidental loss of annotations
+- Fixed annotation drag release positions, pinned-image editor placement and confirmation dialog visibility
+- Fixed automatically detected window selections including invisible borders and appearing misaligned
+- Updated the website introduction to highlight fast launching and the toolbox
+
 ## 1.10 - 2026-10-30
 
 ### 中文
