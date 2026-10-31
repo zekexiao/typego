@@ -29,7 +29,7 @@ PluginSettingsDialog::PluginSettingsDialog(const QString &title, QWidget *conten
 
     auto *titleBar = new QWidget(this);
     titleBar->setObjectName(QStringLiteral("windowTitleBar"));
-    titleBar->setFixedHeight(36);
+    titleBar->setFixedHeight(44);
     auto *titleLayout = new QHBoxLayout(titleBar);
     titleLayout->setContentsMargins(12, 0, 12, 0);
     auto *titleLabel = new QLabel(title, titleBar);
@@ -49,7 +49,7 @@ PluginSettingsDialog::PluginSettingsDialog(const QString &title, QWidget *conten
 
     auto *body = new QWidget(this);
     auto *bodyLayout = new QVBoxLayout(body);
-    bodyLayout->setContentsMargins(16, 16, 16, 12);
+    bodyLayout->setContentsMargins(24, 16, 24, 20);
     bodyLayout->setSpacing(12);
     if (content) bodyLayout->addWidget(content);
     // 内容顶到上面，多余空间留在下方，底部按钮不会和表单挤在一起。
@@ -62,7 +62,7 @@ PluginSettingsDialog::PluginSettingsDialog(const QString &title, QWidget *conten
     // 标准按钮组会在 LanguageChange 时把文案重置成 Qt 自带英文。
     auto *footer = new QWidget(this);
     auto *footerLayout = new QHBoxLayout(footer);
-    footerLayout->setContentsMargins(16, 0, 16, 16);
+    footerLayout->setContentsMargins(24, 0, 24, 20);
     auto *closeButton = new QPushButton(tr("Close"), footer);
     closeButton->setMinimumWidth(84);
     footerLayout->addStretch();

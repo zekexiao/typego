@@ -43,10 +43,11 @@ public:
 
     QColor bg() const;
     QColor surface() const;
+    QColor inset() const;
     QColor surfacePressed() const;
     QColor text() const;
     QColor textSecondary() const;
-    // accent 只用于描边、焦点和指示；填充面与表面文字分开取值，保证白字和彩色文字都达到 AA 对比度。
+    // 描边、白字填充和表面文字分别取值，避免明亮的焦点蓝影响文字对比度。
     QColor accent() const;
     QColor accentFill() const;
     QColor accentFillPressed() const;

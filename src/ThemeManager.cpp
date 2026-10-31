@@ -3,6 +3,7 @@
 #include <QGuiApplication>
 #include <QStyleHints>
 #include <QApplication>
+#include <QPalette>
 #include <QEvent>
 #include <QStyle>
 #include <QWidget>
@@ -111,10 +112,11 @@ QString ThemeManager::styleSheet() const
 
     QString style = QString::fromUtf8(file.readAll());
     style.replace(QStringLiteral("@GLASS_TINT@"), translucentColor(bg(), m_frostedGlass ? (m_isDark ? 72 : 100) : 255));
-    style.replace(QStringLiteral("@GLASS_SURFACE@"), translucentColor(surface(), m_frostedGlass ? (m_isDark ? 100 : 125) : 255));
+    style.replace(QStringLiteral("@GLASS_SURFACE@"), translucentColor(surface(), m_frostedGlass ? (m_isDark ? 220 : 235) : 255));
     style.replace(QStringLiteral("@GLASS_INSET@"), translucentColor(bg(), m_frostedGlass ? 65 : 255));
     style.replace(QStringLiteral("@BG@"), bg().name(QColor::HexRgb));
     style.replace(QStringLiteral("@SURFACE@"), surface().name(QColor::HexRgb));
+    style.replace(QStringLiteral("@INSET@"), inset().name(QColor::HexRgb));
     style.replace(QStringLiteral("@SURFACE_PRESSED@"), surfacePressed().name(QColor::HexRgb));
     style.replace(QStringLiteral("@TEXT@"), text().name(QColor::HexRgb));
     style.replace(QStringLiteral("@TEXT_SECONDARY@"), textSecondary().name(QColor::HexRgb));
@@ -184,6 +186,26 @@ void ThemeManager::updatePalette()
         }
     }
 
+    // 原生子控件和文本浏览器也使用同一调色板，避免深色界面出现白色视口。
+    QPalette palette = qApp->palette();
+    palette.setColor(QPalette::Window, bg());
+    palette.setColor(QPalette::WindowText, text());
+    palette.setColor(QPalette::Base, surface());
+    palette.setColor(QPalette::AlternateBase, inset());
+    palette.setColor(QPalette::Text, text());
+    palette.setColor(QPalette::Button, inset());
+    palette.setColor(QPalette::ButtonText, text());
+    palette.setColor(QPalette::Highlight, selection());
+    palette.setColor(QPalette::HighlightedText, accentText());
+    palette.setColor(QPalette::Link, accentText());
+    palette.setColor(QPalette::PlaceholderText, placeholder());
+    palette.setColor(QPalette::ToolTipBase, surface());
+    palette.setColor(QPalette::ToolTipText, text());
+    palette.setColor(QPalette::Disabled, QPalette::Text, placeholder());
+    palette.setColor(QPalette::Disabled, QPalette::WindowText, placeholder());
+    palette.setColor(QPalette::Disabled, QPalette::ButtonText, placeholder());
+    qApp->setPalette(palette);
+
     if (wasDark != m_isDark) {
         emit paletteChanged();
     }
@@ -191,82 +213,86 @@ void ThemeManager::updatePalette()
 
 QColor ThemeManager::bg() const
 {
-    return m_isDark ? QColor(QStringLiteral("#1e1e1e")) : QColor(QStringLiteral("#f5f5f7"));
+    return m_isDark ? QColor(QStringLiteral("#111113")) : QColor(QStringLiteral("#f5f5f5"));
 }
 
 QColor ThemeManager::surface() const
 {
-    return m_isDark ? QColor(QStringLiteral("#2c2c2e")) : QColor(QStringLiteral("#ffffff"));
+    return m_isDark ? QColor(QStringLiteral("#202023")) : QColor(QStringLiteral("#ffffff"));
+}
+
+QColor ThemeManager::inset() const
+{
+    return m_isDark ? QColor(QStringLiteral("#18181b")) : QColor(QStringLiteral("#ebebee"));
 }
 
 QColor ThemeManager::surfacePressed() const
 {
-    return m_isDark ? QColor(QStringLiteral("#48484a")) : QColor(QStringLiteral("#e5e5ea"));
+    return m_isDark ? QColor(QStringLiteral("#3f3f46")) : QColor(QStringLiteral("#dedee3"));
 }
 
 QColor ThemeManager::text() const
 {
-    return m_isDark ? QColor(QStringLiteral("#f5f5f7")) : QColor(QStringLiteral("#1d1d1f"));
+    return m_isDark ? QColor(QStringLiteral("#fafafa")) : QColor(QStringLiteral("#18181b"));
 }
 
 QColor ThemeManager::textSecondary() const
 {
-    return m_isDark ? QColor(QStringLiteral("#98989d")) : QColor(QStringLiteral("#6e6e73"));
+    return m_isDark ? QColor(QStringLiteral("#a1a1aa")) : QColor(QStringLiteral("#65656f"));
 }
 
 QColor ThemeManager::accent() const
 {
     // 描边与指示色在深浅两套主题下都可辨识；填充和文字用下面两个专用取值。
-    return QColor(QStringLiteral("#0a84ff"));
+    return QColor(QStringLiteral("#0088ff"));
 }
 
 QColor ThemeManager::accentFill() const
 {
-    // 填充面上放白字：深色主题需要压暗到 #0a6fd8 才达到 4.9:1 对比度。
-    return m_isDark ? QColor(QStringLiteral("#0a6fd8")) : QColor(QStringLiteral("#0071e3"));
+    // HeroUI 蓝色压暗后用于白字按钮，保证正文尺寸下的对比度。
+    return QColor(QStringLiteral("#006dcc"));
 }
 
 QColor ThemeManager::accentFillPressed() const
 {
-    return m_isDark ? QColor(QStringLiteral("#0b5cb0")) : QColor(QStringLiteral("#0062c4"));
+    return QColor(QStringLiteral("#005cb0"));
 }
 
 QColor ThemeManager::accentText() const
 {
     // 作为文字直接落在背景或卡片上，需要比描边更亮的蓝。
-    return m_isDark ? QColor(QStringLiteral("#4da3ff")) : QColor(QStringLiteral("#0071e3"));
+    return m_isDark ? QColor(QStringLiteral("#69b4ff")) : QColor(QStringLiteral("#0066bd"));
 }
 
 QColor ThemeManager::border() const
 {
-    return m_isDark ? QColor(QStringLiteral("#48484a")) : QColor(QStringLiteral("#d2d2d7"));
+    return m_isDark ? QColor(QStringLiteral("#36363d")) : QColor(QStringLiteral("#e4e4e7"));
 }
 
 QColor ThemeManager::borderFocus() const
 {
-    return QColor(QStringLiteral("#0a84ff"));
+    return accent();
 }
 
 QColor ThemeManager::hover() const
 {
-    return m_isDark ? QColor(QStringLiteral("#3a3a3c")) : QColor(QStringLiteral("#f0f0f2"));
+    return m_isDark ? QColor(QStringLiteral("#2b2b30")) : QColor(QStringLiteral("#f0f0f3"));
 }
 
 QColor ThemeManager::selection() const
 {
-    // 选中行是实心填充 + 白字，必须用填充色而不是描边色。
-    return accentFill();
+    // 淡色选中面保留图标与副标题的辨识度，文字需使用 accentText。
+    return m_isDark ? QColor(QStringLiteral("#162e48")) : QColor(QStringLiteral("#e6f1ff"));
 }
 
 QColor ThemeManager::placeholder() const
 {
-    // 占位与禁用文字同样属于正文尺寸下的文字，深色主题维持 4.9:1，浅色主题 4.5:1。
-    return m_isDark ? QColor(QStringLiteral("#9a9aa0")) : QColor(QStringLiteral("#76767b"));
+    return m_isDark ? QColor(QStringLiteral("#a1a1aa")) : QColor(QStringLiteral("#71717a"));
 }
 
 QColor ThemeManager::error() const
 {
-    return m_isDark ? QColor(QStringLiteral("#f38ba8")) : QColor(QStringLiteral("#dc2626"));
+    return m_isDark ? QColor(QStringLiteral("#ff8da3")) : QColor(QStringLiteral("#c42647"));
 }
 
 QColor ThemeManager::errorFill() const

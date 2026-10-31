@@ -102,6 +102,8 @@ void JsonViewerWindow::setupUI() {
     setCentralWidget(centralWidget);
 
     auto *layout = new QVBoxLayout(centralWidget);
+    layout->setContentsMargins(16, 12, 16, 16);
+    layout->setSpacing(12);
 
 
     m_treeView = new QTreeView(this);

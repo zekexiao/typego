@@ -89,18 +89,18 @@ void ScrollCaptureSession::start()
     m_panel->setAttribute(Qt::WA_ShowWithoutActivating, true);
     m_panel->setWindowTitle(tr("Scrolling capture"));
     m_panel->setStyleSheet(QStringLiteral(
-        "QWidget#scrollPanel { background: rgba(26, 28, 32, 240); border: 1px solid rgba(255,255,255,45); border-radius: 10px; }"
+        "QWidget#scrollPanel { background: rgba(24, 24, 27, 248); border: 1px solid #3f3f46; border-radius: 16px; }"
         "QLabel { color: #eef1f5; }"
-        "QLabel#scrollHint { color: #c8ccd4; font-size: 11px; }"
+        "QLabel#scrollHint { color: #a1a1aa; font-size: 13px; }"
         "QPushButton { color: #e8eaee; background: rgba(255,255,255,26); border: 1px solid rgba(255,255,255,40);"
-        "  border-radius: 6px; padding: 4px 14px; }"
+        "  border-radius: 16px; padding: 6px 16px; }"
         "QPushButton:hover { background: rgba(255,255,255,45); }"
-        "QPushButton#scrollDone { background: #1677ff; border-color: #1677ff; }"
-        "QPushButton#scrollDone:hover { background: #3a8dff; }"));
+        "QPushButton#scrollDone { background: #006dcc; border-color: #006dcc; }"
+        "QPushButton#scrollDone:hover { background: #005cb0; }"));
 
     auto *layout = new QVBoxLayout(m_panel);
-    layout->setContentsMargins(12, 10, 12, 10);
-    layout->setSpacing(6);
+    layout->setContentsMargins(16, 16, 16, 16);
+    layout->setSpacing(8);
     auto *title = new QLabel(tr("Scrolling capture"), m_panel);
     QFont titleFont = title->font();
     titleFont.setBold(true);

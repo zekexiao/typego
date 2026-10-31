@@ -32,22 +32,21 @@ CaptureToolbar::CaptureToolbar(QWidget *parent, Mode mode)
     setFocusPolicy(Qt::NoFocus);
     setCursor(Qt::ArrowCursor);
     setStyleSheet(QStringLiteral(
-        "QWidget#shotToolbar { background: rgba(26, 28, 32, 238); border: 1px solid rgba(255,255,255,38); border-radius: 10px; }"
-        "QToolButton { background: transparent; border: 1px solid transparent; border-radius: 6px; padding: 2px; }"
+        "QWidget#shotToolbar { background: rgba(24, 24, 27, 248); border: 1px solid #3f3f46; border-radius: 16px; }"
+        "QToolButton { background: transparent; border: 1px solid transparent; border-radius: 8px; padding: 2px; }"
         "QToolButton:hover { background: rgba(255,255,255,30); }"
         "QToolButton:pressed { background: rgba(255,255,255,55); }"
-        "QToolButton:checked { background: #1677ff; }"
-        "QToolButton:disabled { opacity: 0.35; }"
+        "QToolButton:checked { background: #006dcc; }"
         "QToolButton[selected=\"true\"] { border: 2px solid #ffffff; }"
-        "QLabel#shotHint { color: #c8ccd4; font-size: 11px; }"
+        "QLabel#shotHint { color: #a1a1aa; font-size: 13px; }"
         "QFrame#shotDivider { background: rgba(255,255,255,36); max-width: 1px; }"));
 
     auto *root = new QVBoxLayout(this);
-    root->setContentsMargins(8, 6, 8, 6);
+    root->setContentsMargins(12, 8, 12, 8);
     root->setSpacing(4);
 
     auto *tools = new QHBoxLayout;
-    tools->setSpacing(2);
+    tools->setSpacing(4);
     m_toolGroup = new QButtonGroup(this);
     m_toolGroup->setExclusive(true);
     for (int index = 0; index < shotToolCount(); ++index) {

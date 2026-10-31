@@ -62,7 +62,7 @@
 #endif
 
 namespace {
-constexpr int DefaultWindowHeight = 460;
+constexpr int DefaultWindowHeight = 560;
 constexpr int ResultsExtraHeight = 10;
 constexpr int InitialVisibleResults = 80;
 constexpr int ResultsFetchBatchSize = 120;
@@ -70,9 +70,9 @@ constexpr int MaxConcurrentIconLoads = 4;
 
 // 结果项布局常量，配合 32px 图标缓存尺寸，避免上采样发虚。
 constexpr int ResultIconSize = 32;
-constexpr int ResultItemHPadding = 12;
-constexpr int ResultItemVPadding = 8;
-constexpr int ResultItemRadius = 8;
+constexpr int ResultItemHPadding = 16;
+constexpr int ResultItemVPadding = 12;
+constexpr int ResultItemRadius = 12;
 constexpr int ResultIconTextGap = 12;
 constexpr int ResultTitleSubtitleGap = 2;
 
@@ -82,11 +82,11 @@ enum ResultRoles {
     SubtitleRole = Qt::UserRole + 2,
 };
 
-// 副标题比标题小一档形成层级，下限 12px 保证小字号下仍可读。
+// 副标题比标题小一档形成层级，下限 13px 保证可读。
 QFont subtitleFontFor(const QFont &base)
 {
     QFont font = base;
-    font.setPixelSize(qMax(12, QFontInfo(base).pixelSize() - 2));
+    font.setPixelSize(qMax(13, QFontInfo(base).pixelSize() - 1));
     return font;
 }
 
@@ -363,7 +363,7 @@ TitleBarIconButton::TitleBarIconButton(Glyph glyph, ThemeManager *themeManager, 
     setFlat(true);
     setCursor(Qt::PointingHandCursor);
     setFocusPolicy(Qt::TabFocus);
-    setFixedSize(32, 28);
+    setFixedSize(32, 32);
     // 图标随主题重绘，悬停换色不走样式表。
     if (themeManager) {
         connect(themeManager, &ThemeManager::paletteChanged, this, qOverload<>(&QWidget::update));
@@ -479,15 +479,19 @@ void ResultItemDelegate::paint(QPainter *painter, const QStyleOptionViewItem &op
     QRect textRect(textLeft, option.rect.top(), availableWidth, option.rect.height());
 
     const QFont subtitleFont = subtitleFontFor(option.font);
-    const QFontMetrics titleMetrics(option.font);
+    QFont titleFont = option.font;
+    if (selected) titleFont.setWeight(QFont::DemiBold);
+    const QFontMetrics titleMetrics(titleFont);
     const QFontMetrics subtitleMetrics(subtitleFont);
     const int blockHeight = subtitle.isEmpty()
         ? titleMetrics.height()
         : titleMetrics.height() + ResultTitleSubtitleGap + subtitleMetrics.height();
     int baselineTop = textRect.center().y() - blockHeight / 2;
 
-    const QColor paintTitle = selected ? QColor(Qt::white) : titleColor;
-    painter->setFont(option.font);
+    const QColor paintTitle = selected
+        ? (m_themeManager ? m_themeManager->accentText() : option.palette.color(QPalette::HighlightedText))
+        : titleColor;
+    painter->setFont(titleFont);
     painter->setPen(paintTitle);
     painter->drawText(QRect(textRect.left(), baselineTop, availableWidth, titleMetrics.height()),
                       Qt::AlignLeft | Qt::AlignVCenter | Qt::TextSingleLine,
@@ -496,10 +500,8 @@ void ResultItemDelegate::paint(QPainter *painter, const QStyleOptionViewItem &op
     if (!subtitle.isEmpty()) {
         baselineTop += titleMetrics.height() + ResultTitleSubtitleGap;
         // 路径类副标题从中间省略，保留头尾信息。
-        // 选中行底色是实心强调色，副标题加不透明一点才能保持可读。
-        const QColor paintSubtitle = selected ? QColor(255, 255, 255, 220) : subtitleColor;
         painter->setFont(subtitleFont);
-        painter->setPen(paintSubtitle);
+        painter->setPen(subtitleColor);
         painter->drawText(QRect(textRect.left(), baselineTop, availableWidth, subtitleMetrics.height()),
                           Qt::AlignLeft | Qt::AlignVCenter | Qt::TextSingleLine,
                           subtitleMetrics.elidedText(subtitle, Qt::ElideMiddle, availableWidth));
@@ -596,8 +598,8 @@ CommandLineEdit::CommandLineEdit(QWidget *parent)
     {
         setObjectName(QStringLiteral("commandInput"));
         auto *layout = new QHBoxLayout(this);
-        layout->setContentsMargins(10, 4, 5, 4);
-        layout->setSpacing(6);
+        layout->setContentsMargins(16, 8, 12, 8);
+        layout->setSpacing(12);
         m_badge->setObjectName(QStringLiteral("commandBadge"));
         m_badge->hide();
         m_editor->setObjectName(QStringLiteral("commandArgumentEdit"));
@@ -718,8 +720,8 @@ MainWindow::MainWindow(AppLauncher *launcher, PluginManager *pluginManager, Sett
     setAttribute(Qt::WA_DontCreateNativeAncestors);
     setProperty("useWindowMaterial", true);
     setWindowTitle(QStringLiteral("TypeGo"));
-    resize(820, DefaultWindowHeight);
-    setMinimumWidth(780);
+    resize(960, DefaultWindowHeight);
+    setMinimumWidth(880);
 
     auto *layout = new QVBoxLayout(this);
     layout->setContentsMargins(0, 0, 0, 0);
@@ -731,7 +733,7 @@ MainWindow::MainWindow(AppLauncher *launcher, PluginManager *pluginManager, Sett
     auto *titleBar = new QWidget(this);
     m_titleBar = titleBar;
     titleBar->setObjectName(QStringLiteral("windowTitleBar"));
-    titleBar->setFixedHeight(36);
+    titleBar->setFixedHeight(44);
     titleBar->installEventFilter(this);
     auto *titleLayout = new QHBoxLayout(titleBar);
     titleLayout->setContentsMargins(8, 0, 8, 0);
@@ -788,14 +790,14 @@ MainWindow::MainWindow(AppLauncher *launcher, PluginManager *pluginManager, Sett
 
     auto *content = new QWidget(this);
     auto *contentLayout = new QVBoxLayout(content);
-    contentLayout->setContentsMargins(20, 8, 20, 20);
-    contentLayout->setSpacing(12);
+    contentLayout->setContentsMargins(24, 8, 24, 20);
+    contentLayout->setSpacing(16);
     layout->addWidget(content, 1);
 
     auto *searchEdit = new CommandLineEdit;
     searchEdit->setCommands(m_pluginManager->commands());
     m_searchEdit = searchEdit;
-    m_searchEdit->setPlaceholderText(tr("Search apps, or type a command (e.g. calc 1+2)"));
+    m_searchEdit->setPlaceholderText(tr("Search apps or commands"));
     connect(m_searchEdit, &CommandLineEdit::managementRequested, this, [this]() {
         openPluginView(QStringLiteral("user"));
     });
@@ -865,6 +867,25 @@ MainWindow::MainWindow(AppLauncher *launcher, PluginManager *pluginManager, Sett
     });
     connect(m_pluginManager, &PluginManager::actionFinished, this, &MainWindow::applyExecutionResult);
     contentLayout->addWidget(m_stack, 1);
+
+    m_launcherFooter = new QFrame;
+    m_launcherFooter->setObjectName(QStringLiteral("launcherFooter"));
+    auto *footerLayout = new QHBoxLayout(m_launcherFooter);
+    footerLayout->setContentsMargins(0, 4, 0, 0);
+    footerLayout->setSpacing(4);
+    const auto addHint = [footerLayout](const QString &key, const QString &text) {
+        auto *keycap = new QLabel(key);
+        keycap->setObjectName(QStringLiteral("keycap"));
+        auto *label = new QLabel(text);
+        label->setObjectName(QStringLiteral("shortcutHint"));
+        footerLayout->addWidget(keycap);
+        footerLayout->addWidget(label);
+        footerLayout->addSpacing(8);
+    };
+    addHint(QStringLiteral("Enter"), tr("Open"));
+    footerLayout->addStretch();
+    addHint(QStringLiteral("Esc"), tr("Clear or close"));
+    contentLayout->addWidget(m_launcherFooter);
 
     auto *debounce = new QTimer(this);
     m_searchDebounce = debounce;
@@ -1414,6 +1435,7 @@ void MainWindow::showEmbedded(const QString &command)
     m_stack->setMinimumHeight(0);
     m_stack->setMaximumHeight(QWIDGETSIZE_MAX);
     m_searchEdit->hide();
+    m_launcherFooter->hide();
     m_commandLabel->hide();
     m_pinnedPanel->hide();
     m_pluginBackButton->show();
@@ -1462,6 +1484,7 @@ void MainWindow::showResults()
     m_pluginDetachButton->hide();
     for (QShortcut *shortcut : m_resultShortcuts) shortcut->setEnabled(true);
     m_searchEdit->show();
+    m_launcherFooter->show();
     if (wasPluginPage) {
         m_searchEdit->setText(QString());
         m_searchDebounce->stop();

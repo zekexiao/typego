@@ -2,12 +2,16 @@
 #include <QFormLayout>
 #include <QDialogButtonBox>
 #include <QLabel>
+#include <QPushButton>
 
 SettingsDialog::SettingsDialog(int maxTextLength, bool prettyPrint, QWidget *parent)
     : QDialog(parent) {
     setWindowTitle(tr("Settings"));
 
     auto *layout = new QFormLayout(this);
+    layout->setContentsMargins(24, 24, 24, 24);
+    layout->setSpacing(16);
+    layout->setFieldGrowthPolicy(QFormLayout::AllNonFixedFieldsGrow);
 
     m_maxTextSpin = new QSpinBox(this);
     m_maxTextSpin->setRange(0, 10000000);
@@ -21,6 +25,7 @@ SettingsDialog::SettingsDialog(int maxTextLength, bool prettyPrint, QWidget *par
     layout->addRow(tr("Pretty print output:"), m_prettyCheck);
 
     auto *buttons = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel, this);
+    buttons->button(QDialogButtonBox::Ok)->setObjectName(QStringLiteral("primary"));
     connect(buttons, &QDialogButtonBox::accepted, this, &QDialog::accept);
     connect(buttons, &QDialogButtonBox::rejected, this, &QDialog::reject);
     layout->addWidget(buttons);

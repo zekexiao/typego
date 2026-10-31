@@ -48,9 +48,11 @@ public:
 
 protected:
     void paintEvent(QPaintEvent *event) override;
+    // 自绘轨道大于原生指示器，让整个开关热区都可点击。
+    bool hitButton(const QPoint &position) const override { return rect().contains(position); }
 
 private:
-    QColor m_accentColor = QColor(QStringLiteral("#0a84ff"));
+    QColor m_accentColor = QColor(QStringLiteral("#006dcc"));
 };
 
 class SettingsView : public QWidget {

@@ -162,6 +162,7 @@ private:
     ThemeManager *m_themeManager;
 
     CommandLineEdit *m_searchEdit;
+    QFrame *m_launcherFooter = nullptr;
     QWidget *m_titleBar = nullptr;
     QLabel *m_commandLabel;
     QWidget *m_pinnedPanel;
@@ -188,7 +189,7 @@ private:
     bool m_commandMode = false;
     QString m_currentCmd;
     QString m_openPluginCmd;
-    int m_resultsMaximumWindowHeight = 460;
+    int m_resultsMaximumWindowHeight = 560;
     int m_resultsBaseHeight = 0;
     bool m_resultsLayoutPending = false;
     bool m_titleBarDragging = false;

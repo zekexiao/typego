@@ -3,15 +3,16 @@
 #include <QLabel>
 #include <QDialogButtonBox>
 #include <QIcon>
+#include <QPushButton>
 
 AboutDialog::AboutDialog(QWidget *parent)
     : QDialog(parent) {
     setWindowTitle(tr("About TypeGo.JsonView"));
-    setFixedSize(400, 300);
+    setMinimumSize(440, 360);
 
     auto *mainLayout = new QVBoxLayout(this);
-    mainLayout->setSpacing(15);
-    mainLayout->setContentsMargins(20, 20, 20, 20);
+    mainLayout->setSpacing(16);
+    mainLayout->setContentsMargins(24, 24, 24, 24);
 
     // Icon
     auto *iconLabel = new QLabel(this);
@@ -26,15 +27,17 @@ AboutDialog::AboutDialog(QWidget *parent)
 
     // Version
     auto *versionLabel = new QLabel(tr("Version 1.0.0"), this);
+    versionLabel->setObjectName(QStringLiteral("muted"));
     versionLabel->setAlignment(Qt::AlignCenter);
     mainLayout->addWidget(versionLabel);
 
     // Copyright
     auto *copyrightLabel = new QLabel(tr("Copyright 2025. All rights reserved."), this);
+    copyrightLabel->setObjectName(QStringLiteral("muted"));
     copyrightLabel->setAlignment(Qt::AlignCenter);
     mainLayout->addWidget(copyrightLabel);
 
-    mainLayout->addSpacing(10);
+    mainLayout->addSpacing(8);
 
     // Open source components
     auto *openSourceLabel = new QLabel(
@@ -50,6 +53,7 @@ AboutDialog::AboutDialog(QWidget *parent)
 
     // Button
     auto *buttonBox = new QDialogButtonBox(QDialogButtonBox::Ok, this);
+    buttonBox->button(QDialogButtonBox::Ok)->setObjectName(QStringLiteral("primary"));
     connect(buttonBox, &QDialogButtonBox::accepted, this, &QDialog::accept);
     mainLayout->addWidget(buttonBox, 0, Qt::AlignCenter);
 }

@@ -76,7 +76,7 @@ bool PluginWindowHost::detachEmbedded()
     bar->addStretch();
     bar->addWidget(attach);
     layout->addLayout(bar);
-    layout->setContentsMargins(8, 8, 8, 8);
+    layout->setContentsMargins(20, 16, 20, 20);
     m_pages->removeWidget(it->content);
     it->content->setParent(window);
     layout->addWidget(it->content, 1);

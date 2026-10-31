@@ -26,7 +26,8 @@ ScreenshotSettingsWidget::ScreenshotSettingsWidget(const Values &values, QWidget
     layout->setSpacing(12);
 
     auto *form = new QFormLayout;
-    form->setSpacing(8);
+    form->setSpacing(16);
+    form->setFieldGrowthPolicy(QFormLayout::AllNonFixedFieldsGrow);
 
     auto *dirRow = new QHBoxLayout;
     m_saveDir = new QLineEdit(values.saveDir, this);
@@ -57,6 +58,7 @@ ScreenshotSettingsWidget::ScreenshotSettingsWidget(const Values &values, QWidget
     m_count = new QLabel(this);
     m_count->setObjectName(QStringLiteral("muted"));
     auto *clear = new QPushButton(tr("Clear history"), this);
+    clear->setObjectName(QStringLiteral("danger"));
     historyRow->addWidget(m_count, 1);
     historyRow->addWidget(clear);
     layout->addLayout(historyRow);

@@ -18,6 +18,8 @@ SearchDialog::SearchDialog(QWidget *parent)
     setWindowFlag(Qt::WindowContextHelpButtonHint, false);
 
     auto *mainLayout = new QVBoxLayout(this);
+    mainLayout->setContentsMargins(24, 24, 24, 24);
+    mainLayout->setSpacing(16);
 
     auto *findLayout = new QGridLayout();
     auto *findLabel = new QLabel(tr("Find what:"), this);
@@ -48,6 +50,7 @@ SearchDialog::SearchDialog(QWidget *parent)
 
     auto *buttons = new QDialogButtonBox(this);
     QPushButton *findNextButton = buttons->addButton(tr("Find Next"), QDialogButtonBox::ActionRole);
+    findNextButton->setObjectName(QStringLiteral("primary"));
     buttons->addButton(QDialogButtonBox::Close);
     mainLayout->addWidget(buttons);
 

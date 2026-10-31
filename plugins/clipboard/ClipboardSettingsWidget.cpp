@@ -20,7 +20,8 @@ ClipboardSettingsWidget::ClipboardSettingsWidget(const Values &values, QWidget *
     layout->setSpacing(12);
 
     auto *form = new QFormLayout;
-    form->setSpacing(8);
+    form->setSpacing(16);
+    form->setFieldGrowthPolicy(QFormLayout::AllNonFixedFieldsGrow);
     m_maxItems = new QSpinBox(this);
     m_maxItems->setRange(10, 200);
     m_maxItems->setValue(qBound(10, values.maxItems, 200));
@@ -42,6 +43,7 @@ ClipboardSettingsWidget::ClipboardSettingsWidget(const Values &values, QWidget *
     m_count->setObjectName(QStringLiteral("muted"));
     historyRow->addWidget(m_count, 1);
     auto *clear = new QPushButton(tr("Clear history"), this);
+    clear->setObjectName(QStringLiteral("danger"));
     historyRow->addWidget(clear);
     layout->addLayout(historyRow);
     layout->addStretch();

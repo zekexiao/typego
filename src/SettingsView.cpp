@@ -3,6 +3,7 @@
 #include "AppLauncher.h"
 #include "PluginSettingsDialog.h"
 #include "Settings.h"
+#include "ThemeManager.h"
 #include "GlobalHotkey.h"
 #include "Updater.h"
 #include "plugins/IPlugin.h"
@@ -27,6 +28,7 @@
 #include <QMessageBox>
 #include <QListWidget>
 #include <QPainter>
+#include <QPainterPath>
 #include <QPushButton>
 #include <QScrollArea>
 #include <QScrollBar>
@@ -49,6 +51,58 @@ void ensureAltSpaceNativeFilterInstalled();
 constexpr int HotkeyEditWidth = 164;
 // 插件设置按钮列宽，按钮本身有固定内边距，这里给整列留出同样的宽度。
 constexpr int PluginActionColumnWidth = 76;
+
+// 导航图标只在创建页面或切换主题时生成，列表重绘复用 QIcon。
+QIcon navigationIcon(int section, const QColor &color)
+{
+    QPixmap pixmap(40, 40);
+    pixmap.setDevicePixelRatio(2);
+    pixmap.fill(Qt::transparent);
+    QPainter painter(&pixmap);
+    painter.setRenderHint(QPainter::Antialiasing);
+    QPen pen(color, 1.5);
+    pen.setCapStyle(Qt::RoundCap);
+    pen.setJoinStyle(Qt::RoundJoin);
+    painter.setPen(pen);
+    painter.setBrush(Qt::NoBrush);
+    switch (section) {
+    case 0:
+        for (int y : {5, 10, 15}) painter.drawLine(QPointF(3, y), QPointF(17, y));
+        painter.setBrush(color);
+        painter.drawEllipse(QPointF(7, 5), 2, 2);
+        painter.drawEllipse(QPointF(13, 10), 2, 2);
+        painter.drawEllipse(QPointF(9, 15), 2, 2);
+        break;
+    case 1:
+        for (int x : {3, 11})
+            for (int y : {3, 11}) painter.drawRoundedRect(QRectF(x, y, 6, 6), 1.5, 1.5);
+        break;
+    case 2: {
+        QPainterPath folder;
+        folder.moveTo(3, 6);
+        folder.lineTo(3, 4);
+        folder.lineTo(8, 4);
+        folder.lineTo(10, 6);
+        folder.lineTo(17, 6);
+        folder.lineTo(17, 16);
+        folder.lineTo(3, 16);
+        folder.closeSubpath();
+        painter.drawPath(folder);
+        break;
+    }
+    case 3:
+        painter.drawRoundedRect(QRectF(3, 3, 14, 11), 2, 2);
+        painter.drawLine(QPointF(10, 14), QPointF(10, 17));
+        painter.drawLine(QPointF(6, 17), QPointF(14, 17));
+        break;
+    default:
+        painter.drawEllipse(QRectF(3, 3, 14, 14));
+        painter.drawLine(QPointF(10, 9), QPointF(10, 14));
+        painter.drawPoint(QPointF(10, 6));
+        break;
+    }
+    return QIcon(pixmap);
+}
 }
 
 HotkeyEdit::HotkeyEdit(QWidget *parent)
@@ -152,7 +206,7 @@ SettingsSwitch::SettingsSwitch(QWidget *parent)
 
 QSize SettingsSwitch::sizeHint() const
 {
-    return QSize(40, 24);
+    return QSize(48, 28);
 }
 
 QSize SettingsSwitch::minimumSizeHint() const
@@ -166,14 +220,14 @@ void SettingsSwitch::paintEvent(QPaintEvent *)
     painter.setRenderHint(QPainter::Antialiasing);
     if (!isEnabled()) painter.setOpacity(0.45);
 
-    const QRectF track(2.0, (height() - 20.0) / 2.0, 36.0, 20.0);
+    const QRectF track(2.0, (height() - 24.0) / 2.0, 44.0, 24.0);
     const QColor idleBorder(128, 128, 128, 120);
     painter.setBrush(isChecked() ? m_accentColor : QColor(128, 128, 128, 65));
     painter.setPen(QPen(isChecked() || underMouse() ? m_accentColor : idleBorder, 1.0));
-    painter.drawRoundedRect(track.adjusted(0.5, 0.5, -0.5, -0.5), 10.0, 10.0);
+    painter.drawRoundedRect(track.adjusted(0.5, 0.5, -0.5, -0.5), 12.0, 12.0);
 
-    QRectF knob(0.0, 0.0, 16.0, 16.0);
-    knob.moveCenter(QPointF(isChecked() ? track.right() - 10.0 : track.left() + 10.0,
+    QRectF knob(0.0, 0.0, 18.0, 18.0);
+    knob.moveCenter(QPointF(isChecked() ? track.right() - 12.0 : track.left() + 12.0,
                             track.center().y()));
     painter.setPen(Qt::NoPen);
     painter.setBrush(Qt::white);
@@ -182,7 +236,7 @@ void SettingsSwitch::paintEvent(QPaintEvent *)
     if (hasFocus()) {
         painter.setBrush(Qt::NoBrush);
         painter.setPen(QPen(m_accentColor, 1.0));
-        painter.drawRoundedRect(track.adjusted(-1.5, -1.5, 1.5, 1.5), 11.5, 11.5);
+        painter.drawRoundedRect(track.adjusted(-1.5, -1.5, 1.5, 1.5), 13.5, 13.5);
     }
 }
 
@@ -204,13 +258,30 @@ SettingsView::SettingsView(Settings *settings, PluginManager *pluginManager, Glo
     root->setSpacing(0);
 
     auto *columns = new QHBoxLayout;
-    columns->setSpacing(20);
+    columns->setSpacing(24);
     root->addLayout(columns, 1);
+
+    auto *sidebar = new QFrame;
+    sidebar->setObjectName(QStringLiteral("settingsSidebar"));
+    sidebar->setFixedWidth(184);
+    auto *sidebarLayout = new QVBoxLayout(sidebar);
+    sidebarLayout->setContentsMargins(12, 20, 12, 16);
+    sidebarLayout->setSpacing(12);
+    auto *brandRow = new QHBoxLayout;
+    brandRow->setSpacing(8);
+    auto *brandIcon = new QLabel;
+    brandIcon->setPixmap(QIcon(QStringLiteral(":/assets/icon.png")).pixmap(28, 28));
+    auto *brandLabel = new QLabel(QStringLiteral("TypeGo"));
+    brandLabel->setObjectName(QStringLiteral("sidebarBrand"));
+    brandRow->addWidget(brandIcon);
+    brandRow->addWidget(brandLabel, 1);
+    sidebarLayout->addLayout(brandRow);
+    sidebarLayout->addSpacing(8);
 
     m_navigation = new QListWidget;
     m_navigation->setObjectName(QStringLiteral("settingsNavigation"));
-    m_navigation->setFixedWidth(148);
-    m_navigation->setSpacing(2);
+    m_navigation->setSpacing(4);
+    m_navigation->setIconSize(QSize(20, 20));
     m_navigation->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
     m_navigation->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
     m_navigation->addItem(tr("Settings"));
@@ -218,7 +289,19 @@ SettingsView::SettingsView(Settings *settings, PluginManager *pluginManager, Glo
     m_navigation->addItem(tr("Scan Folders"));
     m_navigation->addItem(tr("Interface"));
     m_navigation->addItem(tr("About"));
-    columns->addWidget(m_navigation);
+    sidebarLayout->addWidget(m_navigation, 1);
+    auto *sidebarVersion = new QLabel(tr("Version %1").arg(QCoreApplication::applicationVersion()));
+    sidebarVersion->setObjectName(QStringLiteral("sidebarCaption"));
+    sidebarLayout->addWidget(sidebarVersion);
+    columns->addWidget(sidebar);
+    const auto refreshNavigation = [this]() {
+        const QColor color = m_themeManager ? m_themeManager->textSecondary() : palette().color(QPalette::WindowText);
+        for (int i = 0; i < m_navigation->count(); ++i)
+            m_navigation->item(i)->setIcon(navigationIcon(i, color));
+    };
+    refreshNavigation();
+    if (m_themeManager)
+        connect(m_themeManager, &ThemeManager::paletteChanged, this, refreshNavigation);
 
     m_pages = new QStackedWidget;
     m_pages->setObjectName(QStringLiteral("settingsPages"));
@@ -234,8 +317,8 @@ SettingsView::SettingsView(Settings *settings, PluginManager *pluginManager, Glo
         body->setObjectName(QStringLiteral("settingsPage"));
         auto *layout = new QVBoxLayout(body);
         // 底部留出一段 padding，滚到底时内容与底部按钮之间不至于贴着
-        layout->setContentsMargins(0, 2, 8, 16);
-        layout->setSpacing(10);
+        layout->setContentsMargins(0, 4, 8, 20);
+        layout->setSpacing(12);
         auto *heading = new QLabel(title);
         heading->setObjectName(QStringLiteral("pageTitle"));
         layout->addWidget(heading);
@@ -253,7 +336,7 @@ SettingsView::SettingsView(Settings *settings, PluginManager *pluginManager, Glo
         auto *group = new QFrame;
         group->setObjectName(QStringLiteral("settingsGroup"));
         auto *groupLayout = new QVBoxLayout(group);
-        groupLayout->setContentsMargins(16, 0, 16, 0);
+        groupLayout->setContentsMargins(20, 4, 20, 4);
         groupLayout->setSpacing(0);
         layout->addWidget(group);
         return groupLayout;
@@ -268,7 +351,7 @@ SettingsView::SettingsView(Settings *settings, PluginManager *pluginManager, Glo
     auto addRow = [](QVBoxLayout *layout, const QString &text, QWidget *control) {
         auto *row = new QWidget;
         row->setObjectName(QStringLiteral("settingsRow"));
-        row->setMinimumHeight(50);
+        row->setMinimumHeight(60);
         auto *rowLayout = new QHBoxLayout(row);
         rowLayout->setContentsMargins(0, 0, 0, 0);
         rowLayout->setSpacing(16);
@@ -304,6 +387,7 @@ SettingsView::SettingsView(Settings *settings, PluginManager *pluginManager, Glo
     addSection(settingsLayout, tr("Privacy"));
     auto *privacyGroup = addGroup(settingsLayout);
     auto *clearUsageButton = new QPushButton(tr("Clear"));
+    clearUsageButton->setObjectName(QStringLiteral("danger"));
     addRow(privacyGroup, tr("App usage history used for search ranking"), clearUsageButton);
     connect(clearUsageButton, &QPushButton::clicked, this, [this]() {
         // 清空是破坏性操作且立即生效，不走保存按钮，先弹确认。
@@ -534,7 +618,7 @@ SettingsView::SettingsView(Settings *settings, PluginManager *pluginManager, Glo
     auto *aboutCard = new QFrame;
     aboutCard->setObjectName(QStringLiteral("aboutCard"));
     auto *aboutCardLayout = new QHBoxLayout(aboutCard);
-    aboutCardLayout->setContentsMargins(18, 18, 18, 18);
+    aboutCardLayout->setContentsMargins(24, 24, 24, 24);
     aboutCardLayout->setSpacing(16);
     auto *iconLabel = new QLabel;
     iconLabel->setObjectName(QStringLiteral("aboutIcon"));
@@ -551,10 +635,6 @@ SettingsView::SettingsView(Settings *settings, PluginManager *pluginManager, Glo
     auto *versionLabel = new QLabel(tr("Version %1").arg(QCoreApplication::applicationVersion()));
     versionLabel->setObjectName(QStringLiteral("muted"));
     aboutTextLayout->addWidget(versionLabel);
-    auto *descLabel = new QLabel(tr("Windows application launcher and command plugin host."));
-    descLabel->setObjectName(QStringLiteral("aboutDescription"));
-    descLabel->setWordWrap(true);
-    aboutTextLayout->addWidget(descLabel);
     aboutTextLayout->addStretch();
     aboutCardLayout->addLayout(aboutTextLayout, 1);
     aboutLayout->addWidget(aboutCard);
@@ -600,7 +680,7 @@ SettingsView::SettingsView(Settings *settings, PluginManager *pluginManager, Glo
     auto *footer = new QFrame;
     footer->setObjectName(QStringLiteral("settingsFooter"));
     auto *footerLayout = new QHBoxLayout(footer);
-    footerLayout->setContentsMargins(0, 12, 0, 0);
+    footerLayout->setContentsMargins(0, 16, 0, 0);
     footerLayout->setSpacing(0);
     auto *buttons = new QDialogButtonBox(QDialogButtonBox::Save | QDialogButtonBox::Cancel);
     buttons->button(QDialogButtonBox::Save)->setText(tr("Save"));

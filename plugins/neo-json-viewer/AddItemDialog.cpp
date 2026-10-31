@@ -2,6 +2,7 @@
 #include <QFormLayout>
 #include <QDialogButtonBox>
 #include <QMessageBox>
+#include <QPushButton>
 #include <yyjson.h>
 
 AddItemDialog::AddItemDialog(bool isArrayParent, QWidget *parent)
@@ -9,6 +10,9 @@ AddItemDialog::AddItemDialog(bool isArrayParent, QWidget *parent)
     setWindowTitle(tr("Add Item"));
 
     auto *layout = new QFormLayout(this);
+    layout->setContentsMargins(24, 24, 24, 24);
+    layout->setSpacing(16);
+    layout->setFieldGrowthPolicy(QFormLayout::AllNonFixedFieldsGrow);
 
     m_typeCombo = new QComboBox(this);
     m_typeCombo->addItem(tr("String"), static_cast<int>(JsonNodeType::String));
@@ -37,6 +41,7 @@ AddItemDialog::AddItemDialog(bool isArrayParent, QWidget *parent)
     layout->addRow(tr("Value:"), m_valueStack);
 
     auto *buttons = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel, this);
+    buttons->button(QDialogButtonBox::Ok)->setObjectName(QStringLiteral("primary"));
     connect(buttons, &QDialogButtonBox::accepted, this, [this]() {
         if (nodeType() == JsonNodeType::Number) {
             const QByteArray data = m_valueEdit->text().toUtf8();
