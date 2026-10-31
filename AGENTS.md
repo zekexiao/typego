@@ -41,6 +41,31 @@
   发现代码行为与预期不符时先确认是不是缺陷，不要直接把缺陷写成"预期结果"。
 - `test.bat` 等批处理文件内只写 ASCII，cmd 按 GBK 解析带中文的行会打乱引号；中文注释只放在 CMake 和源码里。
 
+## 国际化（i18n）
+
+- 面向用户的文案一律用 `tr()`（QObject 子类内）或 `QCoreApplication::translate("上下文", "文案")` 包裹，
+  源码里只保留英文原文，不要把中文硬编码进界面。
+- `tr()` / `translate()` 的参数必须是**纯字符串字面量**：`tr("Save")` 可以，`tr(QStringLiteral("Save"))` 不行。
+  `lupdate` 解析的是字面量 token，用 `QStringLiteral()` 包一层它就提取不到，文案会永远漏翻译。
+- 非 QObject 的类（存储层、平台辅助代码等）没有 `tr()`，统一用
+  `QCoreApplication::translate("上下文", "文案")`，上下文取类名。
+- 主程序翻译文件是 `i18n/TypeGo_zh_CN.ts`，`build.bat` 会自动跑 `lupdate` 更新它。
+  插件翻译文件在 `plugins/<插件>/translations/<插件>_zh_CN.ts`，插件用的是 `qt_add_translation`，
+  **不会自动跑 lupdate**：新增或修改插件文案后必须手动执行
+  `"C:\Qt\6.10.3\msvc2022_64\bin\lupdate.exe" plugins/<插件> -ts plugins/<插件>/translations/<插件>_zh_CN.ts -no-obsolete`，
+  否则新文案在插件里根本不会出现。
+- 每条 `<message>` 的 `<translation>` 必须有内容，不允许留空。留空时 Qt 直接回退成英文原文，
+  界面上就会露出没翻译的英文。专有名词、命令行、JSON 字面量（如 `PowerShell`、`cmd.exe`、`true`、`null`）
+  确实不需要翻译时，把原文照抄进 `<translation>`，同样不要留空。
+- 新增界面文案要在同一次改动里补齐译文，不能只加原文等以后再翻。
+- 改完文案要重新构建，让 `.qm` 重新生成并嵌入资源（`qt_add_translations` 会把 qm 放进 `:/i18n/`）。
+- 插件描述（`plugin.json` 的 `description`）会显示在命令栏和分离窗口标题上，同样需要本地化：
+  在 `plugin.json` 里加可选的 `descriptionTranslations`（键是 `zh_CN` 这类语言名），宿主按界面语言取，
+  取不到时回退英文原文。插件 SDK 的虚表固定，不能靠加接口返回译文。
+- Qt 标准控件文案通过启动时加载的 Qt 翻译文件本地化，包括 `QKeySequenceEdit` 的快捷键提示。
+- `tst_translations` 用例会校验所有 `.ts` 的译文非空，并反向核对源码里每个 `tr()`/`translate()`
+  文案都已登记到对应 `.ts`（插件没有自动 lupdate，这一步是主要的兜底），提交前必须让它通过。
+
 ## 发版工作流
 
 发布新版本时按顺序执行以下步骤，不要跳步：
