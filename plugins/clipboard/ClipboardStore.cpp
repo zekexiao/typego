@@ -21,6 +21,10 @@ constexpr qint64 MaxImagePixels = 25000000;
 constexpr int MaxItemsLimit = 200;
 // 结果图标按 32px 绘制，缩略图取 64px 兼顾高 DPI。
 constexpr int ThumbnailSize = 64;
+// 索引格式版本：v2 起正文单独存文件，索引只留元数据。
+constexpr int IndexVersion = 2;
+constexpr char IndexFileName[] = "history.json";
+constexpr char CorruptIndexFileName[] = "history.corrupt.json";
 
 QByteArray hashOf(const QByteArray &prefix, const QByteArray &data)
 {
@@ -52,6 +56,7 @@ bool parseType(const QString &value, ClipboardItem::Type *type)
 
 ClipboardStore::ClipboardStore(QString dataDir, QString cacheDir)
     : m_dataDir(std::move(dataDir)), m_imageDir(QDir(m_dataDir).filePath(QStringLiteral("images"))),
+      m_textDir(QDir(m_dataDir).filePath(QStringLiteral("texts"))),
       m_cacheDir(std::move(cacheDir)),
       m_thumbDir(m_cacheDir.isEmpty() ? QString() : QDir(m_cacheDir).filePath(QStringLiteral("thumbnails")))
 {
@@ -72,50 +77,60 @@ void ClipboardStore::setMaxItems(int maxItems)
 void ClipboardStore::load()
 {
     m_items.clear();
-    QFile file(dataPath(QStringLiteral("history.json")));
+    m_indexCorrupted = false;
+    m_lastError.clear();
+    QFile file(dataPath(QString::fromLatin1(IndexFileName)));
     if (file.exists()) {
         if (!file.open(QIODevice::ReadOnly)) {
             m_lastError = QStringLiteral("Cannot read clipboard history index");
+            m_indexCorrupted = true;
+            // 索引读不出来时原样保留磁盘文件，不清理图片，避免把还能抢救的历史删掉。
             return;
         }
+        const QByteArray raw = file.readAll();
+        file.close();
         QJsonParseError error;
-        const QJsonDocument document = QJsonDocument::fromJson(file.readAll(), &error);
-        const QJsonArray array = document.object().value(QStringLiteral("items")).toArray();
-        if (error.error == QJsonParseError::NoError) {
-            m_items.reserve(array.size());
-            for (const auto &value : array) {
-                const QJsonObject object = value.toObject();
-                ClipboardItem item;
-                item.id = object.value(QStringLiteral("id")).toString();
-                item.timestamp = object.value(QStringLiteral("time")).toVariant().toLongLong();
-                item.hash = QByteArray::fromHex(object.value(QStringLiteral("hash")).toString().toLatin1());
-                if (item.id.isEmpty() || item.id != QFileInfo(item.id).fileName()
-                    || item.hash.isEmpty() || !parseType(object.value(QStringLiteral("type")).toString(), &item.type))
-                    continue;
-                if (item.type == ClipboardItem::Type::Text) {
-                    item.text = object.value(QStringLiteral("text")).toString();
-                    if (item.text.isEmpty()) continue;
-                } else if (item.type == ClipboardItem::Type::Files) {
-                    for (const auto &path : object.value(QStringLiteral("files")).toArray())
-                        item.files.append(path.toString());
-                    if (item.files.isEmpty()) continue;
-                } else {
-                    item.imageName = object.value(QStringLiteral("image")).toString();
-                    item.imageSize = QSize(object.value(QStringLiteral("width")).toInt(),
-                                           object.value(QStringLiteral("height")).toInt());
-                    // 索引只允许引用本目录下的图片文件，避免被篡改的路径越界读写。
-                    if (item.imageName.isEmpty() || item.imageName != QFileInfo(item.imageName).fileName()
-                        || !QFileInfo::exists(imagePath(item))) continue;
-                }
-                m_items.append(std::move(item));
-            }
-        } else {
+        const QJsonDocument document = QJsonDocument::fromJson(raw, &error);
+        if (error.error != QJsonParseError::NoError) {
             m_lastError = QStringLiteral("Cannot parse clipboard history index");
+            m_indexCorrupted = true;
+            return;
+        }
+        const QJsonArray array = document.object().value(QStringLiteral("items")).toArray();
+        m_items.reserve(array.size());
+        for (const auto &value : array) {
+            const QJsonObject object = value.toObject();
+            ClipboardItem item;
+            item.id = object.value(QStringLiteral("id")).toString();
+            item.timestamp = object.value(QStringLiteral("time")).toVariant().toLongLong();
+            item.hash = QByteArray::fromHex(object.value(QStringLiteral("hash")).toString().toLatin1());
+            if (item.id.isEmpty() || item.id != QFileInfo(item.id).fileName()
+                || item.hash.isEmpty() || !parseType(object.value(QStringLiteral("type")).toString(), &item.type))
+                continue;
+            if (item.type == ClipboardItem::Type::Text) {
+                // v1 索引把正文放在条目里，v2 放在独立文件；两种都要能读。
+                item.text = object.value(QStringLiteral("text")).toString();
+                if (item.text.isEmpty()) item.text = readTextPayload(item.id);
+                if (item.text.isEmpty()) continue;
+            } else if (item.type == ClipboardItem::Type::Files) {
+                for (const auto &path : object.value(QStringLiteral("files")).toArray())
+                    item.files.append(path.toString());
+                if (item.files.isEmpty()) continue;
+            } else {
+                item.imageName = object.value(QStringLiteral("image")).toString();
+                item.imageSize = QSize(object.value(QStringLiteral("width")).toInt(),
+                                       object.value(QStringLiteral("height")).toInt());
+                // 索引只允许引用本目录下的图片文件，避免被篡改的路径越界读写。
+                if (item.imageName.isEmpty() || item.imageName != QFileInfo(item.imageName).fileName()
+                    || !QFileInfo::exists(imagePath(item))) continue;
+            }
+            m_items.append(std::move(item));
         }
     }
     if (m_items.size() > m_maxItems) trim();
     cleanOrphanImages();
     cleanOrphanThumbs();
+    cleanOrphanTexts();
 }
 
 bool ClipboardStore::save()
@@ -123,6 +138,14 @@ bool ClipboardStore::save()
     if (m_dataDir.isEmpty()) {
         m_lastError = QStringLiteral("Clipboard data directory is unavailable");
         return false;
+    }
+    // 索引损坏时先备份原文件再重建，避免把还能抢救的历史直接覆盖掉。
+    if (m_indexCorrupted) {
+        if (!backupCorruptedIndex()) {
+            m_lastError = QStringLiteral("Cannot back up the damaged clipboard history index");
+            return false;
+        }
+        m_indexCorrupted = false;
     }
     QDir().mkpath(m_dataDir);
     QJsonArray array;
@@ -132,21 +155,30 @@ bool ClipboardStore::save()
             {QStringLiteral("type"), typeName(item.type)},
             {QStringLiteral("time"), double(item.timestamp)},
             {QStringLiteral("hash"), QString::fromLatin1(item.hash.toHex())}};
-        if (item.type == ClipboardItem::Type::Text) object.insert(QStringLiteral("text"), item.text);
-        else if (item.type == ClipboardItem::Type::Files) object.insert(QStringLiteral("files"), QJsonArray::fromStringList(item.files));
-        else {
+        if (item.type == ClipboardItem::Type::Text) {
+            // 正文单独存文件，索引只留长度：重写索引的开销与正文总大小无关。
+            if (!QFileInfo::exists(textPath(item)) && !writeTextPayload(item)) {
+                m_lastError = QStringLiteral("Cannot save clipboard history text");
+                return false;
+            }
+            object.insert(QStringLiteral("size"), item.text.size());
+        } else if (item.type == ClipboardItem::Type::Files) {
+            object.insert(QStringLiteral("files"), QJsonArray::fromStringList(item.files));
+        } else {
             object.insert(QStringLiteral("image"), item.imageName);
             object.insert(QStringLiteral("width"), item.imageSize.width());
             object.insert(QStringLiteral("height"), item.imageSize.height());
         }
         array.append(object);
     }
-    QSaveFile file(dataPath(QStringLiteral("history.json")));
+    QSaveFile file(dataPath(QString::fromLatin1(IndexFileName)));
     if (!file.open(QIODevice::WriteOnly)) {
         m_lastError = QStringLiteral("Cannot open clipboard history index for writing");
         return false;
     }
-    const QByteArray data = QJsonDocument(QJsonObject{{QStringLiteral("version"), 1}, {QStringLiteral("items"), array}}).toJson(QJsonDocument::Compact);
+    const QByteArray data = QJsonDocument(QJsonObject{{QStringLiteral("version"), IndexVersion},
+                                                        {QStringLiteral("items"), array}})
+                                .toJson(QJsonDocument::Compact);
     if (file.write(data) != data.size() || !file.commit()) {
         m_lastError = QStringLiteral("Cannot save clipboard history index");
         return false;
@@ -157,9 +189,10 @@ bool ClipboardStore::save()
 
 void ClipboardStore::clear()
 {
-    for (const auto &item : std::as_const(m_items)) removeImage(item);
+    for (const auto &item : std::as_const(m_items)) removePayload(item);
     m_items.clear();
     if (QDir(m_imageDir).exists()) QDir(m_imageDir).removeRecursively();
+    if (QDir(m_textDir).exists()) QDir(m_textDir).removeRecursively();
     if (!m_thumbDir.isEmpty() && QDir(m_thumbDir).exists()) QDir(m_thumbDir).removeRecursively();
 }
 
@@ -229,6 +262,11 @@ bool ClipboardStore::captureText(const QString &text, qint64 now)
     item.text = text;
     item.hash = hash;
     item.timestamp = now;
+    // 正文先落盘；索引只存元数据，写失败就不收这条。
+    if (!writeTextPayload(item)) {
+        m_lastError = QStringLiteral("Cannot save clipboard history text");
+        return false;
+    }
     m_items.prepend(std::move(item));
     trim();
     return true;
@@ -305,14 +343,52 @@ bool ClipboardStore::touch(const QString &id, qint64 now)
 
 void ClipboardStore::trim()
 {
-    while (m_items.size() > m_maxItems) removeImage(m_items.takeLast());
+    while (m_items.size() > m_maxItems) removePayload(m_items.takeLast());
 }
 
-void ClipboardStore::removeImage(const ClipboardItem &item)
+void ClipboardStore::removePayload(const ClipboardItem &item)
 {
-    if (item.type != ClipboardItem::Type::Image || item.imageName.isEmpty()) return;
-    QFile::remove(imagePath(item));
-    QFile::remove(thumbnailPath(item));
+    if (item.type == ClipboardItem::Type::Image && !item.imageName.isEmpty()) {
+        QFile::remove(imagePath(item));
+        QFile::remove(thumbnailPath(item));
+    } else if (item.type == ClipboardItem::Type::Text && !item.id.isEmpty()
+               && item.id == QFileInfo(item.id).fileName()) {
+        QFile::remove(textPath(item));
+    }
+}
+
+QString ClipboardStore::textPath(const ClipboardItem &item) const
+{
+    if (item.id.isEmpty() || item.id != QFileInfo(item.id).fileName()) return {};
+    return QDir(m_textDir).filePath(item.id + QStringLiteral(".txt"));
+}
+
+QString ClipboardStore::readTextPayload(const QString &id) const
+{
+    if (id.isEmpty() || id != QFileInfo(id).fileName() || m_textDir.isEmpty()) return {};
+    QFile file(QDir(m_textDir).filePath(id + QStringLiteral(".txt")));
+    if (!file.open(QIODevice::ReadOnly)) return {};
+    return QString::fromUtf8(file.readAll());
+}
+
+bool ClipboardStore::writeTextPayload(const ClipboardItem &item) const
+{
+    const QString path = textPath(item);
+    if (path.isEmpty() || m_textDir.isEmpty()) return false;
+    if (!QDir().mkpath(m_textDir)) return false;
+    QSaveFile file(path);
+    if (!file.open(QIODevice::WriteOnly)) return false;
+    const QByteArray data = item.text.toUtf8();
+    return file.write(data) == data.size() && file.commit();
+}
+
+bool ClipboardStore::backupCorruptedIndex()
+{
+    const QString indexPath = dataPath(QString::fromLatin1(IndexFileName));
+    if (!QFileInfo::exists(indexPath)) return true;
+    const QString backupPath = dataPath(QString::fromLatin1(CorruptIndexFileName));
+    QFile::remove(backupPath);
+    return QFile::rename(indexPath, backupPath);
 }
 
 void ClipboardStore::cleanOrphanImages()
@@ -335,5 +411,17 @@ void ClipboardStore::cleanOrphanThumbs()
         if (item.type == ClipboardItem::Type::Image)
             referenced.insert(QFileInfo(thumbnailPath(item)).fileName());
     for (const QFileInfo &entry : thumbDir.entryInfoList(QDir::Files))
+        if (!referenced.contains(entry.fileName())) QFile::remove(entry.absoluteFilePath());
+}
+
+void ClipboardStore::cleanOrphanTexts()
+{
+    QDir textDir(m_textDir);
+    if (m_textDir.isEmpty() || !textDir.exists()) return;
+    QSet<QString> referenced;
+    for (const auto &item : std::as_const(m_items))
+        if (item.type == ClipboardItem::Type::Text)
+            referenced.insert(item.id + QStringLiteral(".txt"));
+    for (const QFileInfo &entry : textDir.entryInfoList(QDir::Files))
         if (!referenced.contains(entry.fileName())) QFile::remove(entry.absoluteFilePath());
 }

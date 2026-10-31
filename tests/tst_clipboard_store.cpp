@@ -19,6 +19,9 @@ private slots:
     void clearRemovesImages();
     void tamperedIndexIsIgnored();
     void typeIconsAreGenerated();
+    void corruptedIndexIsBackedUpNotOverwritten();
+    void indexStaysSmallWhenTextsAreLarge();
+    void legacyInlineTextIndexStillLoads();
 };
 
 void TstClipboardStore::imageCaptureCreatesThumbnail()
@@ -144,6 +147,88 @@ void TstClipboardStore::typeIconsAreGenerated()
     QCOMPARE(paths.size(), 3);
     QCOMPARE(clipboardTypeIcon(ClipboardItem::Type::Text, cache), clipboardTypeIcon(ClipboardItem::Type::Text, cache));
     QCOMPARE(clipboardTypeIcon(ClipboardItem::Type::Text, QString()), QString());
+}
+
+void TstClipboardStore::corruptedIndexIsBackedUpNotOverwritten()
+{
+    QTemporaryDir dir;
+    QVERIFY(dir.isValid());
+    const QString data = dir.filePath(QStringLiteral("data"));
+    QVERIFY(QDir().mkpath(data));
+    // 已经存在的图片条目：索引损坏时不能被当成孤儿删掉。
+    const QString imageDir = QDir(data).filePath(QStringLiteral("images"));
+    QVERIFY(QDir().mkpath(imageDir));
+    const QString imagePath = QDir(imageDir).filePath(QStringLiteral("keep.png"));
+    QImage image(10, 10, QImage::Format_ARGB32);
+    image.fill(Qt::red);
+    QVERIFY(image.save(imagePath, "PNG"));
+
+    const QString indexPath = QDir(data).filePath(QStringLiteral("history.json"));
+    QFile index(indexPath);
+    QVERIFY(index.open(QIODevice::WriteOnly));
+    index.write("{not json");
+    index.close();
+
+    ClipboardStore store(data, dir.filePath(QStringLiteral("cache")));
+    store.load();
+    QVERIFY(store.indexCorrupted());
+    QVERIFY(!store.lastError().isEmpty());
+    // 索引读不出来时磁盘上的历史文件要原样保留。
+    QVERIFY(QFileInfo::exists(imagePath));
+    QVERIFY(QFileInfo::exists(indexPath));
+
+    QVERIFY(store.captureText(QStringLiteral("new"), 1000));
+    QVERIFY(store.save());
+    // 损坏的索引改名备份，新索引正常写出来。
+    QVERIFY(QFileInfo::exists(QDir(data).filePath(QStringLiteral("history.corrupt.json"))));
+    QVERIFY(!store.indexCorrupted());
+
+    ClipboardStore reloaded(data, dir.filePath(QStringLiteral("cache")));
+    reloaded.load();
+    QCOMPARE(reloaded.items().size(), 1);
+    QCOMPARE(reloaded.items().first().text, QStringLiteral("new"));
+}
+
+void TstClipboardStore::indexStaysSmallWhenTextsAreLarge()
+{
+    QTemporaryDir dir;
+    QVERIFY(dir.isValid());
+    const QString data = dir.filePath(QStringLiteral("data"));
+    ClipboardStore store(data, dir.filePath(QStringLiteral("cache")));
+    store.setMaxItems(50);
+    const QString bigText(50000, QLatin1Char('x'));
+    for (int i = 0; i < 20; ++i) {
+        QVERIFY(store.captureText(bigText + QString::number(i), 1000 + i));
+    }
+    QVERIFY(store.save());
+    // 索引只存元数据，正文单独放文件，重写索引的开销与正文大小无关。
+    const QFileInfo indexInfo(QDir(data).filePath(QStringLiteral("history.json")));
+    QVERIFY(indexInfo.exists());
+    QVERIFY(indexInfo.size() < 20000);
+
+    ClipboardStore reloaded(data, dir.filePath(QStringLiteral("cache")));
+    reloaded.load();
+    QCOMPARE(reloaded.items().size(), 20);
+    // 正文完整落盘，只是多了一个序号后缀。
+    QCOMPARE(reloaded.items().first().text.size(), bigText.size() + 2);
+    QVERIFY(reloaded.items().first().text.startsWith(bigText));
+}
+
+void TstClipboardStore::legacyInlineTextIndexStillLoads()
+{
+    QTemporaryDir dir;
+    QVERIFY(dir.isValid());
+    const QString data = dir.filePath(QStringLiteral("data"));
+    QVERIFY(QDir().mkpath(data));
+    QFile index(QDir(data).filePath(QStringLiteral("history.json")));
+    QVERIFY(index.open(QIODevice::WriteOnly));
+    index.write("{\"version\":1,\"items\":["
+                "{\"id\":\"legacy\",\"type\":\"text\",\"time\":1,\"hash\":\"aabb\",\"text\":\"old text\"}]}");
+    index.close();
+    ClipboardStore store(data, dir.filePath(QStringLiteral("cache")));
+    store.load();
+    QCOMPARE(store.items().size(), 1);
+    QCOMPARE(store.items().first().text, QStringLiteral("old text"));
 }
 
 QTEST_GUILESS_MAIN(TstClipboardStore)

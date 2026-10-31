@@ -1,6 +1,8 @@
 #pragma once
 
 #include <TypeGoPlugin/Plugin.h>
+#include <QByteArray>
+#include <QStringList>
 #include <QTimer>
 #include <QTranslator>
 #include <memory>
@@ -8,6 +10,7 @@
 #include "ClipboardStore.h"
 
 class QClipboard;
+class QMimeData;
 
 // 剪贴板历史插件：后台监听系统剪贴板，按关键字过滤并粘贴回剪贴板。
 class ClipboardPlugin final : public QObject, public TypeGo::PluginApi::Plugin {
@@ -32,14 +35,26 @@ private:
     bool matches(const ClipboardItem &item, const QString &filter) const;
     int clearHistory();
     void saveHistory();
+    // 自身写回剪贴板时系统会回送一次 dataChanged；按内容识别这次回声，
+    // 免得标志残留把用户随后的真实复制误吞掉。
+    bool isSelfEcho(const QMimeData *mime) const;
+
+    // 等待系统回声的这一次写入内容。
+    struct ClipboardEcho {
+        bool active = false;
+        ClipboardItem::Type type = ClipboardItem::Type::Text;
+        QString text;
+        QStringList files;
+        QByteArray imageSignature;
+    };
 
     TypeGo::PluginApi::Host *m_host = nullptr;
     QClipboard *m_clipboard = nullptr;
     QTranslator m_translator;
     QTimer m_captureTimer;
     std::unique_ptr<ClipboardStore> m_store;
+    ClipboardEcho m_echo;
     bool m_captureText = true;
     bool m_captureImages = true;
     bool m_captureFiles = true;
-    bool m_skipNextChange = false;
 };

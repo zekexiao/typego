@@ -3,6 +3,7 @@
 #include "ClipboardSettingsWidget.h"
 
 #include <QClipboard>
+#include <QCryptographicHash>
 #include <QCoreApplication>
 #include <QDateTime>
 #include <QDir>
@@ -22,6 +23,29 @@ QString timeText(qint64 msecs)
 {
     return QLocale().toString(QDateTime::fromMSecsSinceEpoch(msecs), QLocale::ShortFormat);
 }
+
+// 图片签名：按像素算，用于识别剪贴板回声时确认内容一致。
+QByteArray imageSignature(const QImage &image)
+{
+    if (image.isNull()) return {};
+    const QImage normalized = image.convertToFormat(QImage::Format_ARGB32);
+    QCryptographicHash hash(QCryptographicHash::Sha256);
+    for (int y = 0; y < normalized.height(); ++y) {
+        hash.addData(reinterpret_cast<const char *>(normalized.constScanLine(y)),
+                     normalized.bytesPerLine());
+    }
+    return hash.result();
+}
+
+// 剪贴板里的本地文件路径；网页链接之类没有本地路径，返回空。
+QStringList localFilePaths(const QMimeData *mime)
+{
+    QStringList paths;
+    for (const QUrl &url : mime->urls()) {
+        if (url.isLocalFile()) paths.append(url.toLocalFile());
+    }
+    return paths;
+}
 } // namespace
 
 Api::Error ClipboardPlugin::initialize(Api::Host *host)
@@ -38,6 +62,14 @@ Api::Error ClipboardPlugin::initialize(Api::Host *host)
     m_store = std::make_unique<ClipboardStore>(dataDir, host->directory(Api::Directory::Cache));
     applyConfig();
     m_store->load();
+    // 索引损坏时历史读不出来，但磁盘文件已经保留；提示用户而不是静默丢弃。
+    if (!m_store->lastError().isEmpty()) {
+        const QString message = m_store->indexCorrupted()
+            ? QStringLiteral("%1. The damaged index was kept and a new history was started.")
+                  .arg(m_store->lastError())
+            : m_store->lastError();
+        host->log(Api::LogLevel::Warning, message);
+    }
 
     // 连续复制会重复触发 dataChanged，合并后再读取剪贴板。
     m_captureTimer.setSingleShot(true);
@@ -64,10 +96,6 @@ void ClipboardPlugin::startMonitoring()
     m_clipboard = QGuiApplication::clipboard();
     if (!m_clipboard) return;
     connect(m_clipboard, &QClipboard::dataChanged, this, [this]() {
-        if (m_skipNextChange) {
-            m_skipNextChange = false;
-            return;
-        }
         if (m_captureText || m_captureImages || m_captureFiles) m_captureTimer.start();
     });
 }
@@ -75,9 +103,24 @@ void ClipboardPlugin::startMonitoring()
 void ClipboardPlugin::stopMonitoring()
 {
     m_captureTimer.stop();
+    m_echo = ClipboardEcho{};
     if (!m_clipboard) return;
     disconnect(m_clipboard, &QClipboard::dataChanged, this, nullptr);
     m_clipboard = nullptr;
+}
+
+bool ClipboardPlugin::isSelfEcho(const QMimeData *mime) const
+{
+    switch (m_echo.type) {
+    case ClipboardItem::Type::Text:
+        return mime->hasText() && mime->text() == m_echo.text;
+    case ClipboardItem::Type::Files:
+        return mime->hasUrls() && localFilePaths(mime) == m_echo.files;
+    case ClipboardItem::Type::Image:
+        return mime->hasImage()
+            && imageSignature(qvariant_cast<QImage>(mime->imageData())) == m_echo.imageSignature;
+    }
+    return false;
 }
 
 void ClipboardPlugin::captureClipboard()
@@ -85,21 +128,24 @@ void ClipboardPlugin::captureClipboard()
     if (!m_store || !m_clipboard) return;
     const QMimeData *mime = m_clipboard->mimeData();
     if (!mime) return;
+    // 系统回声：内容与刚写入的一致才算自身回声，否则按用户的真实复制处理。
+    if (m_echo.active) {
+        const bool echo = isSelfEcho(mime);
+        m_echo = ClipboardEcho{};
+        if (echo) return;
+    }
     const qint64 now = QDateTime::currentMSecsSinceEpoch();
     bool changed = false;
     // 文件优先：从资源管理器复制文件时，剪贴板同时可能带有路径文本。
     if (m_captureFiles && mime->hasUrls()) {
-        QStringList paths;
-        for (const QUrl &url : mime->urls()) {
-            if (!url.isLocalFile()) continue;
-            paths.append(url.toLocalFile());
-        }
-        changed = m_store->captureFiles(paths, now);
-    } else if (m_captureImages && mime->hasImage()) {
-        changed = m_store->captureImage(qvariant_cast<QImage>(mime->imageData()), now);
-    } else if (m_captureText && mime->hasText()) {
-        changed = m_store->captureText(mime->text(), now);
+        // 只有存在本地文件才算文件复制；网页超链接也带 uri-list，但文本才是有效内容。
+        const QStringList paths = localFilePaths(mime);
+        if (!paths.isEmpty()) changed = m_store->captureFiles(paths, now);
     }
+    if (!changed && m_captureImages && mime->hasImage())
+        changed = m_store->captureImage(qvariant_cast<QImage>(mime->imageData()), now);
+    if (!changed && m_captureText && mime->hasText())
+        changed = m_store->captureText(mime->text(), now);
     if (changed) {
         saveHistory();
     } else if (!m_store->lastError().isEmpty() && m_host) {
@@ -211,19 +257,24 @@ Api::ExecutionResult ClipboardPlugin::execute(const Api::Invocation &invocation)
         return {Api::Status::Failed, Api::HostAction::Keep,
                 {Api::ErrorCode::Internal, QStringLiteral("Cannot access the system clipboard")}};
 
-    // 粘贴自身内容会再次触发 dataChanged，跳过这一次以省去重复编码。
-    m_skipNextChange = true;
+    // 粘贴自身内容会再次触发 dataChanged；记下写入内容，回声到达时按内容比对跳过。
+    m_echo = ClipboardEcho{};
+    m_echo.active = true;
     switch (entry->type) {
     case ClipboardItem::Type::Text:
+        m_echo.type = ClipboardItem::Type::Text;
+        m_echo.text = entry->text;
         clipboard->setText(entry->text);
         break;
     case ClipboardItem::Type::Image: {
         const QImage image(m_store->imagePath(*entry));
         if (image.isNull()) {
-            m_skipNextChange = false;
+            m_echo = ClipboardEcho{};
             return {Api::Status::Failed, Api::HostAction::Keep,
                     {Api::ErrorCode::IoError, QStringLiteral("Cannot read the saved clipboard image")}};
         }
+        m_echo.type = ClipboardItem::Type::Image;
+        m_echo.imageSignature = imageSignature(image);
         clipboard->setImage(image);
         break;
     }
@@ -237,6 +288,8 @@ Api::ExecutionResult ClipboardPlugin::execute(const Api::Invocation &invocation)
         auto *mime = new QMimeData;
         mime->setUrls(urls);
         mime->setText(paths.join(QLatin1Char('\n')));
+        m_echo.type = ClipboardItem::Type::Files;
+        m_echo.files = paths;
         clipboard->setMimeData(mime);
         break;
     }
