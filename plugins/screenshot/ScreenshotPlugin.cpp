@@ -30,18 +30,6 @@ QString formatSize(qint64 bytes)
     if (bytes >= 1024 * 1024) return QStringLiteral("%1 MB").arg(bytes / (1024.0 * 1024.0), 0, 'f', 1);
     return QStringLiteral("%1 KB").arg(qMax<qint64>(1, bytes / 1024));
 }
-
-// 把全局逻辑坐标的标注平移到以选区左上角为原点的贴图坐标系。
-QVector<ShotAnnotation> offsetAnnotations(const QVector<ShotAnnotation> &annotations, const QPointF &offset)
-{
-    QVector<ShotAnnotation> result = annotations;
-    for (ShotAnnotation &annotation : result) {
-        annotation.start += offset;
-        annotation.end += offset;
-        for (QPointF &point : annotation.points) point += offset;
-    }
-    return result;
-}
 } // namespace
 
 Api::Error ScreenshotPlugin::initialize(Api::Host *host)
@@ -248,14 +236,17 @@ void ScreenshotPlugin::beginCapture()
 void ScreenshotPlugin::onCompleted(ScreenshotSession::Finish action, const QImage &image,
                                    const QRect &selection)
 {
+    // 合成与贴图都以裁剪区为基准，原始选区不再参与定位。
+    Q_UNUSED(selection)
     ScreenshotSession *session = m_session.release();
     // 贴图保留未标注的底图和矢量标注，方便之后继续修改。
     QImage pinBase;
     QVector<ShotAnnotation> pinAnnotations;
+    QPoint pinOrigin;
     if (session && action == ScreenshotSession::Finish::Pin) {
         pinBase = session->composeImage(false);
-        pinAnnotations = offsetAnnotations(session->annotations(),
-                                           QPointF(-selection.x(), -selection.y()));
+        pinAnnotations = session->relativeAnnotations();
+        pinOrigin = session->cropRect().topLeft();
     }
     if (session) session->deleteLater();
     if (!m_shuttingDown && m_host) m_host->closeView();
@@ -271,7 +262,7 @@ void ScreenshotPlugin::onCompleted(ScreenshotSession::Finish action, const QImag
     case ScreenshotSession::Finish::Pin:
         recordImage(image);
         if (pinBase.isNull()) pinBase = image;
-        addPin(pinBase, pinAnnotations, selection.topLeft());
+        addPin(pinBase, pinAnnotations, pinOrigin);
         break;
     case ScreenshotSession::Finish::Cancel:
         break;

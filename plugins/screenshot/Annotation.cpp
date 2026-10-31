@@ -253,10 +253,14 @@ QImage composeShotImage(const QImage &base, const QVector<ShotAnnotation> &annot
     QPainter painter(&image);
     painter.setRenderHint(QPainter::Antialiasing, true);
     painter.setRenderHint(QPainter::SmoothPixmapTransform, false);
-    painter.setClipRect(image.rect());
+    // 画布按逻辑尺寸裁剪；带 DPR 的图像上 QPainter 已经把逻辑坐标换算成物理像素，
+    // 这里再手动 scale(dpr) 会让矢量标注按 DPR 平方放大。
+    const QRectF canvas(0, 0, image.width() / dpr, image.height() / dpr);
+    painter.setClipRect(canvas);
 
     auto drawOne = [&](const ShotAnnotation &annotation) {
         if (annotation.isEffect()) {
+            // 效果标注直接改像素，目标区域要换算成物理像素。
             const QRectF logical = annotation.rect();
             const QRect target = QRectF(logical.x() * dpr, logical.y() * dpr,
                                         logical.width() * dpr, logical.height() * dpr)
@@ -268,11 +272,10 @@ QImage composeShotImage(const QImage &base, const QVector<ShotAnnotation> &annot
             painter.begin(&image);
             painter.setRenderHint(QPainter::Antialiasing, true);
             painter.setRenderHint(QPainter::SmoothPixmapTransform, false);
-            painter.setClipRect(image.rect());
+            painter.setClipRect(canvas);
             return;
         }
         painter.save();
-        painter.scale(dpr, dpr);
         paintShotAnnotation(painter, annotation);
         painter.restore();
     };
@@ -282,6 +285,18 @@ QImage composeShotImage(const QImage &base, const QVector<ShotAnnotation> &annot
     painter.end();
     image.setDevicePixelRatio(dpr);
     return image;
+}
+
+QVector<ShotAnnotation> shotAnnotationsTranslate(const QVector<ShotAnnotation> &annotations,
+                                                 const QPointF &delta)
+{
+    QVector<ShotAnnotation> result = annotations;
+    for (ShotAnnotation &annotation : result) {
+        annotation.start += delta;
+        annotation.end += delta;
+        for (QPointF &point : annotation.points) point += delta;
+    }
+    return result;
 }
 
 bool shotAnnotationIsRectTool(ShotTool tool)

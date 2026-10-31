@@ -84,6 +84,11 @@ typego_add_test(tst_screenshot_store tst_screenshot_store.cpp
     ${CMAKE_SOURCE_DIR}/plugins/screenshot/ScreenshotStore.cpp)
 target_include_directories(tst_screenshot_store PRIVATE "${CMAKE_SOURCE_DIR}/plugins/screenshot")
 
+# 标注合成只依赖 Qt Gui：验证 HiDPI 下的标注落点与全局坐标到裁剪坐标的平移。
+typego_add_test(tst_screenshot_annotation tst_screenshot_annotation.cpp
+    ${CMAKE_SOURCE_DIR}/plugins/screenshot/Annotation.cpp)
+target_include_directories(tst_screenshot_annotation PRIVATE "${CMAKE_SOURCE_DIR}/plugins/screenshot")
+
 # 长截图拼接是纯图像算法，重点覆盖上下滚动、固定头尾和横向滚动。
 typego_add_test(tst_scroll_stitcher tst_scroll_stitcher.cpp
     ${CMAKE_SOURCE_DIR}/plugins/screenshot/ScrollStitcher.cpp)

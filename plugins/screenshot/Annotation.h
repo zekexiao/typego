@@ -49,9 +49,15 @@ void paintShotAnnotation(QPainter &painter, const ShotAnnotation &annotation);
 void applyShotEffect(QImage &image, const QRect &target, ShotTool tool, int block);
 
 // 把原图与矢量标注合成为物理像素图像，标注坐标基于原图逻辑像素。
+// base 必须带 devicePixelRatio：矢量标注按逻辑坐标绘制，由 Qt 按 DPR 换算成物理像素，
+// 调用方不要再手动缩放，否则会按 DPR 平方放大。
 // pending 非空时一并绘制，用于拖拽中的实时预览；贴图、贴图编辑和截图导出共用同一实现。
 QImage composeShotImage(const QImage &base, const QVector<ShotAnnotation> &annotations,
                         const ShotAnnotation *pending = nullptr);
+
+// 平移一组标注坐标，用于把全局逻辑坐标换算成以裁剪区左上角为原点的坐标系。
+QVector<ShotAnnotation> shotAnnotationsTranslate(const QVector<ShotAnnotation> &annotations,
+                                                 const QPointF &delta);
 
 // 标注命中与几何调整：坐标为标注坐标（原图逻辑像素），贴图和贴图编辑器共用。
 // 返回最上层命中的标注下标，未命中返回 -1；padding 为额外的逻辑像素容差。

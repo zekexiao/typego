@@ -992,9 +992,23 @@ void ScreenshotSession::endMouseGrab()
     }
 }
 
+QRect ScreenshotSession::cropRect() const
+{
+    return m_selection.normalized().intersected(m_virtualLogical);
+}
+
+QVector<ShotAnnotation> ScreenshotSession::relativeAnnotations() const
+{
+    // 标注存的是全局逻辑坐标，合成底图是以裁剪区左上角为原点裁出来的，
+    // 不平移的话标注会画到裁剪区之外。
+    const QRect crop = cropRect();
+    if (crop.isEmpty()) return {};
+    return shotAnnotationsTranslate(m_annotations, QPointF(-crop.x(), -crop.y()));
+}
+
 QImage ScreenshotSession::composeImage(bool includeAnnotations) const
 {
-    const QRect selection = m_selection.normalized().intersected(m_virtualLogical);
+    const QRect selection = cropRect();
     if (selection.width() < 1 || selection.height() < 1) return {};
 
     const qreal scale = m_screens.isEmpty() ? 1.0
@@ -1031,5 +1045,5 @@ QImage ScreenshotSession::composeImage(bool includeAnnotations) const
 
     // 贴图需要保留未标注的底图，方便之后继续编辑矢量标注。
     if (!includeAnnotations) return base;
-    return composeShotImage(base, m_annotations);
+    return composeShotImage(base, relativeAnnotations());
 }

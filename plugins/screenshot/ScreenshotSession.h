@@ -88,6 +88,10 @@ public:
     void finish(Finish action);
 
     QImage composeImage(bool includeAnnotations = true) const;
+    // 裁剪区（与虚拟桌面求交后）的全局位置；合成与贴图定位共用同一基准。
+    QRect cropRect() const;
+    // 标注平移到以裁剪区左上角为原点的坐标系；标注本身存的是全局逻辑坐标。
+    QVector<ShotAnnotation> relativeAnnotations() const;
 
 signals:
     void completed(ScreenshotSession::Finish action, const QImage &image, const QRect &selection);
