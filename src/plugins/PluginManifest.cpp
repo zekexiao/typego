@@ -1,5 +1,6 @@
 #include "PluginManifest.h"
 #include <QJsonArray>
+#include <QLocale>
 #include <QRegularExpression>
 #include <QSet>
 #include <cmath>
@@ -21,6 +22,19 @@ bool optionalBool(const QJsonObject &object, const QString &key)
 {
     return !object.contains(key) || object.value(key).isBool();
 }
+}
+
+// 插件描述会显示在命令栏和分离窗口标题上，按界面语言取译文，缺失时回退英文原文。
+QString localizedPluginDescription(const QJsonObject &metadata, const QStringList &uiLanguages)
+{
+    const QString fallback = metadata.value(QStringLiteral("description")).toString();
+    const QJsonObject translations = metadata.value(QStringLiteral("descriptionTranslations")).toObject();
+    if (translations.isEmpty()) return fallback;
+    for (const QString &language : uiLanguages) {
+        const QString localized = translations.value(QLocale(language).name()).toString();
+        if (!localized.isEmpty()) return localized;
+    }
+    return fallback;
 }
 
 bool validPluginParameters(const QVariantMap &parameters)
@@ -66,14 +80,25 @@ PluginManifestResult parsePluginManifest(const QJsonObject &root, const QString 
     manifest.metadata = data;
     auto &descriptor = manifest.descriptor;
     descriptor.id = data.value(QStringLiteral("id")).toString();
-    descriptor.description = data.value(QStringLiteral("description")).toString();
+    const QString description = data.value(QStringLiteral("description")).toString();
+    descriptor.description = localizedPluginDescription(data, QLocale::system().uiLanguages());
     manifest.version = data.value(QStringLiteral("version")).toString();
     static const QRegularExpression versionPattern(QStringLiteral("^[0-9]+[.][0-9]+[.][0-9]+$"));
-    if (!validId(descriptor.id) || descriptor.description.isEmpty() || descriptor.description.size() > 512
+    if (!validId(descriptor.id) || description.isEmpty() || description.size() > 512
         || manifest.version.size() > 32 || !versionPattern.match(manifest.version).hasMatch()
         || !optionalBool(data, QStringLiteral("hasSettings"))
         || !optionalBool(data, QStringLiteral("background")))
         return fail(Api::ErrorCode::InvalidArgument, QStringLiteral("Invalid plugin identity, version or description"));
+    if (data.contains(QStringLiteral("descriptionTranslations"))) {
+        const auto translations = data.value(QStringLiteral("descriptionTranslations"));
+        if (!translations.isObject())
+            return fail(Api::ErrorCode::InvalidArgument, QStringLiteral("Invalid plugin description translations"));
+        const auto object = translations.toObject();
+        for (auto it = object.constBegin(); it != object.constEnd(); ++it) {
+            if (!it.value().isString() || it.value().toString().isEmpty() || it.value().toString().size() > 512)
+                return fail(Api::ErrorCode::InvalidArgument, QStringLiteral("Invalid plugin description translations"));
+        }
+    }
     descriptor.hasSettings = data.value(QStringLiteral("hasSettings")).toBool();
     descriptor.background = data.value(QStringLiteral("background")).toBool();
     if (data.contains(QStringLiteral("requires")) && !data.value(QStringLiteral("requires")).isArray())

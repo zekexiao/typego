@@ -2,6 +2,7 @@
   "id": "screenshot",
   "version": "1.0.0",
   "description": "Screenshot, annotate, pin to screen and keep history",
+  "descriptionTranslations": {"zh_CN": "截图、标注、贴图与历史记录"},
   "requires": ["widgets", "config"],
   "hasSettings": true,
   "commands": [

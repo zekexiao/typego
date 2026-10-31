@@ -58,6 +58,7 @@ plugin.json 由客户维护，SDK 在构建时添加 apiMajor、apiMinor 和 abi
   "id": "org.example.myplugin",
   "version": "1.0.0",
   "description": "My plugin",
+  "descriptionTranslations": {"zh_CN": "我的插件"},
   "requires": ["async", "widgets", "config"],
   "hasSettings": false,
   "background": false,
@@ -74,6 +75,7 @@ plugin.json 由客户维护，SDK 在构建时添加 apiMajor、apiMinor 和 abi
 | id | 稳定插件身份，也是配置与目录身份；建议反向域名。小写字母开头，后接小写字母、数字，段之间可用点或短横线，最多 128 字符 |
 | version | 三段非负数字版本，最多 32 字符；与 API 版本独立 |
 | description | 必填显示描述，1–512 字符 |
+| descriptionTranslations | 可选语言到描述的对象，例如 `zh_CN`；每条译文为 1–512 字符。宿主按系统界面语言依次匹配，找不到时使用 description |
 | requires | 可选数组；当前支持 async、widgets、config。未知必需能力在加载前被拒绝 |
 | hasSettings | 可选布尔值，默认 false；为 true 时实现 createSettingsView |
 | background | 可选布尔值，默认 false；为 true 时宿主在启动和重新启用时初始化插件，用于需要持续后台工作的能力（如剪贴板监听）。此类插件必须让 initialize 保持轻量，并在禁用或退出时停止后台工作 |

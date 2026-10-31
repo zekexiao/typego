@@ -38,6 +38,7 @@ private:
 private slots:
     void metadataMatchesConsumerToolchain();
     void rejectsIncompatibleAndMalformedMetadata();
+    void descriptionFollowsUiLanguage();
     void parametersAllowOnlyBoundedScalarValues();
     void independentPackageIsLazyAndExecutesOwnedAction();
     void conflictAndMisnamedPackagesDoNotCreateInstances();
@@ -105,6 +106,33 @@ void TstPluginSdk::rejectsIncompatibleAndMalformedMetadata()
     auto root = metadata();
     root.insert(QStringLiteral("IID"), QStringLiteral("other-interface"));
     QCOMPARE(parsePluginManifest(root).error.code, Api::ErrorCode::Incompatible);
+}
+
+// 插件描述会显示在命令栏和分离窗口标题上，必须按界面语言取译文，取不到时回退英文原文。
+void TstPluginSdk::descriptionFollowsUiLanguage()
+{
+    auto root = metadata();
+    auto data = root.value(QStringLiteral("MetaData")).toObject();
+    const QString english = data.value(QStringLiteral("description")).toString();
+    QVERIFY(!english.isEmpty());
+    data.insert(QStringLiteral("descriptionTranslations"),
+                QJsonObject{{QStringLiteral("zh_CN"), QStringLiteral("插件描述")}});
+    root.insert(QStringLiteral("MetaData"), data);
+
+    QCOMPARE(localizedPluginDescription(data, {QStringLiteral("zh-CN")}), QStringLiteral("插件描述"));
+    QCOMPARE(localizedPluginDescription(data, {QStringLiteral("en-US")}), english);
+    QCOMPARE(localizedPluginDescription(data, {}), english);
+    // 译文不改变清单的合法性，描述仍然非空。
+    const auto result = parsePluginManifest(root);
+    QVERIFY2(!result.error, qPrintable(result.error.message));
+    QVERIFY(!result.manifest.descriptor.description.isEmpty());
+    data.insert(QStringLiteral("description"), QString());
+    root.insert(QStringLiteral("MetaData"), data);
+    QVERIFY(parsePluginManifest(root).error);
+    data.insert(QStringLiteral("description"), english);
+    data.insert(QStringLiteral("descriptionTranslations"), QJsonObject{{QStringLiteral("zh_CN"), QString(513, QLatin1Char('x'))}});
+    root.insert(QStringLiteral("MetaData"), data);
+    QVERIFY(parsePluginManifest(root).error);
 }
 
 void TstPluginSdk::parametersAllowOnlyBoundedScalarValues()

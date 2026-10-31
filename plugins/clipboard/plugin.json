@@ -2,6 +2,7 @@
   "id": "clipboard",
   "version": "1.0.0",
   "description": "Clipboard history for text, images and files",
+  "descriptionTranslations": {"zh_CN": "剪贴板历史：文本、图片与文件"},
   "requires": ["widgets", "config"],
   "background": true,
   "hasSettings": true,

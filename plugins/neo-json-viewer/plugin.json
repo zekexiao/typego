@@ -2,6 +2,7 @@
   "id": "json-viewer",
   "version": "1.0.0",
   "description": "JSON View",
+  "descriptionTranslations": {"zh_CN": "JSON 查看器"},
   "requires": ["widgets"],
   "commands": [
     {"id": "viewer", "keyword": "json", "aliases": ["json-viewer"], "mode": "view", "presentation": "embedded", "directActivation": true, "detachable": true}
