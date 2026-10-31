@@ -1,5 +1,31 @@
 # TypeGo 更新日志
 
+## 1.12 - 2026-10-31
+
+### 中文
+
+- 修复高 DPI 屏幕上截图标注被按缩放倍数的平方放大、靠近选区边缘的标注整块丢失的问题
+- 修复复制或保存截图时标注被画到选区之外、导出图片里看不到标注的问题
+- 复制网页超链接时链接文本不再被漏记进剪贴板历史
+- 剪贴板历史索引损坏时不再直接覆盖丢失，原文件会改名备份并在日志中提示
+- 剪贴板历史改为正文单独存放，重写索引不再随历史总量线性变慢
+- 剪贴板回声改为按内容识别，不再误吞用户随后的真实复制
+- JSON 查看器不再允许删除顶层节点，避免整份文档被替换成 `null`
+- JSON 查看器改为后台解析，打开大文件时界面不再卡住；文件大到可能装不进内存时给出提示
+- JSON 查看器搜索加入时间预算并限制正则匹配主体长度，超大文档上搜索不会卡死界面
+
+### English
+
+- Fixed screenshot annotations being scaled by the square of the DPI factor on high-DPI screens, and annotations near the edge of the selection being dropped entirely
+- Fixed annotations being drawn outside the selection when copying or saving a capture, so they were missing from the exported image
+- Copying a web hyperlink no longer drops its text from the clipboard history
+- A damaged clipboard history index is no longer overwritten: the original file is kept as a backup and the problem is reported in the log
+- Clipboard history stores text bodies separately, so rewriting the index no longer slows down with the total history size
+- Clipboard echoes are now recognised by content, so a real copy right afterwards is no longer swallowed
+- The JSON viewer no longer allows deleting the root node, which used to replace the whole document with `null`
+- The JSON viewer parses in the background, so opening a large file no longer freezes the window, and warns when a file may not fit in available memory
+- JSON viewer searches now have a time budget and a bounded regex subject, so searching huge documents no longer freezes the window
+
 ## 1.11 - 2026-10-31
 
 ### 中文
