@@ -1,6 +1,7 @@
 #include "SettingsView.h"
 
 #include "AppLauncher.h"
+#include "PluginSettingsDialog.h"
 #include "Settings.h"
 #include "GlobalHotkey.h"
 #include "Updater.h"
@@ -18,6 +19,7 @@
 #include <QFrame>
 #include <QFileDialog>
 #include <QFontDatabase>
+#include <QFontMetrics>
 #include <QIcon>
 #include <QKeyEvent>
 #include <QLabel>
@@ -41,6 +43,12 @@
 
 namespace {
 void ensureAltSpaceNativeFilterInstalled();
+
+// 快捷键输入框宽度：全局热键与插件热键共用同一尺寸，两个页面的控件看起来一致，
+// 宽度要放得下 "Ctrl+Alt+Shift+Space" 这类较长的组合键。
+constexpr int HotkeyEditWidth = 164;
+// 插件设置按钮列宽，按钮本身有固定内边距，这里给整列留出同样的宽度。
+constexpr int PluginActionColumnWidth = 76;
 }
 
 HotkeyEdit::HotkeyEdit(QWidget *parent)
@@ -50,7 +58,6 @@ HotkeyEdit::HotkeyEdit(QWidget *parent)
     // QKeySequenceEdit 是普通 QWidget，样式表的背景和边框只在 WA_StyledBackground 下才绘制；
     // 否则输入框看起来像一行普通文字，用户看不出这里可以点击录制。
     setAttribute(Qt::WA_StyledBackground, true);
-    if (auto *lineEdit = findChild<QLineEdit *>()) lineEdit->setPlaceholderText(tr("Press Shortcut"));
     setClearButtonEnabled(true);
     ensureAltSpaceNativeFilterInstalled();
 }
@@ -180,13 +187,15 @@ void SettingsSwitch::paintEvent(QPaintEvent *)
 }
 
 SettingsView::SettingsView(Settings *settings, PluginManager *pluginManager, GlobalHotkey *hotkeys,
-                           AppLauncher *launcher, Updater *updater, QWidget *parent)
+                           AppLauncher *launcher, Updater *updater, ThemeManager *themeManager,
+                           QWidget *parent)
     : QWidget(parent)
     , m_settings(settings)
     , m_pluginManager(pluginManager)
     , m_hotkeys(hotkeys)
     , m_launcher(launcher)
     , m_updater(updater)
+    , m_themeManager(themeManager)
 {
     setObjectName(QStringLiteral("settingsView"));
 
@@ -277,7 +286,7 @@ SettingsView::SettingsView(Settings *settings, PluginManager *pluginManager, Glo
     auto *settingsLayout = createPage(tr("Settings"));
     auto *generalGroup = addGroup(settingsLayout);
     m_globalHotkeyEdit = new HotkeyEdit;
-    m_globalHotkeyEdit->setFixedWidth(164);
+    m_globalHotkeyEdit->setFixedWidth(HotkeyEditWidth);
     addRow(generalGroup, tr("Global Hotkey"), m_globalHotkeyEdit);
     addDivider(generalGroup);
     m_engineCombo = new QComboBox;
@@ -310,18 +319,46 @@ SettingsView::SettingsView(Settings *settings, PluginManager *pluginManager, Glo
     auto *pluginOptionsGroup = addGroup(pluginLayout);
     m_pluginAutoEnterCheck = new SettingsSwitch;
     addRow(pluginOptionsGroup, tr("Auto enter on empty args"), m_pluginAutoEnterCheck);
-    auto *pluginActions = new QHBoxLayout;
-    pluginActions->setContentsMargins(0, 2, 0, 2);
-    pluginActions->setSpacing(8);
-    auto *enableAllButton = new QPushButton(tr("Enable all"));
-    auto *disableAllButton = new QPushButton(tr("Disable all"));
-    pluginActions->addStretch();
-    pluginActions->addWidget(enableAllButton);
-    pluginActions->addWidget(disableAllButton);
-    pluginLayout->addLayout(pluginActions);
-    auto *pluginListLayout = addGroup(pluginLayout);
+    pluginLayout->addSpacing(4);
+
     QStringList ids = m_pluginManager->pluginIds();
     ids.sort(Qt::CaseInsensitive);
+
+    auto *pluginListLayout = addGroup(pluginLayout);
+    // 列表头部：左边是分组标题，右边是批量开关，作用对象一目了然，
+    // 不再让两个按钮单独悬在列表外面。
+    auto *listHeader = new QWidget;
+    listHeader->setObjectName(QStringLiteral("pluginListHeader"));
+    auto *listHeaderLayout = new QHBoxLayout(listHeader);
+    listHeaderLayout->setContentsMargins(0, 10, 0, 10);
+    listHeaderLayout->setSpacing(8);
+    auto *listTitle = new QLabel(tr("Installed plugins"));
+    listTitle->setObjectName(QStringLiteral("pluginListTitle"));
+    auto *enableAllButton = new QPushButton(tr("Enable all"));
+    auto *disableAllButton = new QPushButton(tr("Disable all"));
+    listHeaderLayout->addWidget(listTitle);
+    listHeaderLayout->addStretch();
+    listHeaderLayout->addWidget(enableAllButton);
+    listHeaderLayout->addWidget(disableAllButton);
+    pluginListLayout->addWidget(listHeader);
+    addDivider(pluginListLayout);
+
+    // 快捷键列的标签宽度按最长的命令关键字统一算一次，
+    // 这样所有插件的快捷键输入框都落在同一条竖线上，不会因为插件不同而左右跳动。
+    // 只有多命令插件才需要标出命令名，单命令插件不再重复写「快捷键」。
+    QFont labelFont = QApplication::font();
+    labelFont.setPixelSize(13);
+    const QFontMetrics labelMetrics(labelFont);
+    int hotkeyLabelWidth = 0;
+    for (const QString &cmd : ids) {
+        const PluginDescriptor *descriptor = m_pluginManager->descriptor(cmd);
+        if (!descriptor || !descriptor->configurable || descriptor->commands.size() <= 1) continue;
+        for (const PluginCommand &command : descriptor->commands)
+            hotkeyLabelWidth = qMax(hotkeyLabelWidth, labelMetrics.horizontalAdvance(command.keyword));
+    }
+    hotkeyLabelWidth = qBound(0, hotkeyLabelWidth + 4, 160);
+    const int hotkeyColumnWidth = hotkeyLabelWidth + HotkeyEditWidth + (hotkeyLabelWidth > 0 ? 10 : 0);
+
     bool firstPlugin = true;
     for (const QString &cmd : ids) {
         const PluginDescriptor *descriptor = m_pluginManager->descriptor(cmd);
@@ -330,67 +367,79 @@ SettingsView::SettingsView(Settings *settings, PluginManager *pluginManager, Glo
         firstPlugin = false;
         auto *row = new QWidget;
         row->setObjectName(QStringLiteral("pluginRow"));
-        row->setMinimumHeight(68);
         auto *rowLayout = new QHBoxLayout(row);
-        rowLayout->setContentsMargins(0, 8, 0, 8);
+        rowLayout->setContentsMargins(0, 10, 0, 10);
         rowLayout->setSpacing(12);
-        auto *textLayout = new QVBoxLayout;
+        // 左侧：插件名加描述。描述可能换行，行变高时名称和描述要继续贴在一起，
+        // 否则两者会被布局撑开，中间多出一大段空白。
+        auto *textColumn = new QWidget(row);
+        auto *textLayout = new QVBoxLayout(textColumn);
+        textLayout->setContentsMargins(0, 0, 0, 0);
         textLayout->setSpacing(2);
-        auto *commandLabel = new QLabel(cmd);
+        auto *commandLabel = new QLabel(cmd, textColumn);
         commandLabel->setObjectName(QStringLiteral("pluginCommand"));
-        auto *descriptionLabel = new QLabel(descriptor->description);
+        auto *descriptionLabel = new QLabel(descriptor->description, textColumn);
         descriptionLabel->setObjectName(QStringLiteral("muted"));
         descriptionLabel->setWordWrap(true);
         textLayout->addWidget(commandLabel);
         textLayout->addWidget(descriptionLabel);
-        rowLayout->addLayout(textLayout, 1);
+        textLayout->addStretch();
+        rowLayout->addWidget(textColumn, 1);
+        // 设置按钮独占一列并排在快捷键前面，没有设置项的插件也保留同样宽度，
+        // 免得这一列忽有忽无，把后面的快捷键输入框推得忽左忽右。
+        auto *actionColumn = new QWidget(row);
+        actionColumn->setFixedWidth(PluginActionColumnWidth);
+        auto *actionLayout = new QHBoxLayout(actionColumn);
+        actionLayout->setContentsMargins(0, 0, 0, 0);
+        actionLayout->setSpacing(0);
+        if (descriptor->hasSettings) {
+            auto *settingsButton = new QPushButton(tr("Settings"), actionColumn);
+            settingsButton->setObjectName(QStringLiteral("pluginSettingsButton"));
+            settingsButton->setProperty("cmd", cmd);
+            actionLayout->addWidget(settingsButton, 0, Qt::AlignTop);
+            const QString settingsCommand = descriptor->commands.first().keyword;
+            connect(settingsButton, &QPushButton::clicked, this, [this, cmd, settingsCommand]() {
+                openPluginSettings(cmd, settingsCommand);
+            });
+        }
+        rowLayout->addWidget(actionColumn, 0, Qt::AlignTop);
+        // 快捷键列宽度固定，命令名右对齐紧挨输入框，输入框全部落在同一条竖线上。
+        auto *hotkeyColumn = new QWidget(row);
+        hotkeyColumn->setFixedWidth(hotkeyColumnWidth);
+        auto *hotkeyLayout = new QVBoxLayout(hotkeyColumn);
+        hotkeyLayout->setContentsMargins(0, 0, 0, 0);
+        hotkeyLayout->setSpacing(6);
+        HotkeyEdit *rowHotkeyEdit = nullptr;
+        for (const PluginCommand &command : descriptor->commands) {
+            auto *commandLayout = new QHBoxLayout;
+            commandLayout->setContentsMargins(0, 0, 0, 0);
+            commandLayout->setSpacing(10);
+            // 单命令插件不写标签，只在多命令插件里标出命令名，避免每行重复一遍「快捷键」。
+            auto *hotkeyLabel = new QLabel(descriptor->commands.size() == 1 ? QString() : command.keyword,
+                                           hotkeyColumn);
+            hotkeyLabel->setObjectName(QStringLiteral("muted"));
+            hotkeyLabel->setFixedWidth(hotkeyLabelWidth);
+            hotkeyLabel->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
+            auto *hotkeyEdit = new HotkeyEdit(hotkeyColumn);
+            hotkeyEdit->setProperty("cmd", command.keyword);
+            hotkeyEdit->setProperty("pluginId", cmd);
+            hotkeyEdit->setToolTip(tr("Global plugin hotkey"));
+            hotkeyEdit->setFixedWidth(HotkeyEditWidth);
+            m_pluginHotkeyEdits.append(hotkeyEdit);
+            if (!rowHotkeyEdit) rowHotkeyEdit = hotkeyEdit;
+            commandLayout->addWidget(hotkeyLabel);
+            commandLayout->addWidget(hotkeyEdit);
+            hotkeyLayout->addLayout(commandLayout);
+        }
+        hotkeyLayout->addStretch();
+        rowLayout->addWidget(hotkeyColumn, 0, Qt::AlignTop);
         auto *check = new SettingsSwitch;
         check->setProperty("cmd", cmd);
         check->setAccessibleName(cmd + QStringLiteral(" — ") + tr("Enabled"));
         m_pluginChecks.append(check);
-        auto *hotkeyCommands = new QVBoxLayout;
-        for (const PluginCommand &command : descriptor->commands) {
-            auto *hotkeyGroup = new QHBoxLayout;
-            hotkeyGroup->setSpacing(6);
-            auto *hotkeyEdit = new HotkeyEdit;
-            hotkeyEdit->setProperty("cmd", command.keyword);
-            hotkeyEdit->setProperty("pluginId", cmd);
-            hotkeyEdit->setToolTip(tr("Global plugin hotkey"));
-            hotkeyEdit->setFixedWidth(136);
-            m_pluginHotkeyEdits.append(hotkeyEdit);
-            auto *hotkeyLabel = new QLabel(descriptor->commands.size() == 1 ? tr("Hotkey") : command.keyword);
-            hotkeyLabel->setObjectName(QStringLiteral("muted"));
-            hotkeyGroup->addWidget(hotkeyLabel);
-            hotkeyGroup->addWidget(hotkeyEdit);
-            hotkeyCommands->addLayout(hotkeyGroup);
-        }
-        rowLayout->addLayout(hotkeyCommands);
-        if (descriptor->hasSettings) {
-            auto *settingsButton = new QPushButton(tr("Settings"));
-            settingsButton->setObjectName(QStringLiteral("pluginSettingsButton"));
-            settingsButton->setProperty("cmd", cmd);
-            rowLayout->addWidget(settingsButton);
-            const QString settingsCommand = descriptor->commands.first().keyword;
-            connect(settingsButton, &QPushButton::clicked, this, [this, cmd, settingsCommand]() {
-                QWidget *settingsWidget = m_pluginManager->settingsWidgetForCommand(settingsCommand);
-                if (!settingsWidget) return;
-                QDialog settingsDialog(this);
-                auto *dialog = &settingsDialog;
-                dialog->setWindowTitle(tr("%1 Settings").arg(cmd));
-                auto *dialogLayout = new QVBoxLayout(dialog);
-                dialogLayout->setContentsMargins(16, 16, 16, 16);
-                dialogLayout->setSpacing(12);
-
-                dialogLayout->addWidget(settingsWidget);
-                auto *buttons = new QDialogButtonBox(QDialogButtonBox::Close, dialog);
-                buttons->button(QDialogButtonBox::Close)->setText(tr("Close"));
-                connect(buttons, &QDialogButtonBox::rejected, dialog, &QDialog::reject);
-                dialogLayout->addWidget(buttons);
-                dialog->resize(460, 280);
-                dialog->exec();
-            });
-        }
-        rowLayout->addWidget(check, 0, Qt::AlignVCenter);
+        // 开关比输入框矮，撑到输入框同样的高度后，轨道仍然画在正中，两者视觉对齐。
+        if (rowHotkeyEdit) check->setFixedHeight(rowHotkeyEdit->sizeHint().height());
+        rowLayout->addWidget(check, 0, Qt::AlignTop);
         pluginListLayout->addWidget(row);
     }
     pluginLayout->addStretch();
@@ -568,7 +617,7 @@ SettingsView::SettingsView(Settings *settings, PluginManager *pluginManager, Glo
     });
     connect(buttons, &QDialogButtonBox::accepted, this, [this, buttons]() {
         QHash<QString, QString> pluginShortcuts;
-        for (QKeySequenceEdit *edit : m_pluginHotkeyEdits) {
+        for (HotkeyEdit *edit : m_pluginHotkeyEdits) {
             const QString command = edit->property("cmd").toString();
             for (QCheckBox *check : m_pluginChecks) {
                 if (check->property("cmd") == edit->property("pluginId") && check->isChecked()) {
@@ -603,7 +652,7 @@ SettingsView::SettingsView(Settings *settings, PluginManager *pluginManager, Glo
         }
         m_settings->setCustomScanDirs(scanDirs);
         m_settings->setPluginAutoEnter(m_pluginAutoEnterCheck->isChecked());
-        for (QKeySequenceEdit *edit : m_pluginHotkeyEdits) {
+        for (HotkeyEdit *edit : m_pluginHotkeyEdits) {
             m_settings->setPluginHotkey(edit->property("cmd").toString(),
                                         edit->keySequence().toString(QKeySequence::PortableText));
         }
@@ -644,6 +693,16 @@ SettingsView::SettingsView(Settings *settings, PluginManager *pluginManager, Glo
 
     reload();
     showSection(QStringLiteral("set"));
+}
+
+void SettingsView::openPluginSettings(const QString &cmd, const QString &settingsCommand)
+{
+    QWidget *settingsWidget = m_pluginManager->settingsWidgetForCommand(settingsCommand);
+    if (!settingsWidget) return;
+    // 弹窗自带磨砂底和无边框标题栏，与主窗口保持同一套视觉。
+    PluginSettingsDialog dialog(tr("%1 Settings").arg(cmd), settingsWidget, m_themeManager, this);
+    dialog.adjustSize();
+    dialog.exec();
 }
 
 void SettingsView::showSection(const QString &command)
@@ -699,7 +758,7 @@ void SettingsView::reload()
     for (QCheckBox *check : m_pluginChecks) {
         check->setChecked(m_settings->isPluginEnabled(check->property("cmd").toString()));
     }
-    for (QKeySequenceEdit *edit : m_pluginHotkeyEdits) {
+    for (HotkeyEdit *edit : m_pluginHotkeyEdits) {
         edit->setKeySequence(QKeySequence::fromString(
             m_settings->pluginHotkey(edit->property("cmd").toString()), QKeySequence::PortableText));
     }

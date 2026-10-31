@@ -10,7 +10,7 @@
 #include <QCoreApplication>
 
 void registerBuiltinPlugins(PluginManager &manager, Settings &settings, GlobalHotkey &hotkeys,
-                            AppLauncher &launcher, Updater &updater)
+                            AppLauncher &launcher, Updater &updater, ThemeManager &themeManager)
 {
     auto add = [&manager](const QString &id, const QString &description, PluginManager::Factory factory,
                           const QStringList &aliases = {}, IPlugin::LaunchMode mode = IPlugin::LaunchMode::List,
@@ -36,8 +36,9 @@ void registerBuiltinPlugins(PluginManager &manager, Settings &settings, GlobalHo
     add(QStringLiteral("cd"), QCoreApplication::translate("DirectoryPlugin", "Directory browser and navigation"),
         [](QObject *parent) { return new DirectoryPlugin(parent); });
     add(QStringLiteral("set"), QCoreApplication::translate("SettingsPlugin", "Open Settings"),
-        [&settings, &manager, &hotkeys, &launcher, &updater](QObject *parent) {
-            return new SettingsPlugin(&settings, &manager, &hotkeys, &launcher, &updater, parent);
+        [&settings, &manager, &hotkeys, &launcher, &updater, &themeManager](QObject *parent) {
+            return new SettingsPlugin(&settings, &manager, &hotkeys, &launcher, &updater,
+                                      &themeManager, parent);
         }, {QStringLiteral("user"), QStringLiteral("plugin"), QStringLiteral("scan"), QStringLiteral("about")},
         IPlugin::LaunchMode::FullView, false, true, false);
     add(QStringLiteral("file"), QCoreApplication::translate("FilePlugin", "File search (Everything)"),

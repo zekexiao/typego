@@ -111,6 +111,7 @@ qt_add_executable(TypeGo
     src/GlobalHotkey.cpp
     src/Logger.cpp
     src/ThemeManager.cpp
+    src/PluginSettingsDialog.cpp
     src/plugins/AppPlugin.cpp
     src/plugins/BuiltinPlugins.cpp
     src/plugins/PluginWindowHost.cpp

@@ -83,6 +83,20 @@ QLabel#pluginCommand {
     font-weight: 600;
 }
 
+/* 插件列表头部的分组标题，与页面级 section 区分开：没有额外的上边距。 */
+QLabel#pluginListTitle {
+    padding: 0;
+    background-color: transparent;
+    color: @TEXT_SECONDARY@;
+    font-size: 13px;
+    font-weight: 600;
+}
+
+QWidget#pluginListHeader {
+    background-color: transparent;
+    border: none;
+}
+
 QLabel#pageTitle {
     background-color: transparent;
     color: @TEXT@;
@@ -106,7 +120,7 @@ QPushButton#titleBackButton:hover {
 }
 
 QPushButton#pluginSettingsButton {
-    min-width: 68px;
+    min-width: 54px;
     padding-left: 10px;
     padding-right: 10px;
 }
@@ -536,6 +550,16 @@ QWidget[frostedWindow="false"] {
 /* 弹出窗口独立合成，底板与视口均使用实色，不能借用主窗口的半透明底。 */
 QDialog {
     background-color: @BG@;
+}
+
+/* 插件设置弹窗：无边框自绘标题栏，磨砂底由系统材质合成。
+   系统不支持材质时退回实色，文字不会直接落在桌面上。 */
+QDialog#pluginSettingsDialog {
+    background-color: @BG@;
+}
+
+QDialog#pluginSettingsDialog[frostedWindow="true"] {
+    background-color: @GLASS_TINT@;
 }
 
 /* 更新提示弹窗：语言页签用强调色描边，正文区保持透明，与主窗口的基线一致。 */

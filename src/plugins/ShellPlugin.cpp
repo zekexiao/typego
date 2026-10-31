@@ -236,12 +236,10 @@ QWidget *ShellPlugin::settingsWidget()
     auto *layout = new QVBoxLayout(widget);
     layout->setContentsMargins(0, 0, 0, 0);
     layout->setSpacing(12);
-    auto *title = new QLabel(tr("Shell command runner"));
-    title->setObjectName(QStringLiteral("section"));
+    // 对话框标题已经写明是哪个插件，这里不再重复一遍标题，只留一句说明。
     auto *note = new QLabel(tr("Choose the terminal command used to run shell queries. Use {cmd} where the typed command should be inserted."));
     note->setObjectName(QStringLiteral("muted"));
     note->setWordWrap(true);
-    layout->addWidget(title);
     layout->addWidget(note);
 
     auto *preset = new QComboBox(widget);

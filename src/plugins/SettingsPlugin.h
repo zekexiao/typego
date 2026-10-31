@@ -8,13 +8,15 @@ class QWidget;
 class GlobalHotkey;
 class AppLauncher;
 class Updater;
+class ThemeManager;
 
 // 提供设置入口和设置界面的插件。
 class SettingsPlugin : public IPlugin {
     Q_OBJECT
 public:
     SettingsPlugin(Settings *settings, PluginManager *pluginManager, GlobalHotkey *hotkeys,
-                   AppLauncher *launcher, Updater *updater, QObject *parent = nullptr);
+                   AppLauncher *launcher, Updater *updater, ThemeManager *themeManager,
+                   QObject *parent = nullptr);
 
     QString command() const override { return QStringLiteral("set"); }
     QStringList aliases() const override
@@ -35,6 +37,7 @@ private:
     GlobalHotkey *m_hotkeys;
     AppLauncher *m_launcher;
     Updater *m_updater;
+    ThemeManager *m_themeManager;
     QWidget *m_view = nullptr;
     QString m_activeCommand = QStringLiteral("set");
 };

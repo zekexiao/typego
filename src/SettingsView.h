@@ -2,6 +2,7 @@
 
 #include <QCheckBox>
 #include <QColor>
+#include <QKeySequence>
 #include <QKeySequenceEdit>
 #include <QList>
 #include <QWidget>
@@ -9,13 +10,16 @@
 class PluginManager;
 class Settings;
 class QComboBox;
+class QDialogButtonBox;
 class QListWidget;
 class QPushButton;
 class QStackedWidget;
 class GlobalHotkey;
 class AppLauncher;
 class Updater;
+class ThemeManager;
 
+// 快捷键录制框支持 Alt+Space。
 class HotkeyEdit final : public QKeySequenceEdit {
     Q_OBJECT
 public:
@@ -53,7 +57,8 @@ class SettingsView : public QWidget {
     Q_OBJECT
 public:
     SettingsView(Settings *settings, PluginManager *pluginManager, GlobalHotkey *hotkeys,
-                 AppLauncher *launcher, Updater *updater, QWidget *parent = nullptr);
+                 AppLauncher *launcher, Updater *updater, ThemeManager *themeManager,
+                 QWidget *parent = nullptr);
     void reload();
     void showSection(const QString &command);
 
@@ -64,11 +69,15 @@ protected:
     bool eventFilter(QObject *watched, QEvent *event) override;
 
 private:
+    // 打开某个插件的设置弹窗，settingsCommand 是提供设置界面的命令名。
+    void openPluginSettings(const QString &cmd, const QString &settingsCommand);
+
     Settings *m_settings;
     PluginManager *m_pluginManager;
     GlobalHotkey *m_hotkeys;
     AppLauncher *m_launcher;
     Updater *m_updater;
+    ThemeManager *m_themeManager;
     QPushButton *m_checkUpdateButton = nullptr;
     QListWidget *m_navigation;
     QStackedWidget *m_pages;

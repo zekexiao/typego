@@ -152,7 +152,7 @@ int main(int argc, char *argv[])
     PluginManager pluginManager;
     Updater updater;
     pluginManager.setSettings(&settings);
-    registerBuiltinPlugins(pluginManager, settings, hotkey, launcher, updater);
+    registerBuiltinPlugins(pluginManager, settings, hotkey, launcher, updater, themeManager);
     // 扫描只读取 DLL 元数据；客户代码在首次使用时才加载。
     const QString localData = QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation);
     PluginPaths pluginPaths{
