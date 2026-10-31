@@ -3,6 +3,7 @@
 #include <QFrame>
 #include <QIcon>
 #include <QPixmap>
+#include <QPointer>
 #include <QPushButton>
 #include <QSet>
 #include <QStyledItemDelegate>
@@ -10,12 +11,15 @@
 #include <QVariantList>
 #include <QVariantMap>
 #include "plugins/PluginTypes.h"
+#include "utils/ReleaseParser.h"
+#include "utils/UpdateCheckGate.h"
 
 class AppLauncher;
 class PluginManager;
 class Settings;
 class ThemeManager;
 class Updater;
+class UpdateDialog;
 class QLabel;
 class QLineEdit;
 class QListView;
@@ -160,6 +164,8 @@ private:
     void updateResultsLayout();
     void scheduleResultsLayout();
     void applyTaskbarVisibility();
+    // 展示新版本提示。同一时间只保留一个更新弹窗，自动检查与手动检查不会叠出两个窗口。
+    void showUpdateDialog(const ReleaseParser::Result &result, UpdateCheckGate::Mode mode);
     QVariantList queryFiles(const QString &query);
     void launchPath(const QString &path);
     int resultsHeightForWindow(int windowHeight) const;
@@ -186,6 +192,9 @@ private:
     QPushButton *m_pluginDetachButton;
     QWidget *m_titleBackSlot = nullptr;
     QProgressDialog *m_downloadDialog = nullptr;
+    QPointer<UpdateDialog> m_updateDialog;
+    // 已经提示过的版本：自动检查不再重复打扰，手动检查仍然会再次展示。
+    QString m_announcedUpdateVersion;
     QTimer *m_searchDebounce;
     QString m_lastSearchText;
     quint64 m_activeQueryId = 0;

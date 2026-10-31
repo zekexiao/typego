@@ -516,29 +516,26 @@ SettingsView::SettingsView(Settings *settings, PluginManager *pluginManager, Glo
     aboutLayout->addWidget(m_checkUpdateButton, 0, Qt::AlignLeft);
     if (m_updater) {
         connect(m_checkUpdateButton, &QPushButton::clicked, this, [this]() {
-            m_manualCheckPending = true;
             m_checkUpdateButton->setEnabled(false);
-            m_updater->checkForUpdate();
+            m_updater->check(Updater::Mode::Manual);
         });
-        auto finishManualCheck = [this]() {
+        // 无论检查来自自动还是手动，按钮都要恢复可用；只有手动检查才弹结果提示。
+        const auto finishCheck = [this]() {
             m_checkUpdateButton->setEnabled(true);
-            const bool manual = m_manualCheckPending;
-            m_manualCheckPending = false;
-            return manual;
         };
-        connect(m_updater, &Updater::updateAvailable, this, [finishManualCheck](const QString &, const QString &, const QString &, bool) mutable {
-            finishManualCheck();
+        connect(m_updater, &Updater::updateAvailable, this, [finishCheck](const ReleaseParser::Result &, UpdateCheckGate::Mode) {
+            finishCheck();
         });
-        connect(m_updater, &Updater::noUpdateAvailable, this, [this, finishManualCheck]() mutable {
-            if (finishManualCheck()) {
-                QMessageBox::information(this, tr("Check for Updates"),
-                                         tr("TypeGo %1 is up to date.").arg(QCoreApplication::applicationVersion()));
-            }
+        connect(m_updater, &Updater::noUpdateAvailable, this, [this, finishCheck](UpdateCheckGate::Mode mode) {
+            finishCheck();
+            if (mode != Updater::Mode::Manual) return;
+            QMessageBox::information(this, tr("Check for Updates"),
+                                     tr("TypeGo %1 is up to date.").arg(QCoreApplication::applicationVersion()));
         });
-        connect(m_updater, &Updater::checkError, this, [this, finishManualCheck](const QString &message) mutable {
-            if (finishManualCheck()) {
-                QMessageBox::warning(this, tr("Check for Updates"), tr("Update check failed: %1").arg(message));
-            }
+        connect(m_updater, &Updater::checkError, this, [this, finishCheck](const QString &message, UpdateCheckGate::Mode mode) {
+            finishCheck();
+            if (mode != Updater::Mode::Manual) return;
+            QMessageBox::warning(this, tr("Check for Updates"), tr("Update check failed: %1").arg(message));
         });
     }
     aboutLayout->addStretch();

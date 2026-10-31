@@ -87,6 +87,7 @@ add_library(typego_core STATIC
     src/utils/PinyinConverter.cpp
     src/utils/ReleaseParser.cpp
     src/utils/ShellOpen.cpp
+    src/utils/UpdateCheckGate.cpp
     src/utils/Version.cpp
 )
 target_include_directories(typego_core PUBLIC "${CMAKE_SOURCE_DIR}/src")
@@ -117,6 +118,7 @@ qt_add_executable(TypeGo
     src/plugins/SettingsPlugin.cpp
     src/plugins/FilePlugin.cpp
     src/plugins/ShellPlugin.cpp
+    src/UpdateDialog.cpp
     src/Updater.cpp
     resources.qrc
     assets/app_icon.rc

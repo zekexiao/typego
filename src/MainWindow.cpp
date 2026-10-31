@@ -3,6 +3,7 @@
 #include "AppLauncher.h"
 #include "Settings.h"
 #include "ThemeManager.h"
+#include "UpdateDialog.h"
 #include "Updater.h"
 #include "plugins/PluginManager.h"
 #include "plugins/PluginWindowHost.h"
@@ -941,11 +942,10 @@ MainWindow::MainWindow(AppLauncher *launcher, PluginManager *pluginManager, Sett
     connect(m_settings, &Settings::showAllAppsWhenSearchEmptyChanged, this, refreshSearch);
     connect(m_settings, &Settings::showInTaskbarChanged, this, &MainWindow::applyTaskbarVisibility);
     if (m_updater) {
-        connect(m_updater, &Updater::updateAvailable, this, [this](const QString &version, const QString &changelog, const QString &url, bool) {
-            if (QMessageBox::question(this, tr("Update available"), tr("New version %1 is available.\n\n%2\n\nUpdate now?").arg(version, changelog)) == QMessageBox::Yes) {
-                m_updater->downloadAndInstall(url);
-            }
-        });
+        connect(m_updater, &Updater::updateAvailable, this,
+                [this](const ReleaseParser::Result &result, UpdateCheckGate::Mode mode) {
+                    showUpdateDialog(result, mode);
+                });
         connect(m_updater, &Updater::downloadStarted, this, [this]() {
             if (m_downloadDialog) delete m_downloadDialog;
             m_downloadDialog = new QProgressDialog(tr("Downloading update..."), tr("Cancel"), 0, 0, this);
@@ -976,6 +976,34 @@ MainWindow::MainWindow(AppLauncher *launcher, PluginManager *pluginManager, Sett
 MainWindow::~MainWindow()
 {
     delete m_windowHost;
+}
+
+void MainWindow::showUpdateDialog(const ReleaseParser::Result &result, UpdateCheckGate::Mode mode)
+{
+    // 自动检查已经提示过同一版本时不再重复弹窗；手动检查始终给用户看。
+    if (mode == UpdateCheckGate::Mode::Automatic && result.latestVersion == m_announcedUpdateVersion) {
+        return;
+    }
+    m_announcedUpdateVersion = result.latestVersion;
+
+    // 已经有弹窗时只刷新内容并前置，不新建窗口，避免自动与手动检查叠出两个提示。
+    if (m_updateDialog) {
+        m_updateDialog->applyResult(result);
+        m_updateDialog->raise();
+        m_updateDialog->activateWindow();
+        return;
+    }
+
+    auto *dialog = new UpdateDialog(result, this);
+    m_updateDialog = dialog;
+    connect(dialog, &UpdateDialog::updateRequested, this, [this](const QString &url) {
+        if (m_updater) m_updater->downloadAndInstall(url);
+    });
+    connect(dialog, &QDialog::finished, this, [this, dialog]() {
+        if (m_updateDialog == dialog) m_updateDialog = nullptr;
+        dialog->deleteLater();
+    });
+    dialog->open();
 }
 
 void MainWindow::requestHide()

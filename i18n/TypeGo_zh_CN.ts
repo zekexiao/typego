@@ -142,12 +142,12 @@
 <context>
     <name>CommandLineEdit</name>
     <message>
-        <location filename="../src/MainWindow.cpp" line="603"/>
+        <location filename="../src/MainWindow.cpp" line="604"/>
         <source>Open settings</source>
         <translation>打开设置</translation>
     </message>
     <message>
-        <location filename="../src/MainWindow.cpp" line="692"/>
+        <location filename="../src/MainWindow.cpp" line="693"/>
         <source>Type arguments...</source>
         <translation>输入参数...</translation>
     </message>
@@ -305,22 +305,22 @@
 <context>
     <name>FloatIcon</name>
     <message>
-        <location filename="../src/MainWindow.cpp" line="1507"/>
+        <location filename="../src/MainWindow.cpp" line="1535"/>
         <source>Left-click to show or hide TypeGo, right-click for the menu</source>
         <translation>左键显示或隐藏 TypeGo，右键打开菜单</translation>
     </message>
     <message>
-        <location filename="../src/MainWindow.cpp" line="1626"/>
+        <location filename="../src/MainWindow.cpp" line="1654"/>
         <source>Hide main window</source>
         <translation>隐藏主界面</translation>
     </message>
     <message>
-        <location filename="../src/MainWindow.cpp" line="1626"/>
+        <location filename="../src/MainWindow.cpp" line="1654"/>
         <source>Show main window</source>
         <translation>显示主界面</translation>
     </message>
     <message>
-        <location filename="../src/MainWindow.cpp" line="1628"/>
+        <location filename="../src/MainWindow.cpp" line="1656"/>
         <source>Hide float icon</source>
         <translation>隐藏浮动图标</translation>
     </message>
@@ -374,64 +374,64 @@
         <translation>部分插件无法注册。请检查插件包及 SDK 兼容性，然后重启 TypeGo。</translation>
     </message>
     <message>
-        <location filename="../src/main.cpp" line="243"/>
+        <location filename="../src/main.cpp" line="246"/>
         <source>Shortcut unavailable</source>
         <translation>快捷键不可用</translation>
     </message>
     <message>
-        <location filename="../src/main.cpp" line="244"/>
+        <location filename="../src/main.cpp" line="247"/>
         <source>
 Open Settings from the tray icon to choose another shortcut.</source>
         <translation>
 请从托盘图标打开设置，选择其他快捷键。</translation>
     </message>
     <message>
-        <location filename="../src/main.cpp" line="256"/>
+        <location filename="../src/main.cpp" line="259"/>
         <source>Show</source>
         <translation>显示</translation>
     </message>
     <message>
-        <location filename="../src/main.cpp" line="257"/>
+        <location filename="../src/main.cpp" line="260"/>
         <source>Settings</source>
         <translation>设置</translation>
     </message>
     <message>
-        <location filename="../src/main.cpp" line="258"/>
+        <location filename="../src/main.cpp" line="261"/>
         <source>Pin File...</source>
         <translation>固定文件…</translation>
     </message>
     <message>
-        <location filename="../src/main.cpp" line="259"/>
+        <location filename="../src/main.cpp" line="262"/>
         <source>Restart</source>
         <translation>重启</translation>
     </message>
     <message>
-        <location filename="../src/main.cpp" line="260"/>
+        <location filename="../src/main.cpp" line="263"/>
         <source>Quit</source>
         <translation>退出</translation>
     </message>
     <message>
-        <location filename="../src/main.cpp" line="269"/>
+        <location filename="../src/main.cpp" line="272"/>
         <source>Pin File</source>
         <translation>固定文件</translation>
     </message>
     <message>
-        <location filename="../src/main.cpp" line="278"/>
+        <location filename="../src/main.cpp" line="281"/>
         <source>Cannot exit</source>
         <translation>无法退出</translation>
     </message>
     <message>
-        <location filename="../src/main.cpp" line="279"/>
+        <location filename="../src/main.cpp" line="282"/>
         <source>Save your changes and try again.</source>
         <translation>请先保存修改，再重试。</translation>
     </message>
     <message>
-        <location filename="../src/main.cpp" line="285"/>
+        <location filename="../src/main.cpp" line="288"/>
         <source>Cannot restart</source>
         <translation>无法重启</translation>
     </message>
     <message>
-        <location filename="../src/main.cpp" line="286"/>
+        <location filename="../src/main.cpp" line="289"/>
         <source>The new process could not be started. TypeGo is still running; please try again.</source>
         <translation>无法启动新进程。TypeGo 仍在运行，请重试。</translation>
     </message>
@@ -439,70 +439,56 @@ Open Settings from the tray icon to choose another shortcut.</source>
 <context>
     <name>MainWindow</name>
     <message>
-        <location filename="../src/MainWindow.cpp" line="746"/>
+        <location filename="../src/MainWindow.cpp" line="747"/>
         <source>Back to results</source>
         <translation>返回结果</translation>
     </message>
     <message>
-        <location filename="../src/MainWindow.cpp" line="747"/>
+        <location filename="../src/MainWindow.cpp" line="748"/>
         <source>Back</source>
         <translation>返回</translation>
     </message>
     <message>
-        <location filename="../src/MainWindow.cpp" line="752"/>
+        <location filename="../src/MainWindow.cpp" line="753"/>
         <source>Detach plugin view to a window</source>
         <translation>将插件视图分离到窗口</translation>
     </message>
     <message>
-        <location filename="../src/MainWindow.cpp" line="753"/>
+        <location filename="../src/MainWindow.cpp" line="754"/>
         <source>Detach window</source>
         <translation>分离窗口</translation>
     </message>
     <message>
-        <location filename="../src/MainWindow.cpp" line="774"/>
         <location filename="../src/MainWindow.cpp" line="775"/>
+        <location filename="../src/MainWindow.cpp" line="776"/>
         <source>Close</source>
         <translation>关闭</translation>
     </message>
     <message>
-        <location filename="../src/MainWindow.cpp" line="797"/>
+        <location filename="../src/MainWindow.cpp" line="798"/>
         <source>Search apps, or type a command (e.g. calc 1+2)</source>
         <translation>搜索应用，或输入命令（例如 calc 1+2）</translation>
     </message>
     <message>
-        <location filename="../src/MainWindow.cpp" line="858"/>
+        <location filename="../src/MainWindow.cpp" line="859"/>
         <source>The plugin view could not be detached.</source>
         <translation>无法分离插件视图。</translation>
     </message>
     <message>
-        <location filename="../src/MainWindow.cpp" line="863"/>
+        <location filename="../src/MainWindow.cpp" line="864"/>
         <source>The application could not be closed. Save your changes and try again.</source>
         <translation>无法关闭此应用，请先保存修改，再重试。</translation>
     </message>
     <message>
-        <location filename="../src/MainWindow.cpp" line="917"/>
-        <location filename="../src/MainWindow.cpp" line="1354"/>
+        <location filename="../src/MainWindow.cpp" line="918"/>
+        <location filename="../src/MainWindow.cpp" line="1382"/>
         <source>Unpin from Start</source>
         <translation>从开始界面取消固定</translation>
     </message>
     <message>
-        <location filename="../src/MainWindow.cpp" line="917"/>
+        <location filename="../src/MainWindow.cpp" line="918"/>
         <source>Pin to Start</source>
         <translation>固定到开始界面</translation>
-    </message>
-    <message>
-        <location filename="../src/MainWindow.cpp" line="945"/>
-        <source>Update available</source>
-        <translation>更新可用</translation>
-    </message>
-    <message>
-        <location filename="../src/MainWindow.cpp" line="945"/>
-        <source>New version %1 is available.
-
-%2
-
-Update now?</source>
-        <translation>新版本 %1 可用，%2 现在更新？</translation>
     </message>
     <message>
         <location filename="../src/MainWindow.cpp" line="951"/>
@@ -520,73 +506,73 @@ Update now?</source>
         <translation>更新失败</translation>
     </message>
     <message>
-        <location filename="../src/MainWindow.cpp" line="1093"/>
+        <location filename="../src/MainWindow.cpp" line="1121"/>
         <source>Scanning applications...</source>
         <translation>正在扫描应用…</translation>
     </message>
     <message>
-        <location filename="../src/MainWindow.cpp" line="1094"/>
+        <location filename="../src/MainWindow.cpp" line="1122"/>
         <source>Please wait for application indexing to finish.</source>
         <translation>请稍候，正在建立应用索引。</translation>
     </message>
     <message>
-        <location filename="../src/MainWindow.cpp" line="1110"/>
+        <location filename="../src/MainWindow.cpp" line="1138"/>
         <source>Search &quot;%1&quot;</source>
         <translation>搜索 “%1”</translation>
     </message>
     <message>
-        <location filename="../src/MainWindow.cpp" line="1111"/>
+        <location filename="../src/MainWindow.cpp" line="1139"/>
         <source>Search with %1</source>
         <translation>用 %1 搜索</translation>
     </message>
     <message>
-        <location filename="../src/MainWindow.cpp" line="1122"/>
+        <location filename="../src/MainWindow.cpp" line="1150"/>
         <source>Search files &quot;%1&quot;</source>
         <translation>搜索文件“%1”</translation>
     </message>
     <message>
-        <location filename="../src/MainWindow.cpp" line="1123"/>
+        <location filename="../src/MainWindow.cpp" line="1151"/>
         <source>Search with Everything</source>
         <translation>用 Everything 搜索</translation>
     </message>
     <message>
-        <location filename="../src/MainWindow.cpp" line="858"/>
-        <location filename="../src/MainWindow.cpp" line="863"/>
-        <location filename="../src/MainWindow.cpp" line="1457"/>
-        <location filename="../src/MainWindow.cpp" line="1472"/>
-        <location filename="../src/MainWindow.cpp" line="1479"/>
+        <location filename="../src/MainWindow.cpp" line="859"/>
+        <location filename="../src/MainWindow.cpp" line="864"/>
+        <location filename="../src/MainWindow.cpp" line="1485"/>
+        <location filename="../src/MainWindow.cpp" line="1500"/>
+        <location filename="../src/MainWindow.cpp" line="1507"/>
         <source>Action failed</source>
         <translation>操作失败</translation>
     </message>
     <message>
-        <location filename="../src/MainWindow.cpp" line="1458"/>
-        <location filename="../src/MainWindow.cpp" line="1473"/>
-        <location filename="../src/MainWindow.cpp" line="1479"/>
+        <location filename="../src/MainWindow.cpp" line="1486"/>
+        <location filename="../src/MainWindow.cpp" line="1501"/>
+        <location filename="../src/MainWindow.cpp" line="1507"/>
         <source>The selected item could not be opened or executed.</source>
         <translation>无法打开或执行所选项目。</translation>
     </message>
     <message>
-        <location filename="../src/MainWindow.cpp" line="1198"/>
+        <location filename="../src/MainWindow.cpp" line="1226"/>
         <source>Cannot open item</source>
         <translation>无法打开项目</translation>
     </message>
     <message>
-        <location filename="../src/MainWindow.cpp" line="1199"/>
+        <location filename="../src/MainWindow.cpp" line="1227"/>
         <source>Cannot open %1. Check that the file exists and an application is installed to open it.</source>
         <translation>无法打开 %1。请确认文件存在，并已安装可打开此文件的应用。</translation>
     </message>
     <message>
-        <location filename="../src/MainWindow.cpp" line="1339"/>
+        <location filename="../src/MainWindow.cpp" line="1367"/>
         <source>Pinned</source>
         <translation>已固定</translation>
     </message>
     <message>
-        <location filename="../src/MainWindow.cpp" line="1491"/>
+        <location filename="../src/MainWindow.cpp" line="1519"/>
         <source>%1 | Unknown command</source>
         <translation>%1 | 未知的命令</translation>
     </message>
     <message>
-        <location filename="../src/MainWindow.cpp" line="1491"/>
+        <location filename="../src/MainWindow.cpp" line="1519"/>
         <source>%1 | %2</source>
         <translation>%1 | %2</translation>
     </message>
@@ -594,7 +580,7 @@ Update now?</source>
 <context>
     <name>ManagementIcon</name>
     <message>
-        <location filename="../src/MainWindow.cpp" line="520"/>
+        <location filename="../src/MainWindow.cpp" line="521"/>
         <source>Open settings</source>
         <translation>打开设置</translation>
     </message>
@@ -951,45 +937,45 @@ Update now?</source>
         <translation>Windows 应用启动器与命令插件宿主。</translation>
     </message>
     <message>
-        <location filename="../src/SettingsView.cpp" line="560"/>
+        <location filename="../src/SettingsView.cpp" line="557"/>
         <source>Save</source>
         <translation>保存</translation>
     </message>
     <message>
-        <location filename="../src/SettingsView.cpp" line="561"/>
+        <location filename="../src/SettingsView.cpp" line="558"/>
         <source>Cancel</source>
         <translation>取消</translation>
     </message>
     <message>
-        <location filename="../src/SettingsView.cpp" line="586"/>
-        <location filename="../src/SettingsView.cpp" line="638"/>
+        <location filename="../src/SettingsView.cpp" line="583"/>
+        <location filename="../src/SettingsView.cpp" line="635"/>
         <source>Shortcut unavailable</source>
         <translation>快捷键不可用</translation>
     </message>
     <message>
-        <location filename="../src/SettingsView.cpp" line="642"/>
+        <location filename="../src/SettingsView.cpp" line="639"/>
         <source>Action failed</source>
         <translation>操作失败</translation>
     </message>
     <message>
-        <location filename="../src/SettingsView.cpp" line="643"/>
+        <location filename="../src/SettingsView.cpp" line="640"/>
         <source>The application could not be closed. Save your changes and try again.</source>
         <translation>无法关闭此应用，请先保存修改，再重试。</translation>
     </message>
     <message>
         <location filename="../src/SettingsView.cpp" line="513"/>
-        <location filename="../src/SettingsView.cpp" line="534"/>
-        <location filename="../src/SettingsView.cpp" line="540"/>
+        <location filename="../src/SettingsView.cpp" line="532"/>
+        <location filename="../src/SettingsView.cpp" line="538"/>
         <source>Check for Updates</source>
         <translation>检查更新</translation>
     </message>
     <message>
-        <location filename="../src/SettingsView.cpp" line="535"/>
+        <location filename="../src/SettingsView.cpp" line="533"/>
         <source>TypeGo %1 is up to date.</source>
         <translation>TypeGo %1 已是最新版本。</translation>
     </message>
     <message>
-        <location filename="../src/SettingsView.cpp" line="540"/>
+        <location filename="../src/SettingsView.cpp" line="538"/>
         <source>Update check failed: %1</source>
         <translation>检查更新失败：%1</translation>
     </message>
@@ -1079,30 +1065,60 @@ Update now?</source>
     </message>
 </context>
 <context>
+    <name>UpdateDialog</name>
+    <message>
+        <location filename="../src/UpdateDialog.cpp" line="75"/>
+        <location filename="../src/UpdateDialog.cpp" line="85"/>
+        <location filename="../src/UpdateDialog.cpp" line="133"/>
+        <source>Update available</source>
+        <translation>更新可用</translation>
+    </message>
+    <message>
+        <location filename="../src/UpdateDialog.cpp" line="117"/>
+        <source>Update now</source>
+        <translation>立即更新</translation>
+    </message>
+    <message>
+        <location filename="../src/UpdateDialog.cpp" line="119"/>
+        <source>Later</source>
+        <translation>稍后</translation>
+    </message>
+    <message>
+        <location filename="../src/UpdateDialog.cpp" line="134"/>
+        <source>Update from TypeGo %1 to %2</source>
+        <translation>从 TypeGo %1 更新到 %2</translation>
+    </message>
+    <message>
+        <location filename="../src/UpdateDialog.cpp" line="142"/>
+        <source>No release notes are available for this update.</source>
+        <translation>本次更新没有可显示的更新说明。</translation>
+    </message>
+</context>
+<context>
     <name>Updater</name>
     <message>
-        <location filename="../src/Updater.cpp" line="133"/>
+        <location filename="../src/Updater.cpp" line="150"/>
         <source>Invalid update download URL</source>
         <translation>更新下载地址无效</translation>
     </message>
     <message>
-        <location filename="../src/Updater.cpp" line="141"/>
+        <location filename="../src/Updater.cpp" line="158"/>
         <source>Cannot create the update download: %1</source>
         <translation>无法创建更新下载文件：%1</translation>
     </message>
     <message>
-        <location filename="../src/Updater.cpp" line="174"/>
+        <location filename="../src/Updater.cpp" line="191"/>
         <source>Cannot save the update: %1</source>
         <translation>无法保存更新文件：%1</translation>
     </message>
     <message>
-        <location filename="../src/Updater.cpp" line="192"/>
+        <location filename="../src/Updater.cpp" line="209"/>
         <source>The update download is incomplete or invalid. Please try again.</source>
         <translation>下载的更新文件不完整或无效，请重试。</translation>
     </message>
     <message>
-        <location filename="../src/Updater.cpp" line="203"/>
-        <location filename="../src/Updater.cpp" line="208"/>
+        <location filename="../src/Updater.cpp" line="220"/>
+        <location filename="../src/Updater.cpp" line="225"/>
         <source>Cannot start the update installer.</source>
         <translation>无法启动更新安装程序。</translation>
     </message>

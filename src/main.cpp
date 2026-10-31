@@ -181,7 +181,10 @@ int main(int argc, char *argv[])
 
     // 启动数秒后在后台静默检测 GitHub 更新，避免拖慢首屏、与托盘初始化抢占网络。
     // 仅发现新版本时才弹出提示；失败与无更新都不打扰用户。
-    QTimer::singleShot(5000, &updater, &Updater::checkForUpdate);
+    // 静默检查与用户手动点击「检查更新」撞车时由 Updater 合并成一次请求，不会弹两个提示。
+    QTimer::singleShot(5000, &updater, [&updater]() {
+        updater.check(Updater::Mode::Automatic);
+    });
 
     FloatIcon floatIcon(&settings, &themeManager, &window);
     auto restoreFloatPosition = [&]() {

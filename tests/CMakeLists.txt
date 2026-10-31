@@ -58,6 +58,7 @@ target_compile_definitions(tst_plugin_sdk PRIVATE
     TYPEGO_CONTRACT_PLUGIN="$<TARGET_FILE:plugin_contract>")
 typego_add_test(tst_settings tst_settings.cpp)
 typego_add_test(tst_release_parser tst_release_parser.cpp)
+typego_add_test(tst_update_check_gate tst_update_check_gate.cpp)
 typego_add_test(tst_app_matcher tst_app_matcher.cpp)
 typego_add_test(tst_app_usage tst_app_usage.cpp)
 typego_add_test(tst_terminal_launcher tst_terminal_launcher.cpp)

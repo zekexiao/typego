@@ -538,6 +538,30 @@ QDialog {
     background-color: @BG@;
 }
 
+/* 更新提示弹窗：语言页签用强调色描边，正文区保持透明，与主窗口的基线一致。 */
+QWidget#updateDialog QTabBar {
+    qproperty-drawBase: 0;
+}
+QWidget#updateDialog QTabBar::tab {
+    background: transparent;
+    color: @TEXT_SECONDARY@;
+    padding: 6px 16px;
+    border: none;
+    border-bottom: 2px solid transparent;
+}
+QWidget#updateDialog QTabBar::tab:hover {
+    color: @TEXT@;
+}
+QWidget#updateDialog QTabBar::tab:selected {
+    color: @TEXT@;
+    border-bottom: 2px solid @ACCENT@;
+}
+QWidget#updateDialog QTextBrowser {
+    background: transparent;
+    border: none;
+    padding: 0px;
+}
+
 QMenu[frostedWindow="false"],
 QComboBox QAbstractItemView > QWidget {
     background-color: @SURFACE@;

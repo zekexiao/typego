@@ -74,10 +74,16 @@ Updater::Updater(QObject *parent)
     : QObject(parent)
     , m_manager(new QNetworkAccessManager(this))
 {
+    qRegisterMetaType<ReleaseParser::Result>("ReleaseParser::Result");
+    qRegisterMetaType<UpdateCheckGate::Mode>("UpdateCheckGate::Mode");
 }
 
 Updater::~Updater()
 {
+    if (m_checkReply) {
+        m_checkReply->disconnect(this);
+        m_checkReply->abort();
+    }
     if (m_downloadReply) {
         m_downloadReply->disconnect(this);
         m_downloadReply->abort();
@@ -94,32 +100,43 @@ QString Updater::currentVersion() const
     return QCoreApplication::applicationVersion();
 }
 
-void Updater::checkForUpdate()
+bool Updater::isChecking() const
 {
+    return m_gate.isBusy();
+}
+
+void Updater::check(Mode mode)
+{
+    // 静默检查与手动检查可能同时触发，这里保证同一时刻只有一个在途请求，
+    // 避免两次请求各自弹一次更新提示。期间的手动请求并入当前请求。
+    if (!m_gate.request(mode)) return;
+
     QNetworkRequest request{QUrl(QString::fromLatin1(kReleasesFeedUrl))};
     request.setRawHeader("User-Agent", "TypeGo-Updater");
     request.setTransferTimeout(15000);
     request.setAttribute(QNetworkRequest::RedirectPolicyAttribute,
                          QNetworkRequest::NoLessSafeRedirectPolicy);
 
-    QNetworkReply *reply = m_manager->get(request);
-    connect(reply, &QNetworkReply::finished, this, [this, reply]() {
+    m_checkReply = m_manager->get(request);
+    connect(m_checkReply, &QNetworkReply::finished, this, [this, reply = m_checkReply]() {
         reply->deleteLater();
+        if (m_checkReply == reply) m_checkReply = nullptr;
+        const Mode effective = m_gate.finish();
         if (reply->error() != QNetworkReply::NoError) {
-            emit checkError(reply->errorString());
+            emit checkError(reply->errorString(), effective);
             return;
         }
 
         const ReleaseParser::Result release = ReleaseParser::parseAtomFeed(reply->readAll(), currentVersion());
         switch (release.outcome) {
         case ReleaseParser::Outcome::UpToDate:
-            emit noUpdateAvailable();
+            emit noUpdateAvailable(effective);
             return;
         case ReleaseParser::Outcome::InvalidResponse:
-            emit checkError(release.message);
+            emit checkError(release.message, effective);
             return;
         case ReleaseParser::Outcome::UpdateReady:
-            emit updateAvailable(release.version, release.changelog, release.installerUrl, false);
+            emit updateAvailable(release, effective);
             return;
         }
     });
