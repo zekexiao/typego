@@ -102,8 +102,15 @@ int main(int argc, char *argv[])
     app.setWindowIcon(appIcon);
     const QFont defaultAppFont = app.font();
 
+    QTranslator qtTranslator;
     QTranslator translator;
     const QStringList uiLanguages = QLocale::system().uiLanguages();
+    for (const QString &lang : uiLanguages) {
+        if (qtTranslator.load(QStringLiteral(":/i18n/qtbase_") + QLocale(lang).name())) {
+            app.installTranslator(&qtTranslator);
+            break;
+        }
+    }
     for (const QString &lang : uiLanguages) {
         const QString baseName = QStringLiteral("TypeGo_") + QLocale(lang).name();
         if (translator.load(QStringLiteral(":/i18n/") + baseName) ||

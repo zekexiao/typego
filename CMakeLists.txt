@@ -181,6 +181,12 @@ add_custom_target(update_translation_sources ALL
 add_dependencies(TypeGo update_translation_sources)
 
 # Translations
+get_filename_component(TYPEGO_QT_PREFIX "${Qt6_DIR}/../../.." ABSOLUTE)
+qt_add_resources(TypeGo qt_translations
+    PREFIX "/i18n"
+    BASE "${TYPEGO_QT_PREFIX}/translations"
+    FILES "${TYPEGO_QT_PREFIX}/translations/qtbase_zh_CN.qm"
+)
 qt_add_translations(TypeGo
     TS_FILES
         i18n/TypeGo_zh_CN.ts
