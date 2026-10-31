@@ -12,13 +12,13 @@
 
 class QRegularExpression;
 
-class MainWindow : public QMainWindow {
+class JsonViewerWindow : public QMainWindow {
     Q_OBJECT
 
 public:
-    explicit MainWindow(QWidget *parent = nullptr, const QString &settingsPath = {});
+    explicit JsonViewerWindow(QWidget *parent = nullptr, const QString &settingsPath = {});
     bool confirmLeave();
-    ~MainWindow() override;
+    ~JsonViewerWindow() override;
 
 private slots:
     void onOpen();

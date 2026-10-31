@@ -4,41 +4,14 @@
 #include <QList>
 #include <QString>
 #include <QVariantMap>
-#include <QtPlugin>
 
 class QWidget;
 
-#define TYPEGO_PLUGIN_IID "org.typego.Plugin/1.0"
+namespace TypeGo::BuiltinFeature {
 
-namespace TypeGo::PluginApi {
-
-inline constexpr int ApiMajor = 1;
-inline constexpr int ApiMinor = 0;
 inline constexpr int MaxResults = 200;
 inline constexpr int MaxPendingExecutions = 8;
 inline constexpr int MaxParameterBytes = 16384;
-
-// 二进制兼容与 API 版本分别校验，不跨 Qt、工具集或运行库混用。
-inline QString nativeAbi()
-{
-#if defined(Q_OS_WIN) && defined(_MSC_VER)
-    QString abi = QStringLiteral("windows-qt-") + QStringLiteral(QT_VERSION_STR)
-        + QStringLiteral("-msvc-") + QString::number(_MSC_VER)
-        + QStringLiteral("-ptr-") + QString::number(sizeof(void *));
-#ifdef _DLL
-    abi += QStringLiteral("-md");
-#else
-    abi += QStringLiteral("-mt");
-#endif
-#ifdef QT_DEBUG
-    return abi + QStringLiteral("-debug");
-#else
-    return abi + QStringLiteral("-release");
-#endif
-#else
-    return QStringLiteral("unsupported");
-#endif
-}
 
 enum class ErrorCode : int {
     None = 0, InvalidArgument = 1, Incompatible = 2, Conflict = 3,
@@ -57,7 +30,7 @@ enum class Status : int { Succeeded, Failed, Pending };
 enum class HostAction : int { Keep, Hide, OpenView };
 enum class LeaveReason : int { Navigate, Hide, Disable, Shutdown };
 enum class LeaveDecision : int { Ready, Refused, Pending };
-enum class Directory : int { Package, Data, Cache, Temporary };
+enum class Directory : int { Data, Cache, Temporary };
 enum class LogLevel : int { Info, Warning, Error };
 
 struct Invocation {
@@ -113,7 +86,7 @@ public:
     virtual void closeView() = 0;
 };
 
-// 1.0 的虚表和数据布局固定；扩展使用新的可选 Qt 接口或新的主版本。
+// 内置功能与主程序共用的生命周期接口。
 class Plugin {
 public:
     virtual ~Plugin() = default;
@@ -137,6 +110,5 @@ public:
     virtual void shutdown() = 0;
 };
 
-} // namespace TypeGo::PluginApi
+} // namespace TypeGo::BuiltinFeature
 
-Q_DECLARE_INTERFACE(TypeGo::PluginApi::Plugin, TYPEGO_PLUGIN_IID)

@@ -37,7 +37,7 @@
 #include "utils/Restart.h"
 #include "utils/ScreenPosition.h"
 #include "plugins/BuiltinPlugins.h"
-#include "plugins/ExternalPluginRegistry.h"
+#include "plugins/IntegratedFeatures.h"
 #include "plugins/PluginManager.h"
 
 static QIcon buildAppIcon()
@@ -153,16 +153,13 @@ int main(int argc, char *argv[])
     Updater updater;
     pluginManager.setSettings(&settings);
     registerBuiltinPlugins(pluginManager, settings, hotkey, launcher, updater, themeManager);
-    // 扫描只读取 DLL 元数据；客户代码在首次使用时才加载。
+    // 沿用原有数据目录，保证升级后历史记录与设置仍可读取。
     const QString localData = QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation);
     PluginPaths pluginPaths{
-        localData + QStringLiteral("/plugins"), localData + QStringLiteral("/plugin-data"),
+        localData + QStringLiteral("/plugin-data"),
         QStandardPaths::writableLocation(QStandardPaths::CacheLocation) + QStringLiteral("/plugins"),
         QDir::tempPath() + QStringLiteral("/TypeGo/plugins")};
-    pluginPaths.bundledPackages.append(QDir(QCoreApplication::applicationDirPath())
-        .filePath(QStringLiteral("plugins")));
-    ExternalPluginRegistry externalPlugins(pluginManager, std::move(pluginPaths));
-    externalPlugins.discover();
+    registerIntegratedFeatures(pluginManager, pluginPaths);
     // 声明 background 的插件（如剪贴板）需要从启动开始工作；其余插件仍按首次使用加载。
     pluginManager.startBackgroundPlugins();
     QObject::connect(&settings, &Settings::pluginEnabledChanged, &pluginManager, [&pluginManager](const QString &id) {
@@ -174,18 +171,6 @@ int main(int argc, char *argv[])
         QMessageBox::warning(&window, QCoreApplication::translate("Main", "Pinned apps not saved"), message);
     });
     window.setWindowIcon(appIcon);
-    if (!externalPlugins.diagnostics().isEmpty()) {
-        QStringList errors;
-        for (const auto &diagnostic : externalPlugins.diagnostics())
-            errors.append(QStringLiteral("%1\n[%2] %3").arg(diagnostic.path)
-                .arg(static_cast<int>(diagnostic.error.code)).arg(diagnostic.error.message));
-        QTimer::singleShot(0, &window, [&window, detail = errors.join(QStringLiteral("\n\n"))]() {
-            QMessageBox::warning(&window, QCoreApplication::translate("Main", "Plugin unavailable"),
-                QCoreApplication::translate("Main", "Some plugins could not be registered. Check the package and SDK compatibility, then restart TypeGo.")
-                    + QStringLiteral("\n\n") + detail);
-        });
-    }
-
     // 启动数秒后在后台静默检测 GitHub 更新，避免拖慢首屏、与托盘初始化抢占网络。
     // 仅发现新版本时才弹出提示；失败与无更新都不打扰用户。
     // 静默检查与用户手动点击「检查更新」撞车时由 Updater 合并成一次请求，不会弹两个提示。

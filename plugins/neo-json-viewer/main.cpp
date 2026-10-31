@@ -18,7 +18,7 @@ int main(int argc, char* argv[]) {
     a.setWindowIcon(QIcon(":/icon.png"));
     a.setStyle(QStyleFactory::create("fusion"));
 
-    MainWindow w;
+    JsonViewerWindow w;
     w.show();
     return QApplication::exec();
 }

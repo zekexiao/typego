@@ -68,7 +68,7 @@ struct LoadOutcome {
 };
 }
 
-MainWindow::MainWindow(QWidget *parent, const QString &settingsPath)
+JsonViewerWindow::JsonViewerWindow(QWidget *parent, const QString &settingsPath)
     : QMainWindow(parent),
       m_searchDialog(nullptr),
       m_settings(new QSettings(settingsPath, QSettings::IniFormat, this)),
@@ -79,7 +79,7 @@ MainWindow::MainWindow(QWidget *parent, const QString &settingsPath)
     loadSettings();
 
     m_searchDialog = new SearchDialog(this);
-    connect(m_searchDialog, &SearchDialog::findRequested, this, &MainWindow::onSearchRequested);
+    connect(m_searchDialog, &SearchDialog::findRequested, this, &JsonViewerWindow::onSearchRequested);
 
     connect(m_model, &QAbstractItemModel::dataChanged, this,
         [this](const QModelIndex &, const QModelIndex &, const QList<int> &roles) {
@@ -89,12 +89,12 @@ MainWindow::MainWindow(QWidget *parent, const QString &settingsPath)
     connect(m_model, &QAbstractItemModel::rowsRemoved, this, [this]{ setDirty(true); });
 }
 
-MainWindow::~MainWindow() {
+JsonViewerWindow::~JsonViewerWindow() {
     // 加载途中窗口被销毁时，光标状态要还原。
     if (m_loading) QApplication::restoreOverrideCursor();
 }
 
-void MainWindow::setupUI() {
+void JsonViewerWindow::setupUI() {
     updateWindowTitle();
     resize(900, 700);
 
@@ -113,7 +113,7 @@ void MainWindow::setupUI() {
     m_treeView->header()->setStretchLastSection(true);
     m_treeView->setEditTriggers(QAbstractItemView::DoubleClicked | QAbstractItemView::EditKeyPressed);
     m_treeView->setContextMenuPolicy(Qt::CustomContextMenu);
-    connect(m_treeView, &QTreeView::customContextMenuRequested, this, &MainWindow::onCustomContextMenu);
+    connect(m_treeView, &QTreeView::customContextMenuRequested, this, &JsonViewerWindow::onCustomContextMenu);
     layout->addWidget(m_treeView);
 
     m_model = new JsonTreeModel(this);
@@ -124,22 +124,22 @@ void MainWindow::setupUI() {
     statusBar()->addWidget(m_statusLabel);
 }
 
-void MainWindow::setupMenus() {
+void JsonViewerWindow::setupMenus() {
     QMenu *fileMenu = menuBar()->addMenu(tr("&File"));
 
     auto *openAct = new QAction(tr("&Open..."), this);
     openAct->setShortcut(QKeySequence::Open);
-    connect(openAct, &QAction::triggered, this, &MainWindow::onOpen);
+    connect(openAct, &QAction::triggered, this, &JsonViewerWindow::onOpen);
     fileMenu->addAction(openAct);
 
     auto *saveAct = new QAction(tr("&Save"), this);
     saveAct->setShortcut(QKeySequence::Save);
-    connect(saveAct, &QAction::triggered, this, &MainWindow::onSave);
+    connect(saveAct, &QAction::triggered, this, &JsonViewerWindow::onSave);
     fileMenu->addAction(saveAct);
 
     auto *saveAsAct = new QAction(tr("Save &As..."), this);
     saveAsAct->setShortcut(QKeySequence::SaveAs);
-    connect(saveAsAct, &QAction::triggered, this, &MainWindow::onSaveAs);
+    connect(saveAsAct, &QAction::triggered, this, &JsonViewerWindow::onSaveAs);
     fileMenu->addAction(saveAsAct);
 
     fileMenu->addSeparator();
@@ -153,75 +153,75 @@ void MainWindow::setupMenus() {
 
     auto *findAct = new QAction(tr("&Find..."), this);
     findAct->setShortcut(QKeySequence::Find);
-    connect(findAct, &QAction::triggered, this, &MainWindow::onSearch);
+    connect(findAct, &QAction::triggered, this, &JsonViewerWindow::onSearch);
     editMenu->addAction(findAct);
 
     auto *findNextAct = new QAction(tr("Find &Next"), this);
     findNextAct->setShortcut(QKeySequence::FindNext);
-    connect(findNextAct, &QAction::triggered, this, &MainWindow::onFindNext);
+    connect(findNextAct, &QAction::triggered, this, &JsonViewerWindow::onFindNext);
     editMenu->addAction(findNextAct);
 
     auto *findPreviousAct = new QAction(tr("Find &Previous"), this);
     findPreviousAct->setShortcut(QKeySequence::FindPrevious);
-    connect(findPreviousAct, &QAction::triggered, this, &MainWindow::onFindPrevious);
+    connect(findPreviousAct, &QAction::triggered, this, &JsonViewerWindow::onFindPrevious);
     editMenu->addAction(findPreviousAct);
 
     editMenu->addSeparator();
 
     auto *copyAct = new QAction(tr("&Copy"), this);
     copyAct->setShortcut(QKeySequence::Copy);
-    connect(copyAct, &QAction::triggered, this, &MainWindow::onCopy);
+    connect(copyAct, &QAction::triggered, this, &JsonViewerWindow::onCopy);
     editMenu->addAction(copyAct);
 
     auto *copyKeyAct = new QAction(tr("Copy &Key"), this);
-    connect(copyKeyAct, &QAction::triggered, this, &MainWindow::onCopyKey);
+    connect(copyKeyAct, &QAction::triggered, this, &JsonViewerWindow::onCopyKey);
     editMenu->addAction(copyKeyAct);
 
     auto *copyValueAct = new QAction(tr("Copy &Value"), this);
-    connect(copyValueAct, &QAction::triggered, this, &MainWindow::onCopyValue);
+    connect(copyValueAct, &QAction::triggered, this, &JsonViewerWindow::onCopyValue);
     editMenu->addAction(copyValueAct);
 
     auto *pasteAct = new QAction(tr("&Paste"), this);
     pasteAct->setShortcut(QKeySequence::Paste);
-    connect(pasteAct, &QAction::triggered, this, &MainWindow::onPaste);
+    connect(pasteAct, &QAction::triggered, this, &JsonViewerWindow::onPaste);
     editMenu->addAction(pasteAct);
 
     editMenu->addSeparator();
 
     auto *settingsAct = new QAction(tr("&Settings..."), this);
-    connect(settingsAct, &QAction::triggered, this, &MainWindow::onSettings);
+    connect(settingsAct, &QAction::triggered, this, &JsonViewerWindow::onSettings);
     editMenu->addAction(settingsAct);
 
     QMenu *viewMenu = menuBar()->addMenu(tr("&View"));
 
     auto *expandAct = new QAction(tr("&Expand All"), this);
-    connect(expandAct, &QAction::triggered, this, &MainWindow::onExpandAll);
+    connect(expandAct, &QAction::triggered, this, &JsonViewerWindow::onExpandAll);
     viewMenu->addAction(expandAct);
 
     auto *collapseAct = new QAction(tr("&Collapse All"), this);
-    connect(collapseAct, &QAction::triggered, this, &MainWindow::onCollapseAll);
+    connect(collapseAct, &QAction::triggered, this, &JsonViewerWindow::onCollapseAll);
     viewMenu->addAction(collapseAct);
 
     QMenu *helpMenu = menuBar()->addMenu(tr("&Help"));
 
     auto *aboutAct = new QAction(tr("&About"), this);
-    connect(aboutAct, &QAction::triggered, this, &MainWindow::onAbout);
+    connect(aboutAct, &QAction::triggered, this, &JsonViewerWindow::onAbout);
     helpMenu->addAction(aboutAct);
 }
 
-void MainWindow::loadSettings() {
+void JsonViewerWindow::loadSettings() {
     int maxLen = m_settings->value("maxTextLength", 1024).toInt();
     bool pretty = m_settings->value("prettyPrint", true).toBool();
     m_model->setMaxTextLength(maxLen);
     m_model->setPrettyPrint(pretty);
 }
 
-void MainWindow::saveSettings() {
+void JsonViewerWindow::saveSettings() {
     m_settings->setValue("maxTextLength", m_model->maxTextLength());
     m_settings->setValue("prettyPrint", m_model->prettyPrint());
 }
 
-void MainWindow::onOpen() {
+void JsonViewerWindow::onOpen() {
     if (!confirmLeave()) return;
     QString filePath = QFileDialog::getOpenFileName(this, tr("Open Data File"), QString(),
         tr("Data Files (*.json *.msgpack *.mpk);;JSON Files (*.json);;MessagePack Files (*.msgpack *.mpk);;All Files (*)"));
@@ -267,7 +267,7 @@ void MainWindow::onOpen() {
     }));
 }
 
-void MainWindow::finishLoad(const QString &filePath, std::shared_ptr<JsonTreeItem> tree, qint64 parseMs, qint64 totalMs) {
+void JsonViewerWindow::finishLoad(const QString &filePath, std::shared_ptr<JsonTreeItem> tree, qint64 parseMs, qint64 totalMs) {
     setBusy(false);
     if (!tree) {
         QMessageBox::critical(this, tr("Error"), tr("Failed to load file. Check that it contains valid JSON or MessagePack data."));
@@ -303,7 +303,7 @@ void MainWindow::finishLoad(const QString &filePath, std::shared_ptr<JsonTreeIte
     }
 }
 
-void MainWindow::setBusy(bool busy) {
+void JsonViewerWindow::setBusy(bool busy) {
     if (busy) {
         if (m_loading) return;
         m_loading = true;
@@ -316,7 +316,7 @@ void MainWindow::setBusy(bool busy) {
     }
 }
 
-void MainWindow::onSave() {
+void JsonViewerWindow::onSave() {
     if (m_currentFile.isEmpty() || !m_currentFile.endsWith(QStringLiteral(".json"), Qt::CaseInsensitive)) {
         onSaveAs();
         return;
@@ -330,7 +330,7 @@ void MainWindow::onSave() {
     }
 }
 
-void MainWindow::onSaveAs() {
+void JsonViewerWindow::onSaveAs() {
     QString filePath = QFileDialog::getSaveFileName(this, tr("Save JSON File"), QString(), tr("JSON Files (*.json);;All Files (*)"));
     if (filePath.isEmpty())
         return;
@@ -344,7 +344,7 @@ void MainWindow::onSaveAs() {
     }
 }
 
-void MainWindow::onSettings() {
+void JsonViewerWindow::onSettings() {
     SettingsDialog dialog(m_model->maxTextLength(), m_model->prettyPrint(), this);
     if (dialog.exec() == QDialog::Accepted) {
         m_model->setMaxTextLength(dialog.maxTextLength());
@@ -354,7 +354,7 @@ void MainWindow::onSettings() {
     }
 }
 
-void MainWindow::onSearch() {
+void JsonViewerWindow::onSearch() {
     if (m_searchDialog == nullptr)
         return;
 
@@ -368,7 +368,7 @@ void MainWindow::onSearch() {
     m_searchDialog->focusPattern();
 }
 
-void MainWindow::onFindNext() {
+void JsonViewerWindow::onFindNext() {
     if (!m_hasLastSearch || m_lastSearch.text.isEmpty()) {
         onSearch();
         return;
@@ -382,7 +382,7 @@ void MainWindow::onFindNext() {
     findAndSelect(options);
 }
 
-void MainWindow::onFindPrevious() {
+void JsonViewerWindow::onFindPrevious() {
     if (!m_hasLastSearch || m_lastSearch.text.isEmpty()) {
         onSearch();
         return;
@@ -396,7 +396,7 @@ void MainWindow::onFindPrevious() {
     findAndSelect(options);
 }
 
-void MainWindow::onSearchRequested(const SearchOptions &options) {
+void JsonViewerWindow::onSearchRequested(const SearchOptions &options) {
     if (options.text.isEmpty()) {
         m_statusLabel->setText(tr("Search text is empty."));
         return;
@@ -407,7 +407,7 @@ void MainWindow::onSearchRequested(const SearchOptions &options) {
     findAndSelect(options);
 }
 
-bool MainWindow::indexMatchesSearch(const QModelIndex &baseIndex, const SearchOptions &options, QModelIndex *matchedIndex, const QRegularExpression *regex) const {
+bool JsonViewerWindow::indexMatchesSearch(const QModelIndex &baseIndex, const SearchOptions &options, QModelIndex *matchedIndex, const QRegularExpression *regex) const {
     const QModelIndex keyIndex = baseIndex.siblingAtColumn(0);
     const QModelIndex valueIndex = baseIndex.siblingAtColumn(1);
     QString keyText = m_model->data(keyIndex, Qt::DisplayRole).toString();
@@ -446,7 +446,7 @@ bool MainWindow::indexMatchesSearch(const QModelIndex &baseIndex, const SearchOp
     return false;
 }
 
-bool MainWindow::findAndSelect(const SearchOptions &options) {
+bool JsonViewerWindow::findAndSelect(const SearchOptions &options) {
     QRegularExpression regex;
     if (options.useRegex) {
         regex.setPattern(options.text);
@@ -515,15 +515,15 @@ bool MainWindow::findAndSelect(const SearchOptions &options) {
     return false;
 }
 
-void MainWindow::onExpandAll() {
+void JsonViewerWindow::onExpandAll() {
     m_treeView->expandAll();
 }
 
-void MainWindow::onCollapseAll() {
+void JsonViewerWindow::onCollapseAll() {
     m_treeView->collapseAll();
 }
 
-void MainWindow::onCustomContextMenu(const QPoint &pos) {
+void JsonViewerWindow::onCustomContextMenu(const QPoint &pos) {
     QModelIndex index = m_treeView->indexAt(pos);
     if (!index.isValid())
         return;
@@ -536,26 +536,26 @@ void MainWindow::onCustomContextMenu(const QPoint &pos) {
     QMenu menu(this);
 
     if (parentItem && parentItem->nodeType() == JsonNodeType::Array) {
-        menu.addAction(tr("Duplicate"), this, &MainWindow::onDuplicateArrayItem);
+        menu.addAction(tr("Duplicate"), this, &JsonViewerWindow::onDuplicateArrayItem);
     }
 
     if (item->nodeType() == JsonNodeType::Object || item->nodeType() == JsonNodeType::Array) {
-        menu.addAction(tr("Add Item..."), this, &MainWindow::onAddItem);
+        menu.addAction(tr("Add Item..."), this, &JsonViewerWindow::onAddItem);
     }
 
-    menu.addAction(tr("Copy"), this, &MainWindow::onCopy);
-    menu.addAction(tr("Copy Key"), this, &MainWindow::onCopyKey);
-    menu.addAction(tr("Copy Value"), this, &MainWindow::onCopyValue);
-    menu.addAction(tr("Paste"), this, &MainWindow::onPaste);
+    menu.addAction(tr("Copy"), this, &JsonViewerWindow::onCopy);
+    menu.addAction(tr("Copy Key"), this, &JsonViewerWindow::onCopyKey);
+    menu.addAction(tr("Copy Value"), this, &JsonViewerWindow::onCopyValue);
+    menu.addAction(tr("Paste"), this, &JsonViewerWindow::onPaste);
 
     // 顶层节点就是整个文档，删掉等于把内容换成 null，只能逐个删子项。
     const bool isRootNode = !parentItem || parentItem->nodeType() == JsonNodeType::Root;
-    if (!isRootNode) menu.addAction(tr("Delete"), this, &MainWindow::onDeleteItem);
+    if (!isRootNode) menu.addAction(tr("Delete"), this, &JsonViewerWindow::onDeleteItem);
 
     menu.exec(m_treeView->viewport()->mapToGlobal(pos));
 }
 
-void MainWindow::onDuplicateArrayItem() {
+void JsonViewerWindow::onDuplicateArrayItem() {
     if (!m_contextIndex.isValid())
         return;
 
@@ -566,7 +566,7 @@ void MainWindow::onDuplicateArrayItem() {
     m_model->addItem(parentIndex, cloned);
 }
 
-void MainWindow::onAddItem() {
+void JsonViewerWindow::onAddItem() {
     if (!m_contextIndex.isValid())
         return;
 
@@ -586,7 +586,7 @@ void MainWindow::onAddItem() {
     }
 }
 
-void MainWindow::onDeleteItem() {
+void JsonViewerWindow::onDeleteItem() {
     if (!m_contextIndex.isValid())
         return;
 
@@ -599,7 +599,7 @@ void MainWindow::onDeleteItem() {
     m_model->removeRows(m_contextIndex.row(), 1, m_contextIndex.parent());
 }
 
-void MainWindow::onCopy() {
+void JsonViewerWindow::onCopy() {
     QModelIndex idx = m_treeView->currentIndex();
     if (!idx.isValid()) {
         m_statusLabel->setText(tr("No item selected to copy."));
@@ -644,7 +644,7 @@ void MainWindow::onCopy() {
     m_statusLabel->setText(tr("Copied to clipboard."));
 }
 
-void MainWindow::onCopyKey() {
+void JsonViewerWindow::onCopyKey() {
     QModelIndex idx = m_treeView->currentIndex();
     if (!idx.isValid()) {
         m_statusLabel->setText(tr("No item selected to copy."));
@@ -656,7 +656,7 @@ void MainWindow::onCopyKey() {
     m_statusLabel->setText(tr("Copied key to clipboard."));
 }
 
-void MainWindow::onCopyValue() {
+void JsonViewerWindow::onCopyValue() {
     QModelIndex idx = m_treeView->currentIndex();
     if (!idx.isValid()) {
         m_statusLabel->setText(tr("No item selected to copy."));
@@ -672,14 +672,14 @@ void MainWindow::onCopyValue() {
     }
 }
 
-void MainWindow::setDirty(bool dirty) {
+void JsonViewerWindow::setDirty(bool dirty) {
     if (m_isDirty == dirty)
         return;
     m_isDirty = dirty;
     updateWindowTitle();
 }
 
-void MainWindow::updateWindowTitle() {
+void JsonViewerWindow::updateWindowTitle() {
     if (m_currentFile.isEmpty()) {
         setWindowTitle(tr("TypeGo.JsonView%1").arg(m_isDirty ? "*" : ""));
     } else {
@@ -687,7 +687,7 @@ void MainWindow::updateWindowTitle() {
     }
 }
 
-void MainWindow::onPaste() {
+void JsonViewerWindow::onPaste() {
     QModelIndex idx = m_treeView->currentIndex();
     if (!idx.isValid()) {
         m_statusLabel->setText(tr("No item selected to paste."));
@@ -771,7 +771,7 @@ void MainWindow::onPaste() {
     }
 }
 
-bool MainWindow::tryParseKeyValue(const QString &text, QString &outKey, QString &outValue) {
+bool JsonViewerWindow::tryParseKeyValue(const QString &text, QString &outKey, QString &outValue) {
     const QByteArray wrapped = (QStringLiteral("{") + text + QStringLiteral("}")).toUtf8();
     yyjson_doc *doc = yyjson_read(wrapped.constData(), size_t(wrapped.size()), 0);
     if (!doc) return false;
@@ -789,7 +789,7 @@ bool MainWindow::tryParseKeyValue(const QString &text, QString &outKey, QString 
     return valid;
 }
 
-void MainWindow::pasteKeyValueIntoObject(const QModelIndex &parentIdx, JsonTreeItem *parentItem, const QString &key, yyjson_val *root) {
+void JsonViewerWindow::pasteKeyValueIntoObject(const QModelIndex &parentIdx, JsonTreeItem *parentItem, const QString &key, yyjson_val *root) {
     JsonTreeItem *existing = nullptr;
     for (int i = 0; i < parentItem->childCount(); ++i) {
         if (parentItem->child(i)->key() == key) {
@@ -817,7 +817,7 @@ void MainWindow::pasteKeyValueIntoObject(const QModelIndex &parentIdx, JsonTreeI
     }
 }
 
-void MainWindow::selectIndex(const QModelIndex &index) {
+void JsonViewerWindow::selectIndex(const QModelIndex &index) {
     if (!index.isValid())
         return;
     const QModelIndex rowIndex = index.siblingAtColumn(0);
@@ -825,17 +825,17 @@ void MainWindow::selectIndex(const QModelIndex &index) {
     m_treeView->selectionModel()->select(rowIndex, QItemSelectionModel::ClearAndSelect | QItemSelectionModel::Rows);
 }
 
-void MainWindow::closeEvent(QCloseEvent *event) {
+void JsonViewerWindow::closeEvent(QCloseEvent *event) {
     if (confirmLeave()) { saveSettings(); event->accept(); }
     else event->ignore();
 }
 
-void MainWindow::onAbout() {
+void JsonViewerWindow::onAbout() {
     AboutDialog dialog(this);
     dialog.exec();
 }
 
-bool MainWindow::confirmLeave() {
+bool JsonViewerWindow::confirmLeave() {
     if (!m_isDirty) return true;
     const auto answer = QMessageBox::warning(this, tr("Save changes"), tr("Save changes before leaving?"),
         QMessageBox::Save | QMessageBox::Discard | QMessageBox::Cancel, QMessageBox::Save);

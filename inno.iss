@@ -57,7 +57,7 @@ Name: "chinesesimplified"; MessagesFile: "compiler:Languages\ChineseSimplified.i
 Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{cm:AdditionalIcons}"; Flags: unchecked
 
 [Files]
-Source: "{#BuildBinDir}\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
+Source: "{#BuildBinDir}\*"; DestDir: "{app}"; Excludes: "plugins\*"; Flags: ignoreversion recursesubdirs createallsubdirs
 Source: "third_party\everything-sdk\dll\Everything64.dll"; DestDir: "{app}"; Flags: ignoreversion
 
 [Icons]

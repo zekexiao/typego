@@ -211,14 +211,6 @@
     </message>
 </context>
 <context>
-    <name>ExternalPluginAdapter</name>
-    <message>
-        <location filename="../src/plugins/ExternalPluginRegistry.cpp" line="181"/>
-        <source>Plugin error</source>
-        <translation>插件错误</translation>
-    </message>
-</context>
-<context>
     <name>FilePlugin</name>
     <message>
         <location filename="../src/plugins/FilePlugin.cpp" line="43"/>
@@ -349,81 +341,97 @@
     </message>
 </context>
 <context>
+    <name>IntegratedFeatureAdapter</name>
+    <message>
+        <location filename="../src/plugins/IntegratedFeatures.cpp" line="185"/>
+        <source>Plugin error</source>
+        <translation>插件错误</translation>
+    </message>
+</context>
+<context>
+    <name>IntegratedFeatures</name>
+    <message>
+        <location filename="../src/plugins/IntegratedFeatures.cpp" line="350"/>
+        <source>Clipboard history</source>
+        <translation>剪贴板历史</translation>
+    </message>
+    <message>
+        <location filename="../src/plugins/IntegratedFeatures.cpp" line="356"/>
+        <source>Screenshot</source>
+        <translation>截图</translation>
+    </message>
+    <message>
+        <location filename="../src/plugins/IntegratedFeatures.cpp" line="371"/>
+        <source>JSON View</source>
+        <translation>JSON 查看器</translation>
+    </message>
+</context>
+<context>
     <name>Main</name>
     <message>
-        <location filename="../src/main.cpp" line="174"/>
+        <location filename="../src/main.cpp" line="171"/>
         <source>Pinned apps not saved</source>
         <translation>固定应用未保存</translation>
     </message>
     <message>
-        <location filename="../src/main.cpp" line="183"/>
-        <source>Plugin unavailable</source>
-        <translation>插件不可用</translation>
-    </message>
-    <message>
-        <location filename="../src/main.cpp" line="184"/>
-        <source>Some plugins could not be registered. Check the package and SDK compatibility, then restart TypeGo.</source>
-        <translation>部分插件无法注册。请检查插件包及 SDK 兼容性，然后重启 TypeGo。</translation>
-    </message>
-    <message>
-        <location filename="../src/main.cpp" line="253"/>
+        <location filename="../src/main.cpp" line="238"/>
         <source>Shortcut unavailable</source>
         <translation>快捷键不可用</translation>
     </message>
     <message>
-        <location filename="../src/main.cpp" line="254"/>
+        <location filename="../src/main.cpp" line="239"/>
         <source>
 Open Settings from the tray icon to choose another shortcut.</source>
         <translation>
 请从托盘图标打开设置，选择其他快捷键。</translation>
     </message>
     <message>
-        <location filename="../src/main.cpp" line="266"/>
+        <location filename="../src/main.cpp" line="251"/>
         <source>Show</source>
         <translation>显示</translation>
     </message>
     <message>
-        <location filename="../src/main.cpp" line="267"/>
+        <location filename="../src/main.cpp" line="252"/>
         <source>Settings</source>
         <translation>设置</translation>
     </message>
     <message>
-        <location filename="../src/main.cpp" line="268"/>
+        <location filename="../src/main.cpp" line="253"/>
         <source>Pin File...</source>
         <translation>固定文件…</translation>
     </message>
     <message>
-        <location filename="../src/main.cpp" line="269"/>
+        <location filename="../src/main.cpp" line="254"/>
         <source>Restart</source>
         <translation>重启</translation>
     </message>
     <message>
-        <location filename="../src/main.cpp" line="270"/>
+        <location filename="../src/main.cpp" line="255"/>
         <source>Quit</source>
         <translation>退出</translation>
     </message>
     <message>
-        <location filename="../src/main.cpp" line="279"/>
+        <location filename="../src/main.cpp" line="264"/>
         <source>Pin File</source>
         <translation>固定文件</translation>
     </message>
     <message>
-        <location filename="../src/main.cpp" line="288"/>
+        <location filename="../src/main.cpp" line="273"/>
         <source>Cannot exit</source>
         <translation>无法退出</translation>
     </message>
     <message>
-        <location filename="../src/main.cpp" line="289"/>
+        <location filename="../src/main.cpp" line="274"/>
         <source>Save your changes and try again.</source>
         <translation>请先保存修改，再重试。</translation>
     </message>
     <message>
-        <location filename="../src/main.cpp" line="295"/>
+        <location filename="../src/main.cpp" line="280"/>
         <source>Cannot restart</source>
         <translation>无法重启</translation>
     </message>
     <message>
-        <location filename="../src/main.cpp" line="296"/>
+        <location filename="../src/main.cpp" line="281"/>
         <source>The new process could not be started. TypeGo is still running; please try again.</source>
         <translation>无法启动新进程。TypeGo 仍在运行，请重试。</translation>
     </message>

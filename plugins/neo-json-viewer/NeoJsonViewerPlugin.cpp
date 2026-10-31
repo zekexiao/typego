@@ -6,10 +6,10 @@
 #include <QLocale>
 
 namespace {
-class PluginViewerWindow final : public MainWindow {
+class PluginViewerWindow final : public JsonViewerWindow {
 public:
-    PluginViewerWindow(TypeGo::PluginApi::Host *host, QWidget *parent)
-        : MainWindow(parent, QDir(host->directory(TypeGo::PluginApi::Directory::Data)).filePath(QStringLiteral("settings.ini"))), m_host(host) {}
+    PluginViewerWindow(TypeGo::BuiltinFeature::Host *host, QWidget *parent)
+        : JsonViewerWindow(parent, QDir(host->directory(TypeGo::BuiltinFeature::Directory::Data)).filePath(QStringLiteral("settings.ini"))), m_host(host) {}
 
 protected:
     void closeEvent(QCloseEvent *event) override
@@ -19,33 +19,32 @@ protected:
     }
 
 private:
-    TypeGo::PluginApi::Host *m_host;
+    TypeGo::BuiltinFeature::Host *m_host;
 };
 }
 
-TypeGo::PluginApi::Error NeoJsonViewerPlugin::initialize(TypeGo::PluginApi::Host *host)
+TypeGo::BuiltinFeature::Error NeoJsonViewerPlugin::initialize(TypeGo::BuiltinFeature::Host *host)
 {
     m_host = host;
-    const QString translations = QDir(host->directory(TypeGo::PluginApi::Directory::Package))
-        .filePath(QStringLiteral("translations"));
+    const QString translations = QStringLiteral(":/integrated");
     if (m_translator.load(QLocale(), QStringLiteral("NeoJsonViewer"), QStringLiteral("_"), translations))
         QCoreApplication::installTranslator(&m_translator);
     return {};
 }
 
-TypeGo::PluginApi::QueryResult NeoJsonViewerPlugin::query(const TypeGo::PluginApi::QueryRequest &request)
+TypeGo::BuiltinFeature::QueryResult NeoJsonViewerPlugin::query(const TypeGo::BuiltinFeature::QueryRequest &request)
 {
-    using namespace TypeGo::PluginApi;
+    using namespace TypeGo::BuiltinFeature;
     return {request.id, {{QStringLiteral("open-viewer"), tr("JSON View"),
         tr("Browse JSON and MessagePack files · Press Enter to open"), {}, {}, {}}}};
 }
 
-TypeGo::PluginApi::ExecutionResult NeoJsonViewerPlugin::execute(const TypeGo::PluginApi::Invocation &)
+TypeGo::BuiltinFeature::ExecutionResult NeoJsonViewerPlugin::execute(const TypeGo::BuiltinFeature::Invocation &)
 {
-    return {TypeGo::PluginApi::Status::Succeeded, TypeGo::PluginApi::HostAction::OpenView};
+    return {TypeGo::BuiltinFeature::Status::Succeeded, TypeGo::BuiltinFeature::HostAction::OpenView};
 }
 
-QWidget *NeoJsonViewerPlugin::createView(const TypeGo::PluginApi::Invocation &, QWidget *parent)
+QWidget *NeoJsonViewerPlugin::createView(const TypeGo::BuiltinFeature::Invocation &, QWidget *parent)
 {
     if (!m_host) return nullptr;
     auto *window = new PluginViewerWindow(m_host, parent);
@@ -54,10 +53,10 @@ QWidget *NeoJsonViewerPlugin::createView(const TypeGo::PluginApi::Invocation &, 
     return window;
 }
 
-TypeGo::PluginApi::LeaveDecision NeoJsonViewerPlugin::prepareToLeave(TypeGo::PluginApi::LeaveReason reason, quint64 token)
+TypeGo::BuiltinFeature::LeaveDecision NeoJsonViewerPlugin::prepareToLeave(TypeGo::BuiltinFeature::LeaveReason reason, quint64 token)
 {
     Q_UNUSED(token)
-    using namespace TypeGo::PluginApi;
+    using namespace TypeGo::BuiltinFeature;
     if (reason == LeaveReason::Hide) return LeaveDecision::Ready;
     return !m_view || m_view->confirmLeave() ? LeaveDecision::Ready : LeaveDecision::Refused;
 }

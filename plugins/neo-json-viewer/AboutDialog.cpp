@@ -15,7 +15,7 @@ AboutDialog::AboutDialog(QWidget *parent)
 
     // Icon
     auto *iconLabel = new QLabel(this);
-    iconLabel->setPixmap(QIcon(":/icon.png").pixmap(64, 64));
+    iconLabel->setPixmap(QIcon(":/jsonviewer/icon.png").pixmap(64, 64));
     iconLabel->setAlignment(Qt::AlignCenter);
     mainLayout->addWidget(iconLabel);
 

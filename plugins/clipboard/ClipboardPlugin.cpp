@@ -16,7 +16,7 @@
 #include <QUrl>
 #include <utility>
 
-namespace Api = TypeGo::PluginApi;
+namespace Api = TypeGo::BuiltinFeature;
 
 namespace {
 QString timeText(qint64 msecs)
@@ -51,8 +51,7 @@ QStringList localFilePaths(const QMimeData *mime)
 Api::Error ClipboardPlugin::initialize(Api::Host *host)
 {
     m_host = host;
-    const QString translations = QDir(host->directory(Api::Directory::Package))
-        .filePath(QStringLiteral("translations"));
+    const QString translations = QStringLiteral(":/integrated");
     if (m_translator.load(QLocale(), QStringLiteral("Clipboard"), QStringLiteral("_"), translations))
         QCoreApplication::installTranslator(&m_translator);
 

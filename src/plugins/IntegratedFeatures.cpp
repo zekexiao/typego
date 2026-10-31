@@ -1,10 +1,14 @@
-#include "ExternalPluginRegistry.h"
+#include "IntegratedFeatures.h"
+#include "BuiltinFeatureApi.h"
+#include <cmath>
 #include "PluginManager.h"
 #include <QDebug>
 #include <QCoreApplication>
 #include <QDir>
 #include <QFileInfo>
-#include <QPluginLoader>
+#include "../../plugins/clipboard/ClipboardPlugin.h"
+#include "../../plugins/screenshot/ScreenshotPlugin.h"
+#include "../../plugins/neo-json-viewer/NeoJsonViewerPlugin.h"
 #include <QSettings>
 #include <QSet>
 #include <QThread>
@@ -13,14 +17,32 @@
 #include <utility>
 #include <algorithm>
 
-namespace Api = TypeGo::PluginApi;
+namespace Api = TypeGo::BuiltinFeature;
 
 namespace {
-void diagnose(const std::shared_ptr<QList<PluginDiagnostic>> &sink, const QString &path,
-              const QString &id, const Api::Error &error)
+bool validPluginParameters(const QVariantMap &parameters)
 {
-    sink->append({path, id, error});
-    qWarning().noquote() << "TypeGo plugin" << id << path << static_cast<int>(error.code) << error.message;
+    if (parameters.size() > 32) return false;
+    qsizetype bytes = 0;
+    for (auto it = parameters.cbegin(); it != parameters.cend(); ++it) {
+        if (it.key().isEmpty() || it.key().size() > 128) return false;
+        bytes += it.key().size() * 2;
+        switch (it.value().metaType().id()) {
+        case QMetaType::QString: bytes += it.value().toString().size() * 2; break;
+        case QMetaType::Bool:
+        case QMetaType::Int:
+        case QMetaType::UInt:
+        case QMetaType::LongLong:
+        case QMetaType::ULongLong: bytes += 8; break;
+        case QMetaType::Double:
+            if (!std::isfinite(it.value().toDouble())) return false;
+            bytes += 8;
+            break;
+        default: return false;
+        }
+        if (bytes > Api::MaxParameterBytes) return false;
+    }
+    return true;
 }
 
 bool inside(const QString &path, const QString &root)
@@ -36,48 +58,30 @@ Api::Invocation publicInvocation(const PluginInvocation &call)
             call.action.value(QStringLiteral("parameters")).toMap()};
 }
 
-class ExternalPluginAdapter final : public IPlugin, private Api::Host {
+class IntegratedFeatureAdapter final : public IPlugin, private Api::Host {
 public:
-    ExternalPluginAdapter(PluginManifest manifest, QString path, PluginPaths paths,
-                          std::shared_ptr<QList<PluginDiagnostic>> diagnostics, QObject *parent)
-        : IPlugin(parent), m_manifest(std::move(manifest)), m_loader(path), m_paths(std::move(paths)),
-          m_diagnostics(std::move(diagnostics))
+    IntegratedFeatureAdapter(PluginDescriptor descriptor, Api::Plugin *plugin, PluginPaths paths, QObject *parent)
+        : IPlugin(parent), m_descriptor(std::move(descriptor)), m_paths(std::move(paths)),
+          m_plugin(plugin)
     {
-        // 映射保持到进程结束，避免排队事件或 Qt 类型析构跳进已卸载的代码。
-        m_loader.setLoadHints(QLibrary::PreventUnloadHint);
-        const auto checked = parsePluginManifest(m_loader.metaData());
-        if (checked.error || checked.manifest.metadata != m_manifest.metadata) {
-            setError(checked.error ? checked.error : Api::Error{Api::ErrorCode::Conflict, QStringLiteral("Plugin metadata changed; restart TypeGo")});
-            return;
-        }
-        QObject *object = nullptr;
-        try { object = m_loader.instance(); }
-        catch (...) { setError(exceptionError()); return; }
-        if (!object) { setError({Api::ErrorCode::Internal, m_loader.errorString()}); return; }
-        m_plugin = qobject_cast<Api::Plugin *>(object);
-        if (!m_plugin || object->thread() != thread()) {
-            setError({Api::ErrorCode::Incompatible, QStringLiteral("Plugin does not implement the advertised interface on the host thread")});
-            m_plugin = nullptr;
-            return;
-        }
         try {
             if (const auto error = m_plugin->initialize(this)) setError(error);
         } catch (...) { setError(exceptionError()); }
     }
 
-    ~ExternalPluginAdapter() override
+    ~IntegratedFeatureAdapter() override
     {
         m_stopping = true;
         if (m_plugin) {
             try { m_plugin->shutdown(); } catch (...) { qWarning() << "Plugin shutdown threw an exception:" << command(); }
         }
-        // shutdown 必须完成任务收尾；库仍被固定映射，但 Qt 根对象在此销毁。
+        // 先停止后台任务，再释放功能实例。
+        delete m_plugin;
         m_plugin = nullptr;
-        m_loader.unload();
     }
 
-    QString command() const override { return m_manifest.descriptor.commands.first().keyword; }
-    QString description() const override { return m_manifest.descriptor.description; }
+    QString command() const override { return m_descriptor.commands.first().keyword; }
+    QString description() const override { return m_descriptor.description; }
     PluginQueryResult query(const PluginQueryRequest &request) override
     {
         m_queryId = request.id;
@@ -135,7 +139,7 @@ public:
         try { return checkedView(m_plugin->createSettingsView(nullptr), nullptr); }
         catch (...) { setError(exceptionError()); return nullptr; }
     }
-    bool hasSettingsWidget() const override { return m_manifest.descriptor.hasSettings; }
+    bool hasSettingsWidget() const override { return m_descriptor.hasSettings; }
     void deactivate() override
     {
         if (!m_error) { try { m_plugin->deactivate(); } catch (...) { setError(exceptionError()); } }
@@ -168,7 +172,7 @@ private:
     {
         m_error = error;
         m_error.message.truncate(2048);
-        diagnose(m_diagnostics, m_loader.fileName(), m_manifest.descriptor.id, m_error);
+        qWarning().noquote() << "TypeGo feature" << m_descriptor.id << static_cast<int>(error.code) << error.message;
     }
     PluginExecutionResult failure(const Api::Error &error) const
     {
@@ -178,7 +182,7 @@ private:
     PluginQueryResult errorQuery(quint64 id, const Api::Error &error) const
     {
         return {id, {QVariantMap{{QStringLiteral("id"), QStringLiteral("plugin-error")},
-            {QStringLiteral("title"), QCoreApplication::translate("ExternalPluginAdapter", "Plugin error")},
+            {QStringLiteral("title"), QCoreApplication::translate("IntegratedFeatureAdapter", "Plugin error")},
             {QStringLiteral("subtitle"), failure(error).error},
             {QStringLiteral("errorCode"), static_cast<int>(error.code)},
             {QStringLiteral("action"), QVariantMap{{QStringLiteral("type"), QStringLiteral("none")}}}}}};
@@ -219,12 +223,12 @@ private:
         return {static_cast<PluginExecutionResult::Status>(result.status),
                 static_cast<PluginExecutionResult::HostAction>(result.hostAction)};
     }
-    // 结果图标只能是包内文件或本插件自己的数据/缓存/临时目录文件，避免任意路径读取。
+    // 结果图标限制在程序目录或功能自己的数据、缓存与临时目录。
     QString resolveIcon(const QString &icon) const
     {
         if (icon.isEmpty()) return {};
-        const QString id = m_manifest.descriptor.id;
-        QStringList roots{QFileInfo(m_loader.fileName()).absolutePath()};
+        const QString id = m_descriptor.id;
+        QStringList roots{QFileInfo(QCoreApplication::applicationFilePath()).absolutePath()};
         for (const QString &base : {m_paths.data, m_paths.cache, m_paths.temporary})
             if (!base.isEmpty()) roots.append(QDir(base).filePath(id));
         const QString canonical = QFileInfo(QDir(roots.first()).filePath(icon)).canonicalFilePath();
@@ -252,7 +256,6 @@ private:
     QString directory(Api::Directory kind) override
     {
         if (!callbackAllowed()) return {};
-        if (kind == Api::Directory::Package) return QFileInfo(m_loader.fileName()).absolutePath();
         QString root;
         switch (kind) {
         case Api::Directory::Data: root = m_paths.data; break;
@@ -261,7 +264,7 @@ private:
         default: return {};
         }
         if (root.isEmpty()) return {};
-        const QString path = QDir(root).filePath(m_manifest.descriptor.id);
+        const QString path = QDir(root).filePath(m_descriptor.id);
         return QDir().mkpath(path) ? path : QString();
     }
     QSettings *config()
@@ -297,7 +300,7 @@ private:
     void log(Api::LogLevel level, const QString &message) override
     {
         if (!callbackAllowed()) return;
-        const auto text = m_manifest.descriptor.id + QStringLiteral(": ") + message.left(2048);
+        const auto text = m_descriptor.id + QStringLiteral(": ") + message.left(2048);
         if (level == Api::LogLevel::Info) qInfo().noquote() << text;
         else qWarning().noquote() << text;
     }
@@ -320,10 +323,8 @@ private:
     }
     void closeView() override { if (callbackAllowed()) emit viewCloseRequested(); }
 
-    PluginManifest m_manifest;
-    QPluginLoader m_loader;
+    PluginDescriptor m_descriptor;
     PluginPaths m_paths;
-    std::shared_ptr<QList<PluginDiagnostic>> m_diagnostics;
     std::unique_ptr<QSettings> m_config;
     Api::Plugin *m_plugin = nullptr;
     Api::Error m_error;
@@ -337,47 +338,39 @@ private:
 };
 }
 
-ExternalPluginRegistry::ExternalPluginRegistry(PluginManager &manager, PluginPaths paths)
-    : m_manager(manager), m_paths(std::move(paths)), m_diagnostics(std::make_shared<QList<PluginDiagnostic>>()) {}
-
-int ExternalPluginRegistry::discover()
+void registerIntegratedFeatures(PluginManager &manager, const PluginPaths &paths)
 {
-    int registered = 0;
-    QStringList roots = m_paths.bundledPackages;
-    if (!m_paths.packages.isEmpty()) roots.append(m_paths.packages);
-    QSet<QString> visitedRoots;
-    for (const QString &rootPath : std::as_const(roots)) {
-        const QDir root(rootPath);
-        const QString canonicalRoot = root.canonicalPath();
-        if (canonicalRoot.isEmpty() || visitedRoots.contains(canonicalRoot)) continue;
-        visitedRoots.insert(canonicalRoot);
-        for (const QFileInfo &package : root.entryInfoList(QDir::Dirs | QDir::NoDotAndDotDot, QDir::Name)) {
-            const QString path = QDir(package.absoluteFilePath()).filePath(QStringLiteral("plugin.dll"));
-            auto report = [&](const Api::Error &error, const QString &id = {}) { diagnose(m_diagnostics, path, id, error); };
-            if (!inside(QFileInfo(path).canonicalFilePath(), canonicalRoot)
-                || !inside(package.canonicalFilePath(), canonicalRoot)) {
-                report({Api::ErrorCode::InvalidArgument, QStringLiteral("Package must contain plugin.dll inside its installation directory")});
-                continue;
-            }
-            QPluginLoader metadata(path);
-            auto result = parsePluginManifest(metadata.metaData());
-            if (result.error) { report(result.error); continue; }
-            const QString id = result.manifest.descriptor.id;
-            if (id != package.fileName()) {
-                report({Api::ErrorCode::InvalidArgument, QStringLiteral("Package directory must match the declared plugin ID")}, id);
-                continue;
-            }
-            const auto manifest = result.manifest;
-            const auto paths = m_paths;
-            const auto diagnostics = m_diagnostics;
-            if (!m_manager.registerPlugin(manifest.descriptor, [manifest, path, paths, diagnostics](QObject *parent) {
-                return new ExternalPluginAdapter(manifest, path, paths, diagnostics, parent);
-            })) {
-                report({Api::ErrorCode::Conflict, QStringLiteral("Plugin identity, command or alias conflicts with an installed plugin")}, id);
-                continue;
-            }
-            ++registered;
-        }
+    auto add = [&manager, &paths](PluginDescriptor descriptor, std::function<Api::Plugin *()> create) {
+        return manager.registerPlugin(descriptor, [descriptor, paths, create](QObject *parent) {
+            return new IntegratedFeatureAdapter(descriptor, create(), paths, parent);
+        });
+    };
+    PluginDescriptor clip;
+    clip.id = QStringLiteral("clipboard");
+    clip.description = QCoreApplication::translate("IntegratedFeatures", "Clipboard history");
+    clip.background = true; clip.hasSettings = true;
+    clip.commands.append({QStringLiteral("history"), QStringLiteral("clip"), {QStringLiteral("cb"), QStringLiteral("paste")}});
+    add(clip, [] { return new ClipboardPlugin; });
+    PluginDescriptor shot;
+    shot.id = QStringLiteral("screenshot");
+    shot.description = QCoreApplication::translate("IntegratedFeatures", "Screenshot");
+    shot.hasSettings = true;
+    for (const auto &pair : QList<QPair<QString, QStringList>>{
+        {QStringLiteral("shot"), {QStringLiteral("screenshot"), QStringLiteral("snip"), QStringLiteral("jietu")}},
+        {QStringLiteral("shot-full"), {QStringLiteral("shot-screen")}},
+        {QStringLiteral("shot-scroll"), {QStringLiteral("shot-long"), QStringLiteral("scrollshot")}}}) {
+        PluginCommand command; command.id = pair.first == QLatin1String("shot") ? QStringLiteral("capture")
+            : pair.first == QLatin1String("shot-full") ? QStringLiteral("fullscreen") : QStringLiteral("scroll");
+        command.keyword = pair.first; command.aliases = pair.second; command.directActivation = true;
+        command.presentation = PluginPresentation::Overlay; shot.commands.append(command);
     }
-    return registered;
+    shot.commands.append({QStringLiteral("history"), QStringLiteral("shot-history"), {QStringLiteral("shots")}});
+    add(shot, [] { return new ScreenshotPlugin; });
+    PluginDescriptor json;
+    json.id = QStringLiteral("json-viewer");
+    json.description = QCoreApplication::translate("IntegratedFeatures", "JSON View");
+    PluginCommand viewer; viewer.id = QStringLiteral("viewer"); viewer.keyword = QStringLiteral("json");
+    viewer.aliases = {QStringLiteral("json-viewer")}; viewer.launchMode = IPlugin::LaunchMode::FullView;
+    viewer.directActivation = true; viewer.supportsDetach = true; json.commands.append(viewer);
+    add(json, [] { return new NeoJsonViewerPlugin; });
 }

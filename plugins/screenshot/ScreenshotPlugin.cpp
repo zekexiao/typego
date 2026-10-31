@@ -22,7 +22,7 @@
 #include <QWidget>
 #include <utility>
 
-namespace Api = TypeGo::PluginApi;
+namespace Api = TypeGo::BuiltinFeature;
 
 namespace {
 QString formatSize(qint64 bytes)
@@ -35,8 +35,7 @@ QString formatSize(qint64 bytes)
 Api::Error ScreenshotPlugin::initialize(Api::Host *host)
 {
     m_host = host;
-    const QString translations = QDir(host->directory(Api::Directory::Package))
-        .filePath(QStringLiteral("translations"));
+    const QString translations = QStringLiteral(":/integrated");
     if (m_translator.load(QLocale(), QStringLiteral("Screenshot"), QStringLiteral("_"), translations))
         QCoreApplication::installTranslator(&m_translator);
 

@@ -19,18 +19,9 @@ list(PREPEND CMAKE_PREFIX_PATH "C:/Qt/6.10.3/msvc2022_64")
 
 find_package(Qt6 REQUIRED COMPONENTS Core Gui Widgets Svg Network Concurrent LinguistTools)
 
-add_subdirectory(sdk)
 add_subdirectory(plugins/neo-json-viewer)
 add_subdirectory(plugins/clipboard)
 add_subdirectory(plugins/screenshot)
-# 生成可直接交给客户的 SDK；示例从安装目录独立查找接口。
-add_custom_target(plugin_sdk_package ALL
-    COMMAND ${CMAKE_COMMAND} --install "${CMAKE_BINARY_DIR}/sdk"
-        --prefix "${CMAKE_BINARY_DIR}/plugin-sdk" --config $<CONFIG>
-    COMMAND ${CMAKE_COMMAND} -E tar cf "${CMAKE_BINARY_DIR}/TypeGoPluginSDK-1.0.0-windows-x64.zip"
-        --format=zip plugin-sdk
-    WORKING_DIRECTORY "${CMAKE_BINARY_DIR}"
-    VERBATIM)
 
 # 单元测试开关；关闭时不引入 Test 模块，保持发布构建的依赖不变。
 option(TYPEGO_BUILD_TESTS "Build TypeGo unit tests" ON)
@@ -74,8 +65,6 @@ add_library(typego_core STATIC
     src/plugins/ExpressionParser.cpp
     src/plugins/PluginAction.cpp
     src/plugins/PluginManager.cpp
-    src/plugins/PluginManifest.cpp
-    src/plugins/ExternalPluginRegistry.cpp
     src/plugins/TerminalLauncher.cpp
     src/plugins/UnitConversion.cpp
     src/utils/AppMatcher.cpp
@@ -95,7 +84,6 @@ target_compile_options(typego_core PRIVATE
     $<$<CXX_COMPILER_ID:MSVC>:/utf-8>
 )
 target_link_libraries(typego_core PUBLIC
-    TypeGoPlugin::SDK
     Qt6::Core
     Qt6::Gui
     Qt6::Widgets
@@ -105,6 +93,7 @@ target_link_libraries(typego_core PUBLIC neo_json_model)
 
 qt_add_executable(TypeGo
     src/main.cpp
+    src/plugins/IntegratedFeatures.cpp
     src/MainWindow.cpp
     src/SettingsView.cpp
     src/AppLauncher.cpp
@@ -147,6 +136,7 @@ endif()
 
 target_link_libraries(TypeGo PRIVATE
     typego_core
+    clipboard_plugin screenshot_plugin neo_json_viewer
     Qt6::Core
     Qt6::Gui
     Qt6::Widgets
@@ -180,6 +170,17 @@ add_custom_target(update_translation_sources ALL
     VERBATIM
 )
 add_dependencies(TypeGo update_translation_sources)
+
+# 内置功能译文随主程序一同发布。
+qt_add_translation(INTEGRATED_QM_FILES
+    plugins/clipboard/translations/Clipboard_zh_CN.ts
+    plugins/screenshot/translations/Screenshot_zh_CN.ts
+    plugins/neo-json-viewer/translations/NeoJsonViewer_zh_CN.ts)
+qt_add_resources(TypeGo integrated_translations PREFIX /integrated
+    BASE ${CMAKE_CURRENT_BINARY_DIR} FILES ${INTEGRATED_QM_FILES})
+qt_add_resources(TypeGo json_viewer_assets PREFIX /jsonviewer
+    BASE ${CMAKE_CURRENT_SOURCE_DIR}/plugins/neo-json-viewer
+    FILES plugins/neo-json-viewer/icon.png)
 
 # Translations
 get_filename_component(TYPEGO_QT_PREFIX "${Qt6_DIR}/../../.." ABSOLUTE)

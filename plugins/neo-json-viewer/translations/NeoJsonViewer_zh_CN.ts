@@ -141,7 +141,7 @@
     </message>
 </context>
 <context>
-    <name>MainWindow</name>
+    <name>JsonViewerWindow</name>
     <message>
         <location filename="../MainWindow.cpp" line="123"/>
         <source>Ready</source>
@@ -489,12 +489,12 @@
 <context>
     <name>NeoJsonViewerPlugin</name>
     <message>
-        <location filename="../NeoJsonViewerPlugin.cpp" line="39"/>
+        <location filename="../NeoJsonViewerPlugin.cpp" line="38"/>
         <source>JSON View</source>
         <translation>JSON 视图</translation>
     </message>
     <message>
-        <location filename="../NeoJsonViewerPlugin.cpp" line="40"/>
+        <location filename="../NeoJsonViewerPlugin.cpp" line="39"/>
         <source>Browse JSON and MessagePack files · Press Enter to open</source>
         <translation>浏览 JSON 和 MessagePack 文件 · 按回车打开</translation>
     </message>

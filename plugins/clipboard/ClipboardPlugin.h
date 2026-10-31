@@ -1,6 +1,6 @@
 #pragma once
 
-#include <TypeGoPlugin/Plugin.h>
+#include "plugins/BuiltinFeatureApi.h"
 #include <QByteArray>
 #include <QStringList>
 #include <QTimer>
@@ -13,17 +13,16 @@ class QClipboard;
 class QMimeData;
 
 // 剪贴板历史插件：后台监听系统剪贴板，按关键字过滤并粘贴回剪贴板。
-class ClipboardPlugin final : public QObject, public TypeGo::PluginApi::Plugin {
+class ClipboardPlugin final : public QObject, public TypeGo::BuiltinFeature::Plugin {
     Q_OBJECT
-    Q_PLUGIN_METADATA(IID TYPEGO_PLUGIN_IID FILE "typego-plugin.json")
-    Q_INTERFACES(TypeGo::PluginApi::Plugin)
+
 public:
-    TypeGo::PluginApi::Error initialize(TypeGo::PluginApi::Host *host) override;
-    TypeGo::PluginApi::QueryResult query(const TypeGo::PluginApi::QueryRequest &request) override;
-    TypeGo::PluginApi::ExecutionResult execute(const TypeGo::PluginApi::Invocation &invocation) override;
+    TypeGo::BuiltinFeature::Error initialize(TypeGo::BuiltinFeature::Host *host) override;
+    TypeGo::BuiltinFeature::QueryResult query(const TypeGo::BuiltinFeature::QueryRequest &request) override;
+    TypeGo::BuiltinFeature::ExecutionResult execute(const TypeGo::BuiltinFeature::Invocation &invocation) override;
     QWidget *createSettingsView(QWidget *parent) override;
-    void activate(const TypeGo::PluginApi::Invocation &invocation) override;
-    TypeGo::PluginApi::LeaveDecision prepareToLeave(TypeGo::PluginApi::LeaveReason reason, quint64 token) override;
+    void activate(const TypeGo::BuiltinFeature::Invocation &invocation) override;
+    TypeGo::BuiltinFeature::LeaveDecision prepareToLeave(TypeGo::BuiltinFeature::LeaveReason reason, quint64 token) override;
     void shutdown() override;
 
 private:
@@ -31,7 +30,7 @@ private:
     void stopMonitoring();
     void captureClipboard();
     void applyConfig();
-    TypeGo::PluginApi::ResultItem resultItem(const ClipboardItem &item) const;
+    TypeGo::BuiltinFeature::ResultItem resultItem(const ClipboardItem &item) const;
     bool matches(const ClipboardItem &item, const QString &filter) const;
     int clearHistory();
     void saveHistory();
@@ -48,7 +47,7 @@ private:
         QByteArray imageSignature;
     };
 
-    TypeGo::PluginApi::Host *m_host = nullptr;
+    TypeGo::BuiltinFeature::Host *m_host = nullptr;
     QClipboard *m_clipboard = nullptr;
     QTranslator m_translator;
     QTimer m_captureTimer;
