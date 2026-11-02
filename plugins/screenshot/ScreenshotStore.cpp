@@ -13,6 +13,15 @@
 namespace {
 constexpr int ThumbnailSize = 160;
 const QString FilePrefix = QStringLiteral("shot_");
+
+// 修改时间精度有限，同一毫秒内的连拍会并列；文件名带时间戳和序号，按名字倒序兜底才能稳定保留最新的。
+bool newerFirst(const QFileInfo &a, const QFileInfo &b)
+{
+    const QDateTime left = a.lastModified();
+    const QDateTime right = b.lastModified();
+    if (left != right) return left > right;
+    return a.fileName() > b.fileName();
+}
 }
 
 ScreenshotStore::ScreenshotStore(QString dataDir, QString cacheDir)
@@ -47,11 +56,14 @@ QString ScreenshotStore::record(const QImage &image, QString *error)
     for (int index = 2; QFileInfo::exists(path); ++index)
         path = QDir(m_historyDir).filePath(name + QStringLiteral("_") + QString::number(index)
                                              + QStringLiteral(".png"));
-    QImageWriter writer(path, "png");
-    if (!writer.write(image)) {
-        m_lastError = writer.errorString();
-        if (error) *error = m_lastError;
-        return {};
+    {
+        // 先析构 writer 关闭文件，否则 Windows 上 prune() 删不掉仍被占用的文件。
+        QImageWriter writer(path, "png");
+        if (!writer.write(image)) {
+            m_lastError = writer.errorString();
+            if (error) *error = m_lastError;
+            return {};
+        }
     }
     prune();
     return path;
@@ -62,9 +74,7 @@ QList<ShotHistoryEntry> ScreenshotStore::entries() const
     QList<ShotHistoryEntry> result;
     const QDir dir(m_historyDir);
     QFileInfoList files = dir.entryInfoList({QStringLiteral("*.png")}, QDir::Files);
-    std::sort(files.begin(), files.end(), [](const QFileInfo &a, const QFileInfo &b) {
-        return a.lastModified() > b.lastModified();
-    });
+    std::sort(files.begin(), files.end(), newerFirst);
     result.reserve(files.size());
     for (const QFileInfo &file : files) {
         QImageReader reader(file.absoluteFilePath());
@@ -119,9 +129,7 @@ void ScreenshotStore::prune()
 {
     const QDir dir(m_historyDir);
     QFileInfoList files = dir.entryInfoList({QStringLiteral("*.png")}, QDir::Files);
-    std::sort(files.begin(), files.end(), [](const QFileInfo &a, const QFileInfo &b) {
-        return a.lastModified() > b.lastModified();
-    });
+    std::sort(files.begin(), files.end(), newerFirst);
     for (int index = m_limit; index < files.size(); ++index) {
         const QFileInfo &file = files.at(index);
         QFile::remove(QDir(m_cacheDir).filePath(file.completeBaseName() + QStringLiteral(".png")));
