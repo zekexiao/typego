@@ -14,3 +14,7 @@ node_modules
 .idea
 dev.log
 dev.err
+
+# 本地工具与缓存
+.claude/
+__pycache__/
