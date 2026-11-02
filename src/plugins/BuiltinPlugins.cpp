@@ -41,7 +41,11 @@ void registerBuiltinPlugins(PluginManager &manager, Settings &settings, GlobalHo
                                       &themeManager, parent);
         }, {QStringLiteral("user"), QStringLiteral("plugin"), QStringLiteral("scan"), QStringLiteral("about")},
         IPlugin::LaunchMode::FullView, false, true, false);
+#ifdef Q_OS_WIN
     add(QStringLiteral("file"), QCoreApplication::translate("FilePlugin", "File search (Everything)"),
+#else
+    add(QStringLiteral("file"), QCoreApplication::translate("FilePlugin", "File search (fd)"),
+#endif
         [](QObject *parent) { return new FilePlugin(parent); });
     add(QStringLiteral("shell"), QCoreApplication::translate("ShellPlugin", "Run shell commands"),
         [](QObject *parent) { return new ShellPlugin(parent); }, {QStringLiteral("cmd")},

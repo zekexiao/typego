@@ -73,6 +73,7 @@ add_library(typego_core STATIC
     src/utils/AppMatcher.cpp
     src/utils/AppUsageStore.cpp
     src/utils/DirectoryListing.cpp
+    src/utils/FileSearchCommand.cpp
     src/utils/PinStorage.cpp
     src/utils/ScreenPosition.cpp
     src/utils/Restart.cpp

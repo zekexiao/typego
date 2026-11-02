@@ -1150,7 +1150,11 @@ void MainWindow::performSearch()
             && m_pluginManager->plugin(QStringLiteral("file"))) {
             QVariantMap fileItem;
             fileItem["title"] = tr("Search files \"%1\"").arg(trimmed);
+#ifdef Q_OS_WIN
             fileItem["subtitle"] = tr("Search with Everything");
+#else
+            fileItem["subtitle"] = tr("Search with fd or find");
+#endif
             fileItem["icon"] = "";
             QVariantMap action;
             action["type"] = QStringLiteral("fileSearch");

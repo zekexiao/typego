@@ -13,4 +13,4 @@ cmake --build build
 cmake --build build --target check && QT_QPA_PLATFORM=offscreen ctest --test-dir build --output-on-failure
 ```
 
-Everything file search and other Win32 integrations are unavailable on Linux. UI snapshots (`build/bin/TypeGo --ui-snapshots`) need a CJK font such as `fonts-noto-cjk`.
+On Linux, file search (`file`) uses `fd` (`fdfind` on Debian/Ubuntu, package `fd-find`) under the home folder and falls back to `find`; other Win32 integrations (screen capture, startup entry, installer updates, window effects) are unavailable. UI snapshots (`build/bin/TypeGo --ui-snapshots`) need a CJK font such as `fonts-noto-cjk`.

@@ -213,106 +213,126 @@
 <context>
     <name>FilePlugin</name>
     <message>
-        <location filename="../src/plugins/FilePlugin.cpp" line="43"/>
+        <location filename="../src/plugins/FilePlugin.cpp" line="51"/>
         <source>Searching files...</source>
         <translation>正在搜索文件…</translation>
     </message>
     <message>
-        <location filename="../src/plugins/FilePlugin.cpp" line="60"/>
+        <location filename="../src/plugins/FilePlugin.cpp" line="68"/>
         <source>Folder</source>
         <translation>文件夹</translation>
     </message>
     <message>
-        <location filename="../src/plugins/FilePlugin.cpp" line="64"/>
+        <location filename="../src/plugins/FilePlugin.cpp" line="72"/>
         <source>%1 File</source>
         <translation>%1 文件</translation>
     </message>
     <message>
-        <location filename="../src/plugins/FilePlugin.cpp" line="66"/>
+        <location filename="../src/plugins/FilePlugin.cpp" line="74"/>
         <source>File</source>
         <translation>文件</translation>
     </message>
     <message>
-        <location filename="../src/plugins/FilePlugin.cpp" line="76"/>
+        <location filename="../src/plugins/FilePlugin.cpp" line="84"/>
+        <location filename="../src/plugins/FilePlugin.cpp" line="195"/>
         <source>Enter a filename to search</source>
         <translation>输入文件名进行搜索</translation>
     </message>
     <message>
-        <location filename="../src/plugins/FilePlugin.cpp" line="77"/>
+        <location filename="../src/plugins/FilePlugin.cpp" line="85"/>
         <source>Powered by Everything for fast search</source>
         <translation>由 Everything 提供极速搜索支持</translation>
     </message>
     <message>
-        <location filename="../src/plugins/FilePlugin.cpp" line="95"/>
+        <location filename="../src/plugins/FilePlugin.cpp" line="103"/>
         <source>Everything service is not running</source>
         <translation>Everything 服务未运行</translation>
     </message>
     <message>
-        <location filename="../src/plugins/FilePlugin.cpp" line="96"/>
+        <location filename="../src/plugins/FilePlugin.cpp" line="104"/>
         <source>Please start Everything before using file search</source>
         <translation>请先启动 Everything 再使用文件搜索</translation>
     </message>
     <message>
-        <location filename="../src/plugins/FilePlugin.cpp" line="98"/>
+        <location filename="../src/plugins/FilePlugin.cpp" line="106"/>
+        <location filename="../src/plugins/FilePlugin.cpp" line="213"/>
         <source>Search failed</source>
         <translation>搜索失败</translation>
     </message>
     <message>
-        <location filename="../src/plugins/FilePlugin.cpp" line="99"/>
+        <location filename="../src/plugins/FilePlugin.cpp" line="107"/>
         <source>Error code: </source>
         <translation>错误码: </translation>
     </message>
     <message>
-        <location filename="../src/plugins/FilePlugin.cpp" line="116"/>
+        <location filename="../src/plugins/FilePlugin.cpp" line="124"/>
+        <location filename="../src/plugins/FilePlugin.cpp" line="252"/>
         <source>No files found</source>
         <translation>未找到文件</translation>
     </message>
     <message>
-        <location filename="../src/plugins/FilePlugin.cpp" line="166"/>
+        <location filename="../src/plugins/FilePlugin.cpp" line="174"/>
         <source>Showing %1 of %2 results</source>
         <translation>显示 %1 / %2 条结果</translation>
     </message>
     <message>
-        <location filename="../src/plugins/FilePlugin.cpp" line="167"/>
+        <location filename="../src/plugins/FilePlugin.cpp" line="175"/>
+        <location filename="../src/plugins/FilePlugin.cpp" line="278"/>
         <source>Use a more specific keyword to narrow the results</source>
         <translation>使用更精确的关键词缩小范围</translation>
     </message>
     <message>
-        <location filename="../src/plugins/FilePlugin.cpp" line="180"/>
-        <source>File search is only available on Windows</source>
-        <translation>文件搜索仅在 Windows 上可用</translation>
+        <location filename="../src/plugins/FilePlugin.cpp" line="195"/>
+        <source>Search your home folder with fd or find</source>
+        <translation>使用 fd 或 find 搜索主目录</translation>
     </message>
     <message>
-        <location filename="../src/plugins/FilePlugin.cpp" line="181"/>
-        <source>Everything SDK only supports Windows</source>
-        <translation>Everything SDK 仅支持 Windows 平台</translation>
+        <location filename="../src/plugins/FilePlugin.cpp" line="213"/>
+        <source>Cannot start %1</source>
+        <translation>无法启动 %1</translation>
     </message>
     <message>
-        <location filename="../src/plugins/BuiltinPlugins.cpp" line="44"/>
-        <location filename="../src/plugins/FilePlugin.h" line="14"/>
+        <location filename="../src/plugins/FilePlugin.cpp" line="252"/>
+        <source>File search timed out</source>
+        <translation>文件搜索超时</translation>
+    </message>
+    <message>
+        <location filename="../src/plugins/FilePlugin.cpp" line="277"/>
+        <source>Showing the first %1 results</source>
+        <translation>仅显示前 %1 条结果</translation>
+    </message>
+    <message>
+        <location filename="../src/plugins/BuiltinPlugins.cpp" line="45"/>
+        <location filename="../src/plugins/FilePlugin.h" line="15"/>
         <source>File search (Everything)</source>
         <translation>文件搜索（Everything）</translation>
+    </message>
+    <message>
+        <location filename="../src/plugins/BuiltinPlugins.cpp" line="47"/>
+        <location filename="../src/plugins/FilePlugin.h" line="17"/>
+        <source>File search (fd)</source>
+        <translation>文件搜索（fd）</translation>
     </message>
 </context>
 <context>
     <name>FloatIcon</name>
     <message>
-        <location filename="../src/MainWindow.cpp" line="1537"/>
+        <location filename="../src/MainWindow.cpp" line="1541"/>
         <source>Left-click to show or hide TypeGo, right-click for the menu</source>
         <translation>左键显示或隐藏 TypeGo，右键打开菜单</translation>
     </message>
     <message>
-        <location filename="../src/MainWindow.cpp" line="1656"/>
+        <location filename="../src/MainWindow.cpp" line="1660"/>
         <source>Hide main window</source>
         <translation>隐藏主界面</translation>
     </message>
     <message>
-        <location filename="../src/MainWindow.cpp" line="1656"/>
+        <location filename="../src/MainWindow.cpp" line="1660"/>
         <source>Show main window</source>
         <translation>显示主界面</translation>
     </message>
     <message>
-        <location filename="../src/MainWindow.cpp" line="1658"/>
+        <location filename="../src/MainWindow.cpp" line="1662"/>
         <source>Hide float icon</source>
         <translation>隐藏浮动图标</translation>
     </message>
@@ -481,7 +501,7 @@ Open Settings from the tray icon to choose another shortcut.</source>
     </message>
     <message>
         <location filename="../src/MainWindow.cpp" line="920"/>
-        <location filename="../src/MainWindow.cpp" line="1384"/>
+        <location filename="../src/MainWindow.cpp" line="1388"/>
         <source>Unpin from Start</source>
         <translation>从开始界面取消固定</translation>
     </message>
@@ -531,48 +551,53 @@ Open Settings from the tray icon to choose another shortcut.</source>
         <translation>搜索文件“%1”</translation>
     </message>
     <message>
-        <location filename="../src/MainWindow.cpp" line="1153"/>
+        <location filename="../src/MainWindow.cpp" line="1154"/>
         <source>Search with Everything</source>
         <translation>用 Everything 搜索</translation>
     </message>
     <message>
         <location filename="../src/MainWindow.cpp" line="861"/>
         <location filename="../src/MainWindow.cpp" line="866"/>
-        <location filename="../src/MainWindow.cpp" line="1487"/>
-        <location filename="../src/MainWindow.cpp" line="1502"/>
-        <location filename="../src/MainWindow.cpp" line="1509"/>
+        <location filename="../src/MainWindow.cpp" line="1491"/>
+        <location filename="../src/MainWindow.cpp" line="1506"/>
+        <location filename="../src/MainWindow.cpp" line="1513"/>
         <source>Action failed</source>
         <translation>操作失败</translation>
     </message>
     <message>
-        <location filename="../src/MainWindow.cpp" line="1488"/>
-        <location filename="../src/MainWindow.cpp" line="1503"/>
-        <location filename="../src/MainWindow.cpp" line="1509"/>
+        <location filename="../src/MainWindow.cpp" line="1492"/>
+        <location filename="../src/MainWindow.cpp" line="1507"/>
+        <location filename="../src/MainWindow.cpp" line="1513"/>
         <source>The selected item could not be opened or executed.</source>
         <translation>无法打开或执行所选项目。</translation>
     </message>
     <message>
-        <location filename="../src/MainWindow.cpp" line="1228"/>
+        <location filename="../src/MainWindow.cpp" line="1232"/>
         <source>Cannot open item</source>
         <translation>无法打开项目</translation>
     </message>
     <message>
-        <location filename="../src/MainWindow.cpp" line="1229"/>
+        <location filename="../src/MainWindow.cpp" line="1156"/>
+        <source>Search with fd or find</source>
+        <translation>用 fd 或 find 搜索</translation>
+    </message>
+    <message>
+        <location filename="../src/MainWindow.cpp" line="1233"/>
         <source>Cannot open %1. Check that the file exists and an application is installed to open it.</source>
         <translation>无法打开 %1。请确认文件存在，并已安装可打开此文件的应用。</translation>
     </message>
     <message>
-        <location filename="../src/MainWindow.cpp" line="1369"/>
+        <location filename="../src/MainWindow.cpp" line="1373"/>
         <source>Pinned</source>
         <translation>已固定</translation>
     </message>
     <message>
-        <location filename="../src/MainWindow.cpp" line="1521"/>
+        <location filename="../src/MainWindow.cpp" line="1525"/>
         <source>%1 | Unknown command</source>
         <translation>%1 | 未知的命令</translation>
     </message>
     <message>
-        <location filename="../src/MainWindow.cpp" line="1521"/>
+        <location filename="../src/MainWindow.cpp" line="1525"/>
         <source>%1 | %2</source>
         <translation>%1 | %2</translation>
     </message>
@@ -984,7 +1009,7 @@ Open Settings from the tray icon to choose another shortcut.</source>
 <context>
     <name>ShellPlugin</name>
     <message>
-        <location filename="../src/plugins/BuiltinPlugins.cpp" line="46"/>
+        <location filename="../src/plugins/BuiltinPlugins.cpp" line="50"/>
         <location filename="../src/plugins/ShellPlugin.h" line="14"/>
         <source>Run shell commands</source>
         <translation>运行 shell 命令</translation>
