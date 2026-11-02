@@ -63,17 +63,17 @@
 
 namespace {
 constexpr int DefaultWindowHeight = 560;
-constexpr int ResultsExtraHeight = 10;
+constexpr int ResultsExtraHeight = 8;
 constexpr int InitialVisibleResults = 80;
 constexpr int ResultsFetchBatchSize = 120;
 constexpr int MaxConcurrentIconLoads = 4;
 
 // 结果项布局常量，配合 32px 图标缓存尺寸，避免上采样发虚。
 constexpr int ResultIconSize = 32;
-constexpr int ResultItemHPadding = 16;
-constexpr int ResultItemVPadding = 12;
-constexpr int ResultItemRadius = 12;
-constexpr int ResultIconTextGap = 12;
+constexpr int ResultItemHPadding = 10;
+constexpr int ResultItemVPadding = 6;
+constexpr int ResultItemRadius = 8;
+constexpr int ResultIconTextGap = 10;
 constexpr int ResultTitleSubtitleGap = 2;
 
 // 标题与副标题分开提供，供 ResultItemDelegate 分层绘制。
@@ -598,8 +598,8 @@ CommandLineEdit::CommandLineEdit(QWidget *parent)
     {
         setObjectName(QStringLiteral("commandInput"));
         auto *layout = new QHBoxLayout(this);
-        layout->setContentsMargins(16, 8, 12, 8);
-        layout->setSpacing(12);
+        layout->setContentsMargins(12, 4, 8, 4);
+        layout->setSpacing(8);
         m_badge->setObjectName(QStringLiteral("commandBadge"));
         m_badge->hide();
         m_editor->setObjectName(QStringLiteral("commandArgumentEdit"));
@@ -790,8 +790,8 @@ MainWindow::MainWindow(AppLauncher *launcher, PluginManager *pluginManager, Sett
 
     auto *content = new QWidget(this);
     auto *contentLayout = new QVBoxLayout(content);
-    contentLayout->setContentsMargins(24, 8, 24, 20);
-    contentLayout->setSpacing(16);
+    contentLayout->setContentsMargins(12, 4, 12, 12);
+    contentLayout->setSpacing(8);
     layout->addWidget(content, 1);
 
     auto *searchEdit = new CommandLineEdit;
@@ -867,25 +867,6 @@ MainWindow::MainWindow(AppLauncher *launcher, PluginManager *pluginManager, Sett
     });
     connect(m_pluginManager, &PluginManager::actionFinished, this, &MainWindow::applyExecutionResult);
     contentLayout->addWidget(m_stack, 1);
-
-    m_launcherFooter = new QFrame;
-    m_launcherFooter->setObjectName(QStringLiteral("launcherFooter"));
-    auto *footerLayout = new QHBoxLayout(m_launcherFooter);
-    footerLayout->setContentsMargins(0, 4, 0, 0);
-    footerLayout->setSpacing(4);
-    const auto addHint = [footerLayout](const QString &key, const QString &text) {
-        auto *keycap = new QLabel(key);
-        keycap->setObjectName(QStringLiteral("keycap"));
-        auto *label = new QLabel(text);
-        label->setObjectName(QStringLiteral("shortcutHint"));
-        footerLayout->addWidget(keycap);
-        footerLayout->addWidget(label);
-        footerLayout->addSpacing(8);
-    };
-    addHint(QStringLiteral("Enter"), tr("Open"));
-    footerLayout->addStretch();
-    addHint(QStringLiteral("Esc"), tr("Clear or close"));
-    contentLayout->addWidget(m_launcherFooter);
 
     auto *debounce = new QTimer(this);
     m_searchDebounce = debounce;
@@ -1435,7 +1416,6 @@ void MainWindow::showEmbedded(const QString &command)
     m_stack->setMinimumHeight(0);
     m_stack->setMaximumHeight(QWIDGETSIZE_MAX);
     m_searchEdit->hide();
-    m_launcherFooter->hide();
     m_commandLabel->hide();
     m_pinnedPanel->hide();
     m_pluginBackButton->show();
@@ -1484,7 +1464,6 @@ void MainWindow::showResults()
     m_pluginDetachButton->hide();
     for (QShortcut *shortcut : m_resultShortcuts) shortcut->setEnabled(true);
     m_searchEdit->show();
-    m_launcherFooter->show();
     if (wasPluginPage) {
         m_searchEdit->setText(QString());
         m_searchDebounce->stop();

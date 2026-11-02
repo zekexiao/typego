@@ -163,7 +163,6 @@ private:
     ThemeManager *m_themeManager;
 
     CommandLineEdit *m_searchEdit;
-    QFrame *m_launcherFooter = nullptr;
     QWidget *m_titleBar = nullptr;
     QLabel *m_commandLabel;
     QWidget *m_pinnedPanel;

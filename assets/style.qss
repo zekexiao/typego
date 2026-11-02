@@ -152,7 +152,6 @@ QFrame#settingsDivider {
 QFrame#settingsFooter {
     background-color: transparent;
     border: none;
-    border-top: 1px solid @BORDER@;
 }
 
 QListWidget#scanDirectoryList {
@@ -242,10 +241,10 @@ QComboBox {
 }
 
 QFrame#commandInput {
-    min-height: 52px;
+    min-height: 42px;
     background-color: @GLASS_SURFACE@;
     border: 1px solid @BORDER@;
-    border-radius: 16px;
+    border-radius: 12px;
 }
 
 /* Qt 样式表不支持 :focus-within，聚焦状态由 CommandLineEdit 设置 focused 动态属性。 */
@@ -254,7 +253,7 @@ QFrame#commandInput[focused="true"] {
 }
 
 QLabel#commandBadge {
-    padding: 6px 10px;
+    padding: 4px 8px;
     background-color: @SELECTION@;
     color: @ACCENT_TEXT@;
     font-weight: 600;
@@ -360,7 +359,7 @@ QPlainTextEdit#shellOutput {
 }
 
 QPushButton#pinnedAppButton {
-    padding: 6px 12px;
+    padding: 4px 8px;
 }
 
 QListWidget::item:hover,
@@ -376,6 +375,8 @@ QTreeView::item:selected {
 
 /* 搜索结果由 ResultItemDelegate 自绘，样式表只负责容器外观和文字基色。 */
 QListView#searchResults {
+    padding: 4px;
+    border-radius: 12px;
     color: @TEXT@;
     selection-background-color: transparent;
     selection-color: @TEXT@;
@@ -646,10 +647,7 @@ QFrame#settingsSidebar {
 }
 QLabel#sidebarBrand { font-size: 18px; font-weight: 600; }
 QLabel#sidebarCaption { color: @TEXT_SECONDARY@; font-size: 12px; }
-QFrame#launcherFooter { border: none; background: transparent; }
-QLabel#keycap { padding: 0 2px; background: transparent; color: @TEXT_SECONDARY@; border: none; font-size: 12px; }
-QLabel#shortcutHint { color: @TEXT_SECONDARY@; font-size: 12px; }
-QPushButton#pinnedAppButton { padding: 6px 12px; border-radius: 16px; }
+QPushButton#pinnedAppButton { padding: 4px 8px; border-radius: 12px; }
 QPushButton#primary:disabled { background: @INSET@; color: @PLACEHOLDER@; border-color: @BORDER@; }
 QPushButton#danger:disabled { color: @PLACEHOLDER@; border-color: @BORDER@; background: @INSET@; }
 QPushButton#windowCloseButton:focus, QPushButton#titleBackButton:focus { border: 1px solid @BORDER_FOCUS@; }

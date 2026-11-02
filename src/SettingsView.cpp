@@ -253,13 +253,9 @@ SettingsView::SettingsView(Settings *settings, PluginManager *pluginManager, Glo
 {
     setObjectName(QStringLiteral("settingsView"));
 
-    auto *root = new QVBoxLayout(this);
-    root->setContentsMargins(0, 0, 0, 0);
-    root->setSpacing(0);
-
-    auto *columns = new QHBoxLayout;
+    auto *columns = new QHBoxLayout(this);
+    columns->setContentsMargins(0, 0, 0, 0);
     columns->setSpacing(24);
-    root->addLayout(columns, 1);
 
     auto *sidebar = new QFrame;
     sidebar->setObjectName(QStringLiteral("settingsSidebar"));
@@ -305,7 +301,11 @@ SettingsView::SettingsView(Settings *settings, PluginManager *pluginManager, Glo
 
     m_pages = new QStackedWidget;
     m_pages->setObjectName(QStringLiteral("settingsPages"));
-    columns->addWidget(m_pages, 1);
+    // 操作栏只属于右侧内容列，侧栏连续延伸到底部。
+    auto *contentLayout = new QVBoxLayout;
+    contentLayout->setSpacing(0);
+    contentLayout->addWidget(m_pages, 1);
+    columns->addLayout(contentLayout, 1);
 
     auto createPage = [this](const QString &title) {
         auto *scroll = new QScrollArea;
@@ -316,8 +316,8 @@ SettingsView::SettingsView(Settings *settings, PluginManager *pluginManager, Glo
         auto *body = new QWidget(scroll);
         body->setObjectName(QStringLiteral("settingsPage"));
         auto *layout = new QVBoxLayout(body);
-        // 底部留出一段 padding，滚到底时内容与底部按钮之间不至于贴着
-        layout->setContentsMargins(0, 4, 8, 20);
+        // 与操作栏共同保留紧凑间距，避免底部出现重复留白。
+        layout->setContentsMargins(0, 4, 8, 8);
         layout->setSpacing(12);
         auto *heading = new QLabel(title);
         heading->setObjectName(QStringLiteral("pageTitle"));
@@ -680,7 +680,7 @@ SettingsView::SettingsView(Settings *settings, PluginManager *pluginManager, Glo
     auto *footer = new QFrame;
     footer->setObjectName(QStringLiteral("settingsFooter"));
     auto *footerLayout = new QHBoxLayout(footer);
-    footerLayout->setContentsMargins(0, 16, 0, 0);
+    footerLayout->setContentsMargins(0, 8, 8, 0);
     footerLayout->setSpacing(0);
     auto *buttons = new QDialogButtonBox(QDialogButtonBox::Save | QDialogButtonBox::Cancel);
     buttons->button(QDialogButtonBox::Save)->setText(tr("Save"));
@@ -690,7 +690,7 @@ SettingsView::SettingsView(Settings *settings, PluginManager *pluginManager, Glo
     buttons->button(QDialogButtonBox::Cancel)->setMinimumWidth(84);
     footerLayout->addStretch();
     footerLayout->addWidget(buttons);
-    root->addWidget(footer);
+    contentLayout->addWidget(footer);
     connect(buttons->button(QDialogButtonBox::Cancel), &QPushButton::clicked, this, [this]() {
         reload();
         emit closeRequested();
