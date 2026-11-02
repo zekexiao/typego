@@ -1,4 +1,4 @@
-# 在 Windows 和 Ubuntu 上编译、跑单元测试并打安装包；推送 v* 标签时把安装包附加到同名 Release。
+# 在 Windows 和 Ubuntu 上编译、跑单元测试并打安装包；推送 v* 标签时自动创建同名 Release 并上传安装包。
 name: Package
 
 on:
@@ -108,12 +108,31 @@ jobs:
     permissions:
       contents: write
     steps:
+      - uses: actions/checkout@v4
+
+      # 标签必须与 VERSION 一致；Release 正文取 CHANGELOG.md 中该版本的条目（不含版本标题）。
+      - name: Release notes
+        id: notes
+        run: |
+          version=$(tr -d '[:space:]' < VERSION)
+          if [ "${GITHUB_REF_NAME}" != "v${version}" ]; then
+            echo "::error::标签 ${GITHUB_REF_NAME} 与 VERSION ${version} 不一致"
+            exit 1
+          fi
+          awk -v v="$version" '/^## /{if(found)exit; found=index($0,"## " v " ")==1; next} found' CHANGELOG.md > notes.md
+          if ! grep -q '[^[:space:]]' notes.md; then
+            echo "::error::CHANGELOG.md 缺少 ${version} 的条目"
+            exit 1
+          fi
+          echo "version=${version}" >> "$GITHUB_OUTPUT"
+
       - uses: actions/download-artifact@v4
         with:
           path: dist
           merge-multiple: true
 
-      # 已有同名 Release 时只追加附件，不改正文。
       - uses: softprops/action-gh-release@v2
         with:
+          name: TypeGo ${{ steps.notes.outputs.version }}
+          body_path: notes.md
           files: dist/*

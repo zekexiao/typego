@@ -103,11 +103,12 @@
    - `inno.iss` 的 `#define MyAppVersion`
    - `CHANGELOG.md` 顶部新增版本条目（中英双语，日期格式 `YYYY-MM-DD`）
 3. **提交并推送**：`git add` + `git commit` + `git push origin master`。
-4. **编译并发布 Release**：
-   - 运行 `build.bat` 生成 Release 构建
-   - 用 `"C:\Program Files (x86)\Inno Setup 6\ISCC.exe" inno.iss` 打包，产物为 `dist\TypeGo_<版本>_x64.exe`
+4. **打标签，由 CI 发布 Release**：
    - 创建并推送标签 `git tag -a v<版本> -m "TypeGo <版本>" && git push origin v<版本>`
-   - 在 GitHub `zekexiao/typego` 创建同名 Release（正文取 CHANGELOG 该版本条目），上传安装包 asset，文件名必须是 `TypeGo_<版本>_x64.exe`（客户端更新器按 `.exe` + `x64` 命名规则匹配下载地址）
+   - `.github/workflows/package.yml` 会自动在 Windows 上用 `inno.iss` 打出 `TypeGo_<版本>_x64.exe`、在 Ubuntu 上用 `cpack -G DEB` 打出 `typego_<版本>_amd64.deb`，
+     校验标签与 `VERSION` 一致，以 CHANGELOG 该版本条目为正文创建同名 Release 并上传两个安装包
+   - 不再本地运行 ISCC 或手工上传；安装包文件名必须保持 `TypeGo_<版本>_x64.exe`（客户端更新器按 `.exe` + `x64` 命名规则匹配下载地址）
+   - 在 Actions 页面确认工作流成功、Release 附件齐全；失败时修复后删除并重推标签
 5. **更新网页信息**：官网版本与下载链接由 `website/src/data/releases.ts` 自动从 `CHANGELOG.md` + `VERSION` 派生，无需手改；确认 CHANGELOG 条目内容即可，网站构建时会校验两者一致。
 6. **发布网页**：根目录执行 `npm run site:deploy`（wrangler pages，项目名 `typego`）。
 
