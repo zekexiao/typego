@@ -33,13 +33,22 @@
 - `build.bat` 编译成功后自动调用 `run.bat --ui-snapshots`；只需重新截图时直接运行后者。
 - 默认输出到 `build/ui-snapshots/<UTC时间>`；`build/ui-snapshots/LATEST.txt` 指向最近成功批次。
   也可用 `run.bat --ui-snapshots <新目录>` 指定输出目录，禁止覆盖已有目录。
-- 每个批次包含浅色和深色主题的原尺寸 PNG、`manifest.json` 覆盖清单，以及图片内嵌的单文件 `index.html` 图册。
-  覆盖主窗口及结果状态、全部设置页（长页分段）、内置工具设置、JSON 窗口与弹窗、截图选区/工具栏/贴图/长截图面板。
+- 截图按分组开关：`--pages=main,settings,json,tools,update,capture`，缺省只跑 `main,settings`（主窗口输入态与设置页）。
+  改动其它功能时用 `--pages=all` 或指定对应分组；`core` 是 `main,settings` 的别名。
+- 每个批次包含浅色和深色主题的原尺寸 PNG、`manifest.json`（含 `groups` 字段）和内嵌图片的单文件 `index.html` 图册。
+  全局部覆盖：主窗口及输入结果态、全部设置页（长页分段）、内置工具设置、JSON 窗口与弹窗、更新弹窗、截图选区/工具栏/贴图/长截图面板。
 - 截图使用生产 Qt Widgets 和临时示例数据；入口必须先于日志、单实例、自启、热键、网络请求和后台服务初始化。
   禁止为截图读取个人剪贴板、用户配置或扫描个人文件；所有默认 QSettings 必须重定向到临时 INI。
-- 新增页面、弹窗、设置分组或重要状态时，同步扩展 `src/UiSnapshots.cpp`。浅深色必须覆盖同一套内容。
+  示例夹具目录固定为 `build/ui-snapshots/_fixture`，保证 PNG 字节可复现，跨批次才能用哈希当变更信号。
+- 新增页面、弹窗、设置分组或重要状态时，同步扩展 `src/UiSnapshots.cpp` 并归入合适分组。浅深色必须覆盖同一套内容。
+- 生成后用 `tools/ui-snapshot.ps1` 产出审阅包（默认读 `LATEST.txt` 指向的批次）：
+  把同一页面的浅色与深色拼成对照总览图 `review/sheet-NN.png`，并与上一批次逐页哈希对比，
+  输出 `review/summary.json`（pages/changed/added/removed/sheets）与 `review/index.html` 图册。
+  常用参数：`-Generate` 先重跑截图（`-Scope all` 会自动传 `--pages=all`）、`-Scope all`、`-Ids 'json-*,update'`、
+  `-Batch <目录>`、`-Baseline none`、`-TileWidth`、`-RowsPerSheet`。
 - 生成后检查文字、底色、布局及长页面是否完整；失败必须修复或明确说明，不能交付上次的截图冒充本次结果。
-- 完成回复须一次性交付整套截图，按主题/页面分组供用户展开查看，并附完整图册；不要只给本机路径或让用户自行运行。
+- 完成回复须一次性交付整套审阅图（每个分组都覆盖，浅深对照），不逐个导入几十张原尺寸 PNG；
+  用户要看细节时再导入对应原图。不要只给本机路径或让用户自行运行。
   在 Cindy 中使用媒体导入工具导入真实 PNG 后展示返回地址，查看图片的工具不等于向用户交付图片。
 - 截图是离屏视觉检查，不替代交互测试；系统合成的磨砂效果、真实桌面捕获、DPI/多屏、原生对话框需另行实机验证。
 

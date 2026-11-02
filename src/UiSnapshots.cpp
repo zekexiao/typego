@@ -72,7 +72,14 @@ bool writeFile(const QString &path, const QByteArray &bytes)
 // 唯一的界面夹具入口；只注入结果数据，仍使用生产窗口、模型和绘制代理。
 class UiSnapshotRunner {
 public:
-    explicit UiSnapshotRunner(QString directory) : m_directory(std::move(directory)) {}
+    explicit UiSnapshotRunner(QString directory, QStringList groups)
+        : m_directory(std::move(directory)), m_groups(std::move(groups)) {}
+
+    // 分组开关：包含 all 或该分组名时才生成，避免每次交付无关截图。
+    bool wants(const QString &group) const
+    {
+        return m_groups.contains(QStringLiteral("all")) || m_groups.contains(group);
+    }
 
     bool capture(QWidget &widget, const QString &id, const QSize &size = {})
     {
@@ -126,6 +133,7 @@ public:
             registerBuiltinPlugins(plugins, settings, hotkeys, launcher, updater, palette);
             // 仅注册描述，不启动后台服务；剪贴板历史使用下面的静态结果夹具。
             registerIntegratedFeatures(plugins, {data, data + QStringLiteral("/cache"), data + QStringLiteral("/temp")});
+            if (wants(QStringLiteral("main")))
             {
                 MainWindow window(&launcher, &plugins, &settings, &updater, &palette);
                 window.setProperty("skipWindowMaterial", true);
@@ -177,6 +185,7 @@ public:
                 FloatIcon icon(&settings, &palette, &window);
                 if (!capture(icon, QStringLiteral("floating-icon"))) return false;
             }
+            if (wants(QStringLiteral("tools")))
             {
                 MainWindow window(&launcher, &plugins, &settings, &updater, &palette);
                 window.setProperty("skipWindowMaterial", true);
@@ -186,6 +195,7 @@ public:
                 }
                 if (!capture(window, QStringLiteral("converter"), {960, 560})) return false;
             }
+            if (wants(QStringLiteral("settings")))
             {
                 MainWindow window(&launcher, &plugins, &settings, &updater, &palette);
                 window.setProperty("skipWindowMaterial", true);
@@ -218,6 +228,7 @@ public:
                     }
                 }
             }
+            if (wants(QStringLiteral("tools")))
             {
                 ClipboardSettingsWidget::Values values;
                 values.count = 12;
@@ -225,6 +236,7 @@ public:
                     new ClipboardSettingsWidget(values, nullptr, [](const auto &) {}, [] { return 0; }), &palette);
                 if (!capture(dialog, QStringLiteral("clipboard-settings"), {560, 450})) return false;
             }
+            if (wants(QStringLiteral("tools")))
             {
                 ScreenshotSettingsWidget::Values values;
                 values.saveDir = QStringLiteral("C:/Example/Screenshots");
@@ -233,6 +245,7 @@ public:
                     new ScreenshotSettingsWidget(values, nullptr, [](const auto &) {}, [] { return 0; }), &palette);
                 if (!capture(dialog, QStringLiteral("screenshot-settings"), {620, 490})) return false;
             }
+            if (wants(QStringLiteral("tools")))
             {
                 ShellPlugin shell;
                 PluginSettingsDialog dialog(shell.description(), shell.settingsWidget(), &palette);
@@ -240,6 +253,7 @@ public:
                 std::unique_ptr<QWidget> view(shell.createView(nullptr));
                 if (!capture(*view, QStringLiteral("shell"), {960, 480})) return false;
             }
+            if (wants(QStringLiteral("json")))
             {
                 JsonViewerWindow json(nullptr, data + QStringLiteral("/json.ini"));
                 if (!capture(json, QStringLiteral("json-empty"), {960, 560})) return false;
@@ -252,15 +266,18 @@ public:
                 tree->setCurrentIndex(model->index(0, 0));
                 if (!capture(json, QStringLiteral("json-tree"))) return false;
             }
+            if (wants(QStringLiteral("json")))
             {
                 SearchDialog dialog;
                 dialog.setOptions({QStringLiteral("name"), false, true, true, false, true});
                 if (!capture(dialog, QStringLiteral("json-search"), {520, 360})) return false;
             }
+            if (wants(QStringLiteral("json")))
             {
                 SettingsDialog dialog(120, true);
                 if (!capture(dialog, QStringLiteral("json-settings"), {520, 250})) return false;
             }
+            if (wants(QStringLiteral("json")))
             {
                 AddItemDialog dialog(false);
                 auto *combo = dialog.findChild<QComboBox *>();
@@ -272,10 +289,12 @@ public:
                 AddItemDialog array(true);
                 if (!capture(array, QStringLiteral("json-add-array"), {500, 300})) return false;
             }
+            if (wants(QStringLiteral("json")))
             {
                 AboutDialog dialog;
                 if (!capture(dialog, QStringLiteral("json-about"))) return false;
             }
+            if (wants(QStringLiteral("update")))
             {
                 ReleaseParser::Result result;
                 result.outcome = ReleaseParser::Outcome::UpdateReady;
@@ -290,6 +309,7 @@ public:
                 UpdateDialog dialog(result);
                 if (!capture(dialog, QStringLiteral("update"), {700, 460})) return false;
             }
+            if (wants(QStringLiteral("capture")))
             {
                 CaptureToolbar toolbar;
                 toolbar.setUndoRedo(true, false);
@@ -297,6 +317,7 @@ public:
                 CaptureToolbar pin(nullptr, CaptureToolbar::Mode::Pin);
                 if (!capture(pin, QStringLiteral("pin-toolbar"))) return false;
             }
+            if (wants(QStringLiteral("capture")))
             {
                 QImage image(720, 420, QImage::Format_RGB32);
                 image.fill(palette.surface());
@@ -345,7 +366,8 @@ public:
 private:
     bool finish()
     {
-        const QJsonObject manifest{{"schema", 1}, {"version", QCoreApplication::applicationVersion()},
+        const QJsonObject manifest{{"schema", 2}, {"version", QCoreApplication::applicationVersion()},
+            {"groups", QJsonArray::fromStringList(m_groups)},
             {"createdUtc", QDateTime::currentDateTimeUtc().toString(Qt::ISODate)},
             {"renderer", QStringLiteral("Qt Widgets / offscreen / zh_CN / 1x")},
             {"limitations", QJsonArray{QStringLiteral("OS blur, native file pickers, real desktop capture and interactive behavior require on-device verification.")}},
@@ -373,6 +395,7 @@ private:
     }
 
     QString m_directory;
+    QStringList m_groups;
     QString m_theme;
     QString m_error;
     QJsonArray m_images;
@@ -416,12 +439,34 @@ int runUiSnapshots(int argc, char *argv[])
     const auto args = app.arguments();
     const int flag = args.indexOf(QStringLiteral("--ui-snapshots"));
     const QString root = QDir::cleanPath(QDir(QCoreApplication::applicationDirPath()).absoluteFilePath(QStringLiteral("../ui-snapshots")));
-    const QString output = flag + 1 < args.size() ? QDir(args.at(flag + 1)).absolutePath()
-        : QDir(root).filePath(QDateTime::currentDateTimeUtc().toString(QStringLiteral("yyyyMMdd-HHmmss-zzz")));
+    // 页面分组：--pages=core / --pages=all / --pages=main,settings,json，缺省只看主界面输入态与设置页。
+    QStringList groups;
+    for (const auto &arg : args) {
+        if (!arg.startsWith(QStringLiteral("--pages="))) continue;
+        groups = arg.section(QLatin1Char('='), 1).toLower().split(QLatin1Char(','), Qt::SkipEmptyParts);
+    }
+    if (groups.isEmpty()) groups << QStringLiteral("main") << QStringLiteral("settings");
+    // core 是 main+settings 的别名，展平后去重。
+    if (groups.removeAll(QStringLiteral("core")) > 0) {
+        groups << QStringLiteral("main") << QStringLiteral("settings");
+    }
+    groups.removeDuplicates();
+    // 输出目录是 --ui-snapshots 之后第一个非选项参数，因此选项可以写在前面。
+    QString next;
+    for (int i = flag + 1; i < args.size(); ++i) {
+        if (!args.at(i).startsWith(QStringLiteral("--"))) { next = args.at(i); break; }
+    }
+    const QString output = next.isEmpty()
+        ? QDir(root).filePath(QDateTime::currentDateTimeUtc().toString(QStringLiteral("yyyyMMdd-HHmmss-zzz")))
+        : QDir(next).absolutePath();
     // 拒绝覆盖旧批次，避免把过期截图误认为本次成果。
     if (QDir(output).exists() || !QDir().mkpath(output)) return 4;
-    UiSnapshotRunner runner(output);
-    if (!runner.run(temporary.path())) {
+    // 夹具目录用固定路径：随机临时目录会被写进目录浏览截图，让跨批次对比永远报“有变化”。
+    const QString fixture = QDir(root).filePath(QStringLiteral("_fixture"));
+    QDir(fixture).removeRecursively();
+    if (!QDir().mkpath(fixture)) return 2;
+    UiSnapshotRunner runner(output, groups);
+    if (!runner.run(fixture)) {
         writeFile(QDir(output).filePath(QStringLiteral("FAILED.txt")), runner.error().toUtf8());
         return 5;
     }
