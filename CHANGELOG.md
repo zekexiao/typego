@@ -1,5 +1,27 @@
 # TypeGo 更新日志
 
+## 1.13 - 2026-11-02
+
+### 中文
+
+- 剪贴板历史、截图和 JSON 查看器改为随主程序内置启动，不再加载外部第三方插件，安装包里也不再附带插件 SDK 与插件目录
+- 界面整体换成 HeroUI 风格：雾灰画布、轻量卡片、胶囊按钮和柔和的选中态，浅色与深色主题重新调色
+- 主界面进一步收紧间距与内边距，去掉 Enter 打开、Esc 清除等默认操作提示
+- 设置页插件列表重排：分组标题与批量开关同行，快捷键输入框对齐到同一条竖线，工具设置改用独立弹窗
+- 更新弹窗改为中英双语分页并可滚动，一次列出从当前版本到最新版之间的全部更新说明；开机检查与手动检查合并为同一次请求，不再重复弹窗
+- 内置工具的描述按界面语言显示，并补全剪贴板、截图和 JSON 查看器的中文翻译
+- 启动时加载 Qt 自带翻译，标准按钮、快捷键提示等系统文案也跟着本地化
+
+### English
+
+- Clipboard history, screenshot and the JSON viewer now ship as built-in features that start with the app; external third-party plugins, the plugin SDK and the plugin folder are no longer loaded or packaged
+- Restyled the whole interface around HeroUI: a mist-grey canvas, light cards, pill buttons and a softer selection state, with recoloured light and dark themes
+- Tightened the spacing and padding of the main window and dropped the default "Enter to open" and "Esc to clear" hints
+- Reworked the plugin list in settings: the group heading shares a row with the bulk toggles, hotkey fields line up on one column, and tool settings open in their own dialog
+- The update dialog now shows Chinese and English notes on separate tabs inside a scrollable body listing every release between your version and the latest; the start-up check and the manual check share one request so the dialog no longer pops up twice
+- Built-in tool descriptions follow the interface language, and the Chinese translations of the clipboard, screenshot and JSON viewer are now complete
+- Qt's own translations load at start-up, so standard buttons and shortcut hints are localised too
+
 ## 1.12 - 2026-10-31
 
 ### 中文
