@@ -57,13 +57,13 @@
         <translation>文件资源管理器</translation>
     </message>
     <message>
-        <location filename="../src/AppLauncher.cpp" line="234"/>
+        <location filename="../src/AppLauncher.cpp" line="236"/>
         <source>Custom Directory</source>
         <translation>自定义目录</translation>
     </message>
     <message>
-        <location filename="../src/AppLauncher.cpp" line="412"/>
-        <location filename="../src/AppLauncher.cpp" line="426"/>
+        <location filename="../src/AppLauncher.cpp" line="414"/>
+        <location filename="../src/AppLauncher.cpp" line="428"/>
         <source>Cannot save pinned apps. Your previous pins have been kept. Check the data file and folder permissions, then try again.
 %1</source>
         <translation>无法保存固定应用，原有列表已保留。请检查数据文件和目录权限后重试。
@@ -101,7 +101,7 @@
         <translation>打开必应搜索</translation>
     </message>
     <message>
-        <location filename="../src/AppLauncher.cpp" line="230"/>
+        <location filename="../src/AppLauncher.cpp" line="232"/>
         <source>Start Menu</source>
         <translation>开始菜单</translation>
     </message>

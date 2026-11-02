@@ -15,7 +15,10 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTORCC ON)
 
-list(PREPEND CMAKE_PREFIX_PATH "C:/Qt/6.10.3/msvc2022_64")
+# Windows 默认 Qt 路径；其他平台通过 CMAKE_PREFIX_PATH 或系统 Qt 查找。
+if(WIN32)
+    list(PREPEND CMAKE_PREFIX_PATH "C:/Qt/6.10.3/msvc2022_64")
+endif()
 
 find_package(Qt6 REQUIRED COMPONENTS Core Gui Widgets Svg Network Concurrent LinguistTools)
 
@@ -112,13 +115,15 @@ qt_add_executable(TypeGo
     src/UpdateDialog.cpp
     src/Updater.cpp
     resources.qrc
-    assets/app_icon.rc
 )
 
-# 图标更新后强制重新编译 Windows 资源。
-set_source_files_properties(assets/app_icon.rc PROPERTIES
-    OBJECT_DEPENDS "${CMAKE_SOURCE_DIR}/assets/icon.ico"
-)
+if(WIN32)
+    target_sources(TypeGo PRIVATE assets/app_icon.rc)
+    # 图标更新后强制重新编译 Windows 资源。
+    set_source_files_properties(assets/app_icon.rc PROPERTIES
+        OBJECT_DEPENDS "${CMAKE_SOURCE_DIR}/assets/icon.ico"
+    )
+endif()
 
 target_compile_options(TypeGo PRIVATE
     $<$<CXX_COMPILER_ID:MSVC>:/utf-8>
@@ -148,11 +153,11 @@ target_link_libraries(TypeGo PRIVATE
     QHotkey::QHotkey
     QWindowKit::Widgets
     spdlog::spdlog
-    "${EVERYTHING_SDK_DIR}/lib/Everything64.lib"
 )
 
+# Everything SDK 只提供 Windows 导入库，文件搜索在其他平台退化为提示项。
 if(WIN32)
-    target_link_libraries(TypeGo PRIVATE dwmapi ole32)
+    target_link_libraries(TypeGo PRIVATE "${EVERYTHING_SDK_DIR}/lib/Everything64.lib" dwmapi ole32)
 endif()
 
 set_target_properties(TypeGo PROPERTIES
