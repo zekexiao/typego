@@ -202,6 +202,37 @@ qt_add_translations(TypeGo
     LUPDATE_OPTIONS -no-obsolete
 )
 
+# Linux 安装与 deb 打包：Qt 运行库随包部署到 /opt/typego，不依赖发行版自带的旧版 Qt。
+# 用法：cmake --install 或 cpack -G DEB（在构建目录执行）。
+if(UNIX AND NOT APPLE)
+    include(GNUInstallDirs)
+    set_target_properties(TypeGo PROPERTIES INSTALL_RPATH "$ORIGIN/../${CMAKE_INSTALL_LIBDIR}")
+    install(TARGETS TypeGo RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
+    qt_generate_deploy_app_script(TARGET TypeGo OUTPUT_SCRIPT TYPEGO_DEPLOY_SCRIPT NO_TRANSLATIONS)
+    install(SCRIPT "${TYPEGO_DEPLOY_SCRIPT}")
+
+    # 桌面入口、图标和命令行入口放到系统目录，程序本体留在 /opt/typego。
+    file(CREATE_LINK /opt/typego/${CMAKE_INSTALL_BINDIR}/TypeGo "${CMAKE_CURRENT_BINARY_DIR}/typego" SYMBOLIC)
+    install(FILES "${CMAKE_CURRENT_BINARY_DIR}/typego" DESTINATION /usr/bin)
+    install(FILES assets/typego.desktop DESTINATION /usr/share/applications)
+    install(FILES assets/icon.png DESTINATION /usr/share/pixmaps RENAME typego.png)
+
+    set(CPACK_GENERATOR DEB)
+    set(CPACK_PACKAGE_NAME typego)
+    set(CPACK_PACKAGE_VENDOR "Linger Me, Inc.")
+    set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "Application launcher with built-in tools")
+    set(CPACK_PACKAGE_HOMEPAGE_URL "https://typego.app")
+    set(CPACK_PACKAGING_INSTALL_PREFIX /opt/typego)
+    set(CPACK_DEBIAN_FILE_NAME DEB-DEFAULT)
+    set(CPACK_DEBIAN_PACKAGE_MAINTAINER "Linger Me, Inc. <xiao@linger.me>")
+    set(CPACK_DEBIAN_PACKAGE_SECTION utils)
+    # 依赖由 dpkg-shlibdeps 从 ELF 推导；随包 Qt 库不是系统包，要告诉它在哪找。
+    set(CPACK_DEBIAN_PACKAGE_SHLIBDEPS ON)
+    set(CPACK_DEBIAN_PACKAGE_SHLIBDEPS_PRIVATE_DIRS "${CMAKE_INSTALL_LIBDIR}")
+    set(CPACK_DEBIAN_PACKAGE_RECOMMENDS "fd-find, fonts-noto-cjk")
+    include(CPack)
+endif()
+
 if(TYPEGO_BUILD_TESTS)
     enable_testing()
     add_subdirectory(tests)

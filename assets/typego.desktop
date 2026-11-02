@@ -1,0 +1,10 @@
+[Desktop Entry]
+Type=Application
+Name=TypeGo
+Comment=Application launcher with built-in tools
+Comment[zh_CN]=内置常用工具的应用启动器
+Exec=/opt/typego/bin/TypeGo
+Icon=typego
+Terminal=false
+Categories=Utility;
+StartupWMClass=TypeGo
