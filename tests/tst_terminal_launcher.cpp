@@ -21,6 +21,9 @@ private slots:
 
 void TstTerminalLauncher::cmdWithPlaceholderUsesNativeArguments()
 {
+#ifndef Q_OS_WIN
+    QSKIP("cmd.exe 原始命令行路径只在 Windows 启用");
+#endif
     const TerminalLauncher::Invocation inv =
         TerminalLauncher::build(QStringLiteral("cmd.exe"), QStringLiteral("/C {cmd}"), QStringLiteral("dir /w"));
     QVERIFY(inv.usesNativeArguments);
@@ -31,6 +34,9 @@ void TstTerminalLauncher::cmdWithPlaceholderUsesNativeArguments()
 
 void TstTerminalLauncher::cmdWithoutPlaceholderAppendsCommand()
 {
+#ifndef Q_OS_WIN
+    QSKIP("cmd.exe 原始命令行路径只在 Windows 启用");
+#endif
     // 用户把模板里的 {cmd} 删掉时，命令仍要接在后面，不能变成空跑。
     const TerminalLauncher::Invocation inv =
         TerminalLauncher::build(QStringLiteral("cmd.exe"), QStringLiteral("/C"), QStringLiteral("echo hi"));
@@ -40,6 +46,9 @@ void TstTerminalLauncher::cmdWithoutPlaceholderAppendsCommand()
 
 void TstTerminalLauncher::cmdInAbsolutePathStillUsesNativeArguments()
 {
+#ifndef Q_OS_WIN
+    QSKIP("cmd.exe 原始命令行路径只在 Windows 启用");
+#endif
     const TerminalLauncher::Invocation inv = TerminalLauncher::build(
         QStringLiteral("C:/Windows/System32/cmd.exe"), QStringLiteral("/K {cmd}"), QStringLiteral("ping 127.0.0.1"));
     QVERIFY(inv.usesNativeArguments);

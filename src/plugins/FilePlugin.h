@@ -3,7 +3,7 @@
 #include "IPlugin.h"
 #include <QFutureWatcher>
 
-// everything 文件搜索
+// 文件搜索：Windows 走 Everything，其他平台走 fd/find。
 class FilePlugin : public IPlugin {
     Q_OBJECT
 public:
@@ -11,7 +11,11 @@ public:
     ~FilePlugin() override;
 
     QString command() const override { return QStringLiteral("file"); }
+#ifdef Q_OS_WIN
     QString description() const override { return tr("File search (Everything)"); }
+#else
+    QString description() const override { return tr("File search (fd)"); }
+#endif
     PluginQueryResult query(const PluginQueryRequest &request) override;
     PluginExecutionResult execute(const PluginInvocation &invocation) override;
     void cancelQuery() override;

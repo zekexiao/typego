@@ -416,6 +416,7 @@ int runUiSnapshots(int argc, char *argv[])
     app.setApplicationName(QStringLiteral("TypeGo-UI-Snapshots"));
     app.setApplicationVersion(QStringLiteral(TYPEGO_VERSION));
     app.setQuitOnLastWindowClosed(false);
+#ifdef Q_OS_WIN
     // offscreen 平台不枚举 Windows 系统字体，必须显式加载，防止截出全是方框的文字。
     const QString fonts = qEnvironmentVariable("WINDIR", QStringLiteral("C:/Windows")) + QStringLiteral("/Fonts/");
     const int fontId = QFontDatabase::addApplicationFont(fonts + QStringLiteral("msyh.ttc"));
@@ -423,6 +424,20 @@ int runUiSnapshots(int argc, char *argv[])
     QFontDatabase::addApplicationFont(fonts + QStringLiteral("msyhbd.ttc"));
     QFontDatabase::addApplicationFont(fonts + QStringLiteral("consola.ttf"));
     QFont font(QFontDatabase::applicationFontFamilies(fontId).first());
+#else
+    // 其他平台的 offscreen 走 fontconfig，按固定优先级挑中文字体，保证同机截图可复现。
+    QString family;
+    const QStringList families = QFontDatabase::families();
+    for (const char *candidate : {"Noto Sans CJK SC", "Noto Sans SC", "Source Han Sans SC", "WenQuanYi Micro Hei",
+                                  "PingFang SC"}) {
+        if (families.contains(QLatin1String(candidate))) {
+            family = QLatin1String(candidate);
+            break;
+        }
+    }
+    if (family.isEmpty()) return 7;
+    QFont font(family);
+#endif
     font.setPixelSize(14);
     const QFontMetrics metrics(font);
     if (!metrics.inFontUcs4(0x6c49) || !metrics.inFontUcs4('A')) return 7;

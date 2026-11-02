@@ -8,6 +8,14 @@
 #ifdef Q_OS_WIN
 #include <windows.h>
 #include "Everything.h"
+#else
+#include "../utils/FileSearchCommand.h"
+
+#include <QDeadlineTimer>
+#include <QDir>
+#include <QFileInfo>
+#include <QProcess>
+#include <QStandardPaths>
 #endif
 
 FilePlugin::FilePlugin(QObject *parent)
@@ -175,16 +183,100 @@ QVariantList FilePlugin::searchFiles(const QString &args, int limit)
 
     Everything_Reset();
 #else
-    Q_UNUSED(args)
-    QVariantMap item;
-    item["title"] = tr("File search is only available on Windows");
-    item["subtitle"] = tr("Everything SDK only supports Windows");
-    item["icon"] = "";
-    QVariantMap action;
-    action["type"] = QStringLiteral("none");
-    action["plugin"] = QStringLiteral("file");
-    item["action"] = action;
-    results.append(item);
+    const auto message = [&results](const QString &title, const QString &subtitle) {
+        QVariantMap item;
+        item["title"] = title;
+        item["subtitle"] = subtitle;
+        item["icon"] = "";
+        item["action"] = QVariantMap{{"type", QStringLiteral("none")}, {"plugin", QStringLiteral("file")}};
+        results.append(item);
+    };
+    if (args.trimmed().isEmpty()) {
+        message(tr("Enter a filename to search"), tr("Search your home folder with fd or find"));
+        return results;
+    }
+
+    // fd 在 Debian/Ubuntu 上的可执行名是 fdfind；只查找一次，局部静态初始化线程安全。
+    static const QString fdProgram = [] {
+        const QString fd = QStandardPaths::findExecutable(QStringLiteral("fd"));
+        return fd.isEmpty() ? QStandardPaths::findExecutable(QStringLiteral("fdfind")) : fd;
+    }();
+    limit = qMax(1, limit);
+    // 多取一条用来判断结果是否被截断。
+    const FileSearchCommand::Command command =
+        FileSearchCommand::build(fdProgram, args, QDir::homePath(), limit + 1);
+
+    QProcess process;
+    process.setStandardErrorFile(QProcess::nullDevice());
+    process.start(command.program, command.arguments, QIODevice::ReadOnly);
+    if (!process.waitForStarted()) {
+        message(tr("Search failed"), tr("Cannot start %1").arg(command.program));
+        return results;
+    }
+
+    // find 没有条数上限，读够就结束进程；整体限时，避免在大目录树上卡住查询线程。
+    QStringList paths;
+    paths.reserve(limit + 1);
+    const auto append = [&paths](const QByteArray &line) {
+        const QString path = FileSearchCommand::parseLine(line);
+        if (!path.isEmpty()) paths.append(path);
+    };
+    const auto takeLines = [&]() {
+        while (paths.size() <= limit && process.canReadLine()) append(process.readLine());
+    };
+    QDeadlineTimer deadline(5000);
+    bool timedOut = false;
+    for (;;) {
+        takeLines();
+        if (paths.size() > limit) break;
+        if (deadline.hasExpired()) {
+            timedOut = true;
+            break;
+        }
+        if (!process.waitForReadyRead(static_cast<int>(deadline.remainingTime()))) {
+            takeLines();
+            // 输出的最后一行可能没有换行。
+            if (paths.size() <= limit) append(process.readAll());
+            timedOut = process.state() != QProcess::NotRunning;
+            break;
+        }
+    }
+    if (process.state() != QProcess::NotRunning) {
+        process.kill();
+        process.waitForFinished(1000);
+    }
+
+    const bool truncated = paths.size() > limit;
+    if (truncated) paths.resize(limit);
+    if (paths.isEmpty()) {
+        message(timedOut ? tr("File search timed out") : tr("No files found"), args);
+        return results;
+    }
+
+    results.reserve(paths.size() + 1);
+    for (const QString &fullPath : std::as_const(paths)) {
+        // 外部命令不返回类型，只对截断后的少量结果做 stat。
+        const bool isFolder = QFileInfo(fullPath).isDir();
+        const int sep = fullPath.lastIndexOf(QLatin1Char('/'));
+        QString name = sep >= 0 ? fullPath.mid(sep + 1) : fullPath;
+        if (name.isEmpty()) name = fullPath;
+        const QString dir = sep > 0 ? fullPath.left(sep) : QStringLiteral("/");
+        const QString kind = typeLabel(name, isFolder);
+
+        QVariantMap item;
+        item["title"] = name;
+        item["subtitle"] = kind + QStringLiteral(" · ") + dir;
+        item["kind"] = kind;
+        item["path"] = fullPath;
+        item["icon"] = "";
+        item["action"] = QVariantMap{{"type", isFolder ? QStringLiteral("openFolder") : QStringLiteral("openFile")},
+                                     {"data", fullPath}, {"plugin", QStringLiteral("file")}};
+        results.append(item);
+    }
+    if (truncated || timedOut) {
+        message(tr("Showing the first %1 results").arg(paths.size()),
+                tr("Use a more specific keyword to narrow the results"));
+    }
 #endif
 
     return results;

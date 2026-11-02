@@ -112,6 +112,7 @@ void AppLauncher::rebuildApps()
         m_settings && m_settings->hideUninstallEntries()));
 }
 
+#ifdef Q_OS_WIN
 static QPixmap hIconToPixmap(HICON hIcon)
 {
     ICONINFO iconInfo;
@@ -163,6 +164,7 @@ static QPixmap hIconToPixmap(HICON hIcon)
 
     return QPixmap::fromImage(image);
 }
+#endif
 
 QString AppLauncher::extractIcon(const QString &filePath)
 {
