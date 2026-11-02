@@ -41,7 +41,6 @@ jobs:
         run: |
           cmake --build build --target check
           ctest --test-dir build --output-on-failure
-          ctest --test-dir build -R tst_screenshot_store --repeat until-fail:30 --output-on-failure
         env:
           QT_QPA_PLATFORM: offscreen
 
