@@ -2,6 +2,8 @@
     <qresource prefix="/assets">
         <file alias="icon.png">assets/icon.png</file>
         <file alias="check.svg">assets/check.svg</file>
+        <file alias="spin-up.svg">assets/spin-up.svg</file>
+        <file alias="spin-down.svg">assets/spin-down.svg</file>
         <file alias="style.qss">assets/style.qss</file>
     </qresource>
 </RCC>
