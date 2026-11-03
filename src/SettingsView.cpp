@@ -255,14 +255,14 @@ SettingsView::SettingsView(Settings *settings, PluginManager *pluginManager, Glo
 
     auto *columns = new QHBoxLayout(this);
     columns->setContentsMargins(0, 0, 0, 0);
-    columns->setSpacing(24);
+    columns->setSpacing(16);
 
     auto *sidebar = new QFrame;
     sidebar->setObjectName(QStringLiteral("settingsSidebar"));
-    sidebar->setFixedWidth(184);
+    sidebar->setFixedWidth(168);
     auto *sidebarLayout = new QVBoxLayout(sidebar);
-    sidebarLayout->setContentsMargins(12, 20, 12, 16);
-    sidebarLayout->setSpacing(12);
+    sidebarLayout->setContentsMargins(12, 12, 12, 12);
+    sidebarLayout->setSpacing(8);
     auto *brandRow = new QHBoxLayout;
     brandRow->setSpacing(8);
     auto *brandIcon = new QLabel;
@@ -276,7 +276,7 @@ SettingsView::SettingsView(Settings *settings, PluginManager *pluginManager, Glo
 
     m_navigation = new QListWidget;
     m_navigation->setObjectName(QStringLiteral("settingsNavigation"));
-    m_navigation->setSpacing(4);
+    m_navigation->setSpacing(2);
     m_navigation->setIconSize(QSize(20, 20));
     m_navigation->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
     m_navigation->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
@@ -317,12 +317,12 @@ SettingsView::SettingsView(Settings *settings, PluginManager *pluginManager, Glo
         body->setObjectName(QStringLiteral("settingsPage"));
         auto *layout = new QVBoxLayout(body);
         // 与操作栏共同保留紧凑间距，避免底部出现重复留白。
-        layout->setContentsMargins(0, 4, 8, 8);
-        layout->setSpacing(12);
+        layout->setContentsMargins(0, 2, 8, 8);
+        layout->setSpacing(8);
         auto *heading = new QLabel(title);
         heading->setObjectName(QStringLiteral("pageTitle"));
         layout->addWidget(heading);
-        layout->addSpacing(4);
+        layout->addSpacing(2);
         scroll->setWidget(body);
         m_pages->addWidget(scroll);
         return layout;
@@ -336,7 +336,7 @@ SettingsView::SettingsView(Settings *settings, PluginManager *pluginManager, Glo
         auto *group = new QFrame;
         group->setObjectName(QStringLiteral("settingsGroup"));
         auto *groupLayout = new QVBoxLayout(group);
-        groupLayout->setContentsMargins(20, 4, 20, 4);
+        groupLayout->setContentsMargins(16, 2, 16, 2);
         groupLayout->setSpacing(0);
         layout->addWidget(group);
         return groupLayout;
@@ -351,10 +351,10 @@ SettingsView::SettingsView(Settings *settings, PluginManager *pluginManager, Glo
     auto addRow = [](QVBoxLayout *layout, const QString &text, QWidget *control) {
         auto *row = new QWidget;
         row->setObjectName(QStringLiteral("settingsRow"));
-        row->setMinimumHeight(60);
+        row->setMinimumHeight(46);
         auto *rowLayout = new QHBoxLayout(row);
         rowLayout->setContentsMargins(0, 0, 0, 0);
-        rowLayout->setSpacing(16);
+        rowLayout->setSpacing(12);
         auto *label = new QLabel(text);
         label->setObjectName(QStringLiteral("settingLabel"));
         label->setWordWrap(true);
@@ -374,7 +374,7 @@ SettingsView::SettingsView(Settings *settings, PluginManager *pluginManager, Glo
     addDivider(generalGroup);
     m_engineCombo = new QComboBox;
     m_engineCombo->addItems({"Bing", "Google", "Baidu", "DuckDuckGo", "File Search"});
-    m_engineCombo->setFixedWidth(184);
+    m_engineCombo->setFixedWidth(168);
     m_engineCombo->installEventFilter(this);
     addRow(generalGroup, tr("Search"), m_engineCombo);
     addSection(settingsLayout, tr("Startup"));
@@ -414,7 +414,7 @@ SettingsView::SettingsView(Settings *settings, PluginManager *pluginManager, Glo
     auto *listHeader = new QWidget;
     listHeader->setObjectName(QStringLiteral("pluginListHeader"));
     auto *listHeaderLayout = new QHBoxLayout(listHeader);
-    listHeaderLayout->setContentsMargins(0, 10, 0, 10);
+    listHeaderLayout->setContentsMargins(0, 6, 0, 6);
     listHeaderLayout->setSpacing(8);
     auto *listTitle = new QLabel(tr("Installed plugins"));
     listTitle->setObjectName(QStringLiteral("pluginListTitle"));
@@ -452,7 +452,7 @@ SettingsView::SettingsView(Settings *settings, PluginManager *pluginManager, Glo
         auto *row = new QWidget;
         row->setObjectName(QStringLiteral("pluginRow"));
         auto *rowLayout = new QHBoxLayout(row);
-        rowLayout->setContentsMargins(0, 10, 0, 10);
+        rowLayout->setContentsMargins(0, 6, 0, 6);
         rowLayout->setSpacing(12);
         // 左侧：插件名加描述。描述可能换行，行变高时名称和描述要继续贴在一起，
         // 否则两者会被布局撑开，中间多出一大段空白。
@@ -541,11 +541,11 @@ SettingsView::SettingsView(Settings *settings, PluginManager *pluginManager, Glo
     auto *directoryEditor = new QWidget;
     directoryEditor->setObjectName(QStringLiteral("scanDirectoryEditor"));
     auto *directoryEditorLayout = new QVBoxLayout(directoryEditor);
-    directoryEditorLayout->setContentsMargins(0, 10, 0, 12);
+    directoryEditorLayout->setContentsMargins(0, 6, 0, 8);
     directoryEditorLayout->setSpacing(8);
     m_customScanDirsList = new QListWidget;
     m_customScanDirsList->setObjectName(QStringLiteral("scanDirectoryList"));
-    m_customScanDirsList->setMinimumHeight(112);
+    m_customScanDirsList->setMinimumHeight(96);
     directoryEditorLayout->addWidget(m_customScanDirsList);
     auto *scanDirActions = new QHBoxLayout;
     scanDirActions->setSpacing(8);
@@ -579,7 +579,7 @@ SettingsView::SettingsView(Settings *settings, PluginManager *pluginManager, Glo
     m_themeCombo->addItem(tr("System"), QStringLiteral("system"));
     m_themeCombo->addItem(tr("Light"), QStringLiteral("light"));
     m_themeCombo->addItem(tr("Dark"), QStringLiteral("dark"));
-    m_themeCombo->setFixedWidth(184);
+    m_themeCombo->setFixedWidth(168);
     m_themeCombo->installEventFilter(this);
     addRow(appearanceGroup, tr("Theme"), m_themeCombo);
     addDivider(appearanceGroup);
@@ -592,7 +592,7 @@ SettingsView::SettingsView(Settings *settings, PluginManager *pluginManager, Glo
     for (const QString &family : fontFamilies) {
         m_fontCombo->addItem(family, family);
     }
-    m_fontCombo->setFixedWidth(184);
+    m_fontCombo->setFixedWidth(168);
     m_fontCombo->installEventFilter(this);
     addRow(appearanceGroup, tr("Font"), m_fontCombo);
     addSection(interfaceLayout, tr("Window"));
@@ -618,13 +618,13 @@ SettingsView::SettingsView(Settings *settings, PluginManager *pluginManager, Glo
     auto *aboutCard = new QFrame;
     aboutCard->setObjectName(QStringLiteral("aboutCard"));
     auto *aboutCardLayout = new QHBoxLayout(aboutCard);
-    aboutCardLayout->setContentsMargins(24, 24, 24, 24);
-    aboutCardLayout->setSpacing(16);
+    aboutCardLayout->setContentsMargins(16, 16, 16, 16);
+    aboutCardLayout->setSpacing(12);
     auto *iconLabel = new QLabel;
     iconLabel->setObjectName(QStringLiteral("aboutIcon"));
-    iconLabel->setFixedSize(56, 56);
+    iconLabel->setFixedSize(48, 48);
     iconLabel->setAlignment(Qt::AlignCenter);
-    iconLabel->setPixmap(QIcon(QStringLiteral(":/assets/icon.png")).pixmap(48, 48));
+    iconLabel->setPixmap(QIcon(QStringLiteral(":/assets/icon.png")).pixmap(40, 40));
     aboutCardLayout->addWidget(iconLabel, 0, Qt::AlignTop);
     auto *aboutTextLayout = new QVBoxLayout;
     aboutTextLayout->setSpacing(3);
@@ -680,7 +680,7 @@ SettingsView::SettingsView(Settings *settings, PluginManager *pluginManager, Glo
     auto *footer = new QFrame;
     footer->setObjectName(QStringLiteral("settingsFooter"));
     auto *footerLayout = new QHBoxLayout(footer);
-    footerLayout->setContentsMargins(0, 8, 8, 0);
+    footerLayout->setContentsMargins(0, 6, 8, 0);
     footerLayout->setSpacing(0);
     auto *buttons = new QDialogButtonBox(QDialogButtonBox::Save | QDialogButtonBox::Cancel);
     buttons->button(QDialogButtonBox::Save)->setText(tr("Save"));

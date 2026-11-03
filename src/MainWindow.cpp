@@ -62,18 +62,18 @@
 #endif
 
 namespace {
-constexpr int DefaultWindowHeight = 560;
+constexpr int DefaultWindowHeight = 500;
 constexpr int ResultsExtraHeight = 8;
 constexpr int InitialVisibleResults = 80;
 constexpr int ResultsFetchBatchSize = 120;
 constexpr int MaxConcurrentIconLoads = 4;
 
 // 结果项布局常量，配合 32px 图标缓存尺寸，避免上采样发虚。
-constexpr int ResultIconSize = 32;
-constexpr int ResultItemHPadding = 10;
-constexpr int ResultItemVPadding = 6;
+constexpr int ResultIconSize = 24;
+constexpr int ResultItemHPadding = 8;
+constexpr int ResultItemVPadding = 4;
 constexpr int ResultItemRadius = 8;
-constexpr int ResultIconTextGap = 10;
+constexpr int ResultIconTextGap = 8;
 constexpr int ResultTitleSubtitleGap = 2;
 
 // 标题与副标题分开提供，供 ResultItemDelegate 分层绘制。
@@ -514,7 +514,7 @@ ManagementIcon::ManagementIcon(QWidget *parent)
     : QWidget(parent)
     , m_icon(QStringLiteral(":/assets/icon.png"))
 {
-    setFixedSize(32, 32);
+    setFixedSize(28, 28);
     setAttribute(Qt::WA_TranslucentBackground);
     setAutoFillBackground(false);
     setCursor(Qt::PointingHandCursor);
@@ -571,7 +571,7 @@ void ManagementIcon::paintEvent(QPaintEvent *)
 {
     QPainter painter(this);
     painter.setRenderHint(QPainter::Antialiasing);
-    const int hoverSize = 30;
+    const int hoverSize = 26;
     const QRect hoverRect((width() - hoverSize) / 2, (height() - hoverSize) / 2, hoverSize, hoverSize);
     if (m_hovered || m_pressed) {
         painter.setPen(Qt::NoPen);
@@ -585,7 +585,7 @@ void ManagementIcon::paintEvent(QPaintEvent *)
         painter.setBrush(Qt::NoBrush);
         painter.drawEllipse(hoverRect.adjusted(-1, -1, 1, 1));
     }
-    const int iconSize = 22;
+    const int iconSize = 18;
     const QRect iconRect((width() - iconSize) / 2, (height() - iconSize) / 2, iconSize, iconSize);
     m_icon.paint(&painter, iconRect, Qt::AlignCenter, QIcon::Normal);
 }
@@ -598,8 +598,8 @@ CommandLineEdit::CommandLineEdit(QWidget *parent)
     {
         setObjectName(QStringLiteral("commandInput"));
         auto *layout = new QHBoxLayout(this);
-        layout->setContentsMargins(12, 4, 8, 4);
-        layout->setSpacing(8);
+        layout->setContentsMargins(10, 3, 6, 3);
+        layout->setSpacing(6);
         m_badge->setObjectName(QStringLiteral("commandBadge"));
         m_badge->hide();
         m_editor->setObjectName(QStringLiteral("commandArgumentEdit"));
@@ -733,7 +733,7 @@ MainWindow::MainWindow(AppLauncher *launcher, PluginManager *pluginManager, Sett
     auto *titleBar = new QWidget(this);
     m_titleBar = titleBar;
     titleBar->setObjectName(QStringLiteral("windowTitleBar"));
-    titleBar->setFixedHeight(44);
+    titleBar->setFixedHeight(36);
     titleBar->installEventFilter(this);
     auto *titleLayout = new QHBoxLayout(titleBar);
     titleLayout->setContentsMargins(8, 0, 8, 0);
@@ -790,8 +790,8 @@ MainWindow::MainWindow(AppLauncher *launcher, PluginManager *pluginManager, Sett
 
     auto *content = new QWidget(this);
     auto *contentLayout = new QVBoxLayout(content);
-    contentLayout->setContentsMargins(12, 4, 12, 12);
-    contentLayout->setSpacing(8);
+    contentLayout->setContentsMargins(8, 2, 8, 8);
+    contentLayout->setSpacing(6);
     layout->addWidget(content, 1);
 
     auto *searchEdit = new CommandLineEdit;
@@ -811,7 +811,7 @@ MainWindow::MainWindow(AppLauncher *launcher, PluginManager *pluginManager, Sett
     m_pinnedPanel = new QWidget;
     m_pinnedLayout = new QHBoxLayout(m_pinnedPanel);
     m_pinnedLayout->setContentsMargins(0, 0, 0, 0);
-    m_pinnedLayout->setSpacing(8);
+    m_pinnedLayout->setSpacing(6);
     contentLayout->addWidget(m_pinnedPanel);
 
     m_stack = new QStackedWidget;

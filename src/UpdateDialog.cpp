@@ -79,8 +79,8 @@ UpdateDialog::UpdateDialog(const ReleaseParser::Result &result, QWidget *parent)
     resize(560, 480);
 
     auto *layout = new QVBoxLayout(this);
-    layout->setContentsMargins(20, 20, 20, 16);
-    layout->setSpacing(12);
+    layout->setContentsMargins(16, 16, 16, 12);
+    layout->setSpacing(8);
 
     m_titleLabel = new QLabel(tr("Update available"));
     m_titleLabel->setObjectName(QStringLiteral("pageTitle"));
