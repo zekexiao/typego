@@ -259,10 +259,10 @@ SettingsView::SettingsView(Settings *settings, PluginManager *pluginManager, Glo
 
     auto *sidebar = new QFrame;
     sidebar->setObjectName(QStringLiteral("settingsSidebar"));
-    sidebar->setFixedWidth(168);
+    sidebar->setFixedWidth(180);
     auto *sidebarLayout = new QVBoxLayout(sidebar);
-    sidebarLayout->setContentsMargins(12, 12, 12, 12);
-    sidebarLayout->setSpacing(8);
+    sidebarLayout->setContentsMargins(14, 14, 14, 12);
+    sidebarLayout->setSpacing(10);
     auto *brandRow = new QHBoxLayout;
     brandRow->setSpacing(8);
     auto *brandIcon = new QLabel;
@@ -272,11 +272,11 @@ SettingsView::SettingsView(Settings *settings, PluginManager *pluginManager, Glo
     brandRow->addWidget(brandIcon);
     brandRow->addWidget(brandLabel, 1);
     sidebarLayout->addLayout(brandRow);
-    sidebarLayout->addSpacing(8);
+    sidebarLayout->addSpacing(10);
 
     m_navigation = new QListWidget;
     m_navigation->setObjectName(QStringLiteral("settingsNavigation"));
-    m_navigation->setSpacing(2);
+    m_navigation->setSpacing(4);
     m_navigation->setIconSize(QSize(20, 20));
     m_navigation->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
     m_navigation->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
