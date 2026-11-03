@@ -259,25 +259,25 @@ SettingsView::SettingsView(Settings *settings, PluginManager *pluginManager, Glo
 
     auto *sidebar = new QFrame;
     sidebar->setObjectName(QStringLiteral("settingsSidebar"));
-    sidebar->setFixedWidth(180);
+    sidebar->setFixedWidth(148);
     auto *sidebarLayout = new QVBoxLayout(sidebar);
-    sidebarLayout->setContentsMargins(14, 14, 14, 12);
-    sidebarLayout->setSpacing(10);
+    sidebarLayout->setContentsMargins(10, 12, 10, 10);
+    sidebarLayout->setSpacing(6);
     auto *brandRow = new QHBoxLayout;
-    brandRow->setSpacing(8);
+    brandRow->setSpacing(6);
     auto *brandIcon = new QLabel;
-    brandIcon->setPixmap(QIcon(QStringLiteral(":/assets/icon.png")).pixmap(28, 28));
+    brandIcon->setPixmap(QIcon(QStringLiteral(":/assets/icon.png")).pixmap(22, 22));
     auto *brandLabel = new QLabel(QStringLiteral("TypeGo"));
     brandLabel->setObjectName(QStringLiteral("sidebarBrand"));
     brandRow->addWidget(brandIcon);
     brandRow->addWidget(brandLabel, 1);
     sidebarLayout->addLayout(brandRow);
-    sidebarLayout->addSpacing(10);
+    sidebarLayout->addSpacing(4);
 
     m_navigation = new QListWidget;
     m_navigation->setObjectName(QStringLiteral("settingsNavigation"));
-    m_navigation->setSpacing(4);
-    m_navigation->setIconSize(QSize(20, 20));
+    m_navigation->setSpacing(1);
+    m_navigation->setIconSize(QSize(16, 16));
     m_navigation->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
     m_navigation->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
     m_navigation->addItem(tr("Settings"));

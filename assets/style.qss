@@ -207,12 +207,12 @@ QListWidget#settingsNavigation {
 }
 
 QListWidget#settingsNavigation::item {
-    min-height: 22px;
-    padding: 8px 12px;
+    min-height: 20px;
+    padding: 4px 10px;
     color: @TEXT_SECONDARY@;
     background-color: transparent;
     border: none;
-    border-radius: 10px;
+    border-radius: 8px;
 }
 
 QListWidget#settingsNavigation::item:hover {
@@ -644,8 +644,8 @@ QFrame#settingsSidebar {
     border: 1px solid @BORDER@;
     border-radius: 16px;
 }
-QLabel#sidebarBrand { font-size: 16px; font-weight: 600; }
-QLabel#sidebarCaption { color: @TEXT_SECONDARY@; font-size: 12px; }
+QLabel#sidebarBrand { font-size: 14px; font-weight: 600; }
+QLabel#sidebarCaption { color: @TEXT_SECONDARY@; font-size: 11px; }
 QPushButton#pinnedAppButton { padding: 2px 8px; border-radius: 10px; }
 QPushButton#primary:disabled { background: @INSET@; color: @PLACEHOLDER@; border-color: @BORDER@; }
 QPushButton#danger:disabled { color: @PLACEHOLDER@; border-color: @BORDER@; background: @INSET@; }
