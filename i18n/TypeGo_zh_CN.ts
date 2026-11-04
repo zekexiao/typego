@@ -4,104 +4,104 @@
 <context>
     <name>AppLauncher</name>
     <message>
-        <location filename="../src/AppLauncher.cpp" line="91"/>
+        <location filename="../src/AppLauncher.cpp" line="92"/>
         <source>Notepad</source>
         <translation>记事本</translation>
     </message>
     <message>
-        <location filename="../src/AppLauncher.cpp" line="91"/>
+        <location filename="../src/AppLauncher.cpp" line="92"/>
         <source>Windows Notepad</source>
         <translation>Windows 记事本</translation>
     </message>
     <message>
-        <location filename="../src/AppLauncher.cpp" line="55"/>
-        <location filename="../src/AppLauncher.cpp" line="92"/>
+        <location filename="../src/AppLauncher.cpp" line="56"/>
+        <location filename="../src/AppLauncher.cpp" line="93"/>
         <source>Calculator</source>
         <translation>计算器</translation>
     </message>
     <message>
-        <location filename="../src/AppLauncher.cpp" line="61"/>
+        <location filename="../src/AppLauncher.cpp" line="62"/>
         <source>Pinned apps could not be loaded or saved. The original file has been kept. Check pins.json and folder permissions; restart TypeGo after repairing the file.
 %1</source>
         <translation>无法读取或保存固定应用，原文件已保留。请检查 pins.json 和目录权限，修复文件后重启 TypeGo。
 %1</translation>
     </message>
     <message>
-        <location filename="../src/AppLauncher.cpp" line="92"/>
+        <location filename="../src/AppLauncher.cpp" line="93"/>
         <source>Windows Calculator</source>
         <translation>Windows 计算器</translation>
     </message>
     <message>
-        <location filename="../src/AppLauncher.cpp" line="93"/>
+        <location filename="../src/AppLauncher.cpp" line="94"/>
         <source>Paint</source>
         <translation>画图</translation>
     </message>
     <message>
-        <location filename="../src/AppLauncher.cpp" line="93"/>
+        <location filename="../src/AppLauncher.cpp" line="94"/>
         <source>Windows Paint</source>
         <translation>Windows 画图</translation>
     </message>
     <message>
-        <location filename="../src/AppLauncher.cpp" line="94"/>
+        <location filename="../src/AppLauncher.cpp" line="95"/>
         <source>Command Prompt</source>
         <translation>命令提示符</translation>
     </message>
     <message>
-        <location filename="../src/AppLauncher.cpp" line="94"/>
+        <location filename="../src/AppLauncher.cpp" line="95"/>
         <source>CMD Command Line</source>
         <translation>CMD 命令行</translation>
     </message>
     <message>
-        <location filename="../src/AppLauncher.cpp" line="95"/>
+        <location filename="../src/AppLauncher.cpp" line="96"/>
         <source>File Explorer</source>
         <translation>文件资源管理器</translation>
     </message>
     <message>
-        <location filename="../src/AppLauncher.cpp" line="236"/>
+        <location filename="../src/AppLauncher.cpp" line="143"/>
         <source>Custom Directory</source>
         <translation>自定义目录</translation>
     </message>
     <message>
-        <location filename="../src/AppLauncher.cpp" line="414"/>
-        <location filename="../src/AppLauncher.cpp" line="428"/>
+        <location filename="../src/AppLauncher.cpp" line="321"/>
+        <location filename="../src/AppLauncher.cpp" line="335"/>
         <source>Cannot save pinned apps. Your previous pins have been kept. Check the data file and folder permissions, then try again.
 %1</source>
         <translation>无法保存固定应用，原有列表已保留。请检查数据文件和目录权限后重试。
 %1</translation>
     </message>
     <message>
-        <location filename="../src/AppLauncher.cpp" line="56"/>
-        <location filename="../src/AppLauncher.cpp" line="96"/>
+        <location filename="../src/AppLauncher.cpp" line="57"/>
+        <location filename="../src/AppLauncher.cpp" line="97"/>
         <source>Task Manager</source>
         <translation>任务管理器</translation>
     </message>
     <message>
-        <location filename="../src/AppLauncher.cpp" line="96"/>
+        <location filename="../src/AppLauncher.cpp" line="97"/>
         <source>Windows Task Manager</source>
         <translation>Windows 任务管理器</translation>
     </message>
     <message>
-        <location filename="../src/AppLauncher.cpp" line="97"/>
+        <location filename="../src/AppLauncher.cpp" line="98"/>
         <source>Settings</source>
         <translation>设置</translation>
     </message>
     <message>
-        <location filename="../src/AppLauncher.cpp" line="97"/>
+        <location filename="../src/AppLauncher.cpp" line="98"/>
         <source>Windows Settings</source>
         <translation>Windows 设置</translation>
     </message>
     <message>
-        <location filename="../src/AppLauncher.cpp" line="98"/>
+        <location filename="../src/AppLauncher.cpp" line="99"/>
         <source>Browser</source>
         <translation>浏览器</translation>
     </message>
     <message>
-        <location filename="../src/AppLauncher.cpp" line="98"/>
+        <location filename="../src/AppLauncher.cpp" line="99"/>
         <source>Open Bing Search</source>
         <translation>打开必应搜索</translation>
     </message>
     <message>
-        <location filename="../src/AppLauncher.cpp" line="232"/>
+        <location filename="../src/AppLauncher.cpp" line="139"/>
         <source>Start Menu</source>
         <translation>开始菜单</translation>
     </message>
@@ -142,12 +142,12 @@
 <context>
     <name>CommandLineEdit</name>
     <message>
-        <location filename="../src/MainWindow.cpp" line="606"/>
+        <location filename="../src/MainWindow.cpp" line="522"/>
         <source>Open settings</source>
         <translation>打开设置</translation>
     </message>
     <message>
-        <location filename="../src/MainWindow.cpp" line="695"/>
+        <location filename="../src/MainWindow.cpp" line="611"/>
         <source>Type arguments...</source>
         <translation>输入参数...</translation>
     </message>
@@ -317,22 +317,22 @@
 <context>
     <name>FloatIcon</name>
     <message>
-        <location filename="../src/MainWindow.cpp" line="1541"/>
+        <location filename="../src/MainWindow.cpp" line="1457"/>
         <source>Left-click to show or hide TypeGo, right-click for the menu</source>
         <translation>左键显示或隐藏 TypeGo，右键打开菜单</translation>
     </message>
     <message>
-        <location filename="../src/MainWindow.cpp" line="1660"/>
+        <location filename="../src/MainWindow.cpp" line="1576"/>
         <source>Hide main window</source>
         <translation>隐藏主界面</translation>
     </message>
     <message>
-        <location filename="../src/MainWindow.cpp" line="1660"/>
+        <location filename="../src/MainWindow.cpp" line="1576"/>
         <source>Show main window</source>
         <translation>显示主界面</translation>
     </message>
     <message>
-        <location filename="../src/MainWindow.cpp" line="1662"/>
+        <location filename="../src/MainWindow.cpp" line="1578"/>
         <source>Hide float icon</source>
         <translation>隐藏浮动图标</translation>
     </message>
@@ -459,145 +459,145 @@ Open Settings from the tray icon to choose another shortcut.</source>
 <context>
     <name>MainWindow</name>
     <message>
-        <location filename="../src/MainWindow.cpp" line="749"/>
+        <location filename="../src/MainWindow.cpp" line="665"/>
         <source>Back to results</source>
         <translation>返回结果</translation>
     </message>
     <message>
-        <location filename="../src/MainWindow.cpp" line="750"/>
+        <location filename="../src/MainWindow.cpp" line="666"/>
         <source>Back</source>
         <translation>返回</translation>
     </message>
     <message>
-        <location filename="../src/MainWindow.cpp" line="755"/>
+        <location filename="../src/MainWindow.cpp" line="671"/>
         <source>Detach plugin view to a window</source>
         <translation>将插件视图分离到窗口</translation>
     </message>
     <message>
-        <location filename="../src/MainWindow.cpp" line="756"/>
+        <location filename="../src/MainWindow.cpp" line="672"/>
         <source>Detach window</source>
         <translation>分离窗口</translation>
     </message>
     <message>
-        <location filename="../src/MainWindow.cpp" line="777"/>
-        <location filename="../src/MainWindow.cpp" line="778"/>
+        <location filename="../src/MainWindow.cpp" line="693"/>
+        <location filename="../src/MainWindow.cpp" line="694"/>
         <source>Close</source>
         <translation>关闭</translation>
     </message>
     <message>
-        <location filename="../src/MainWindow.cpp" line="800"/>
+        <location filename="../src/MainWindow.cpp" line="716"/>
         <source>Search apps or commands</source>
         <translation>搜索应用或命令</translation>
     </message>
     <message>
-        <location filename="../src/MainWindow.cpp" line="861"/>
+        <location filename="../src/MainWindow.cpp" line="777"/>
         <source>The plugin view could not be detached.</source>
         <translation>无法分离插件视图。</translation>
     </message>
     <message>
-        <location filename="../src/MainWindow.cpp" line="866"/>
+        <location filename="../src/MainWindow.cpp" line="782"/>
         <source>The application could not be closed. Save your changes and try again.</source>
         <translation>无法关闭此应用，请先保存修改，再重试。</translation>
     </message>
     <message>
-        <location filename="../src/MainWindow.cpp" line="920"/>
-        <location filename="../src/MainWindow.cpp" line="1388"/>
+        <location filename="../src/MainWindow.cpp" line="836"/>
+        <location filename="../src/MainWindow.cpp" line="1304"/>
         <source>Unpin from Start</source>
         <translation>从开始界面取消固定</translation>
     </message>
     <message>
-        <location filename="../src/MainWindow.cpp" line="920"/>
+        <location filename="../src/MainWindow.cpp" line="836"/>
         <source>Pin to Start</source>
         <translation>固定到开始界面</translation>
     </message>
     <message>
-        <location filename="../src/MainWindow.cpp" line="953"/>
+        <location filename="../src/MainWindow.cpp" line="869"/>
         <source>Downloading update...</source>
         <translation>下载更新中...</translation>
     </message>
     <message>
-        <location filename="../src/MainWindow.cpp" line="953"/>
+        <location filename="../src/MainWindow.cpp" line="869"/>
         <source>Cancel</source>
         <translation>取消</translation>
     </message>
     <message>
-        <location filename="../src/MainWindow.cpp" line="970"/>
+        <location filename="../src/MainWindow.cpp" line="886"/>
         <source>Update failed</source>
         <translation>更新失败</translation>
     </message>
     <message>
-        <location filename="../src/MainWindow.cpp" line="1123"/>
+        <location filename="../src/MainWindow.cpp" line="1039"/>
         <source>Scanning applications...</source>
         <translation>正在扫描应用…</translation>
     </message>
     <message>
-        <location filename="../src/MainWindow.cpp" line="1124"/>
+        <location filename="../src/MainWindow.cpp" line="1040"/>
         <source>Please wait for application indexing to finish.</source>
         <translation>请稍候，正在建立应用索引。</translation>
     </message>
     <message>
-        <location filename="../src/MainWindow.cpp" line="1140"/>
+        <location filename="../src/MainWindow.cpp" line="1056"/>
         <source>Search &quot;%1&quot;</source>
         <translation>搜索 “%1”</translation>
     </message>
     <message>
-        <location filename="../src/MainWindow.cpp" line="1141"/>
+        <location filename="../src/MainWindow.cpp" line="1057"/>
         <source>Search with %1</source>
         <translation>用 %1 搜索</translation>
     </message>
     <message>
-        <location filename="../src/MainWindow.cpp" line="1152"/>
+        <location filename="../src/MainWindow.cpp" line="1068"/>
         <source>Search files &quot;%1&quot;</source>
         <translation>搜索文件“%1”</translation>
     </message>
     <message>
-        <location filename="../src/MainWindow.cpp" line="1154"/>
+        <location filename="../src/MainWindow.cpp" line="1070"/>
         <source>Search with Everything</source>
         <translation>用 Everything 搜索</translation>
     </message>
     <message>
-        <location filename="../src/MainWindow.cpp" line="861"/>
-        <location filename="../src/MainWindow.cpp" line="866"/>
-        <location filename="../src/MainWindow.cpp" line="1491"/>
-        <location filename="../src/MainWindow.cpp" line="1506"/>
-        <location filename="../src/MainWindow.cpp" line="1513"/>
+        <location filename="../src/MainWindow.cpp" line="777"/>
+        <location filename="../src/MainWindow.cpp" line="782"/>
+        <location filename="../src/MainWindow.cpp" line="1407"/>
+        <location filename="../src/MainWindow.cpp" line="1422"/>
+        <location filename="../src/MainWindow.cpp" line="1429"/>
         <source>Action failed</source>
         <translation>操作失败</translation>
     </message>
     <message>
-        <location filename="../src/MainWindow.cpp" line="1492"/>
-        <location filename="../src/MainWindow.cpp" line="1507"/>
-        <location filename="../src/MainWindow.cpp" line="1513"/>
+        <location filename="../src/MainWindow.cpp" line="1408"/>
+        <location filename="../src/MainWindow.cpp" line="1423"/>
+        <location filename="../src/MainWindow.cpp" line="1429"/>
         <source>The selected item could not be opened or executed.</source>
         <translation>无法打开或执行所选项目。</translation>
     </message>
     <message>
-        <location filename="../src/MainWindow.cpp" line="1232"/>
+        <location filename="../src/MainWindow.cpp" line="1148"/>
         <source>Cannot open item</source>
         <translation>无法打开项目</translation>
     </message>
     <message>
-        <location filename="../src/MainWindow.cpp" line="1156"/>
+        <location filename="../src/MainWindow.cpp" line="1072"/>
         <source>Search with fd or find</source>
         <translation>用 fd 或 find 搜索</translation>
     </message>
     <message>
-        <location filename="../src/MainWindow.cpp" line="1233"/>
+        <location filename="../src/MainWindow.cpp" line="1149"/>
         <source>Cannot open %1. Check that the file exists and an application is installed to open it.</source>
         <translation>无法打开 %1。请确认文件存在，并已安装可打开此文件的应用。</translation>
     </message>
     <message>
-        <location filename="../src/MainWindow.cpp" line="1373"/>
+        <location filename="../src/MainWindow.cpp" line="1289"/>
         <source>Pinned</source>
         <translation>已固定</translation>
     </message>
     <message>
-        <location filename="../src/MainWindow.cpp" line="1525"/>
+        <location filename="../src/MainWindow.cpp" line="1441"/>
         <source>%1 | Unknown command</source>
         <translation>%1 | 未知的命令</translation>
     </message>
     <message>
-        <location filename="../src/MainWindow.cpp" line="1525"/>
+        <location filename="../src/MainWindow.cpp" line="1441"/>
         <source>%1 | %2</source>
         <translation>%1 | %2</translation>
     </message>
@@ -605,7 +605,7 @@ Open Settings from the tray icon to choose another shortcut.</source>
 <context>
     <name>ManagementIcon</name>
     <message>
-        <location filename="../src/MainWindow.cpp" line="523"/>
+        <location filename="../src/MainWindow.cpp" line="439"/>
         <source>Open settings</source>
         <translation>打开设置</translation>
     </message>

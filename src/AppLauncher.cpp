@@ -1,5 +1,6 @@
 #include "AppLauncher.h"
 #include "Settings.h"
+#include "utils/IconExtractor.h"
 #include <QProcess>
 #include <QDesktopServices>
 #include <QUrl>
@@ -112,104 +113,10 @@ void AppLauncher::rebuildApps()
         m_settings && m_settings->hideUninstallEntries()));
 }
 
-#ifdef Q_OS_WIN
-static QPixmap hIconToPixmap(HICON hIcon)
-{
-    ICONINFO iconInfo;
-    if (!GetIconInfo(hIcon, &iconInfo)) return QPixmap();
-
-    BITMAP bmp;
-    if (!GetObject(iconInfo.hbmColor, sizeof(BITMAP), &bmp)) {
-        DeleteObject(iconInfo.hbmMask);
-        DeleteObject(iconInfo.hbmColor);
-        return QPixmap();
-    }
-
-    int width = bmp.bmWidth;
-    int height = bmp.bmHeight;
-
-    HDC screenDC = GetDC(NULL);
-    HDC memDC = CreateCompatibleDC(screenDC);
-    ReleaseDC(NULL, screenDC);
-
-    BITMAPINFO bmi;
-    memset(&bmi, 0, sizeof(bmi));
-    bmi.bmiHeader.biSize = sizeof(BITMAPINFOHEADER);
-    bmi.bmiHeader.biWidth = width;
-    bmi.bmiHeader.biHeight = -height;
-    bmi.bmiHeader.biPlanes = 1;
-    bmi.bmiHeader.biBitCount = 32;
-    bmi.bmiHeader.biCompression = BI_RGB;
-
-    void *bits = nullptr;
-    HBITMAP hDIB = CreateDIBSection(memDC, &bmi, DIB_RGB_COLORS, &bits, nullptr, 0);
-    if (!hDIB) {
-        DeleteDC(memDC);
-        DeleteObject(iconInfo.hbmMask);
-        DeleteObject(iconInfo.hbmColor);
-        return QPixmap();
-    }
-
-    HBITMAP oldBmp = (HBITMAP)SelectObject(memDC, hDIB);
-    DrawIconEx(memDC, 0, 0, hIcon, width, height, 0, NULL, DI_NORMAL);
-    SelectObject(memDC, oldBmp);
-
-    QImage image(width, height, QImage::Format_ARGB32);
-    memcpy(image.bits(), bits, width * height * 4);
-
-    DeleteObject(hDIB);
-    DeleteDC(memDC);
-    DeleteObject(iconInfo.hbmMask);
-    DeleteObject(iconInfo.hbmColor);
-
-    return QPixmap::fromImage(image);
-}
-#endif
-
 QString AppLauncher::extractIcon(const QString &filePath)
 {
-    QString cacheName = QString::number(qHash(filePath), 16) + ".png";
-    QString cachePath = m_iconCacheDir + "/" + cacheName;
-
-    if (QFile::exists(cachePath)) {
-        return cachePath;
-    }
-
-#ifdef Q_OS_WIN
-    // 先尝试 QFileIconProvider（对已存在的文件路径效果好）
-    QFileInfo fi(filePath);
-    if (fi.exists()) {
-        QFileIconProvider provider;
-        QIcon icon = provider.icon(fi);
-        if (!icon.isNull()) {
-            QPixmap pixmap = icon.pixmap(QSize(32, 32));
-            if (!pixmap.isNull()) {
-                if (pixmap.width() != 32 || pixmap.height() != 32) {
-                    pixmap = pixmap.scaled(32, 32, Qt::KeepAspectRatio, Qt::SmoothTransformation);
-                }
-                if (pixmap.save(cachePath, "PNG")) return cachePath;
-            }
-        }
-    }
-
-    // 使用 SHGetFileInfo 获取系统图标（支持 URL 协议和特殊路径）
-    SHFILEINFOW sfi = {};
-    DWORD flags = SHGFI_ICON | SHGFI_LARGEICON;
-    if (SHGetFileInfoW((LPCWSTR)filePath.utf16(), 0, &sfi, sizeof(sfi), flags)) {
-        HICON hIcon = sfi.hIcon;
-        if (hIcon) {
-            QPixmap pixmap = hIconToPixmap(hIcon);
-            DestroyIcon(hIcon);
-            if (!pixmap.isNull()) {
-                if (pixmap.width() != 32 || pixmap.height() != 32) {
-                    pixmap = pixmap.scaled(32, 32, Qt::KeepAspectRatio, Qt::SmoothTransformation);
-                }
-                if (pixmap.save(cachePath, "PNG")) return cachePath;
-            }
-        }
-    }
-#endif
-    return "";
+    // 图标提取逻辑已收敛到 IconExtractor（含应用执行别名支持）
+    return IconExtractor::extract(filePath, m_iconCacheDir);
 }
 
 QList<AppItem> AppLauncher::scanApps(const QStringList &customDirs, bool recursive, bool hideUninstall)

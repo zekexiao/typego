@@ -5,6 +5,7 @@
 #include "ThemeManager.h"
 #include "UpdateDialog.h"
 #include "Updater.h"
+#include "utils/IconExtractor.h"
 #include "plugins/PluginManager.h"
 #include "plugins/PluginWindowHost.h"
 
@@ -120,95 +121,10 @@ QString localPathOf(const QVariantMap &item)
     return QString();
 }
 
-#ifdef Q_OS_WIN
-QImage hIconToImage(HICON hIcon)
-{
-    ICONINFO iconInfo;
-    if (!GetIconInfo(hIcon, &iconInfo)) return QImage();
-
-    BITMAP bmp;
-    if (!GetObject(iconInfo.hbmColor, sizeof(BITMAP), &bmp)) {
-        DeleteObject(iconInfo.hbmMask);
-        DeleteObject(iconInfo.hbmColor);
-        return QImage();
-    }
-
-    const int width = bmp.bmWidth;
-    const int height = bmp.bmHeight;
-
-    HDC screenDC = GetDC(nullptr);
-    HDC memDC = CreateCompatibleDC(screenDC);
-    ReleaseDC(nullptr, screenDC);
-
-    BITMAPINFO bmi;
-    memset(&bmi, 0, sizeof(bmi));
-    bmi.bmiHeader.biSize = sizeof(BITMAPINFOHEADER);
-    bmi.bmiHeader.biWidth = width;
-    bmi.bmiHeader.biHeight = -height;
-    bmi.bmiHeader.biPlanes = 1;
-    bmi.bmiHeader.biBitCount = 32;
-    bmi.bmiHeader.biCompression = BI_RGB;
-
-    void *bits = nullptr;
-    HBITMAP hDIB = CreateDIBSection(memDC, &bmi, DIB_RGB_COLORS, &bits, nullptr, 0);
-    if (!hDIB) {
-        DeleteDC(memDC);
-        DeleteObject(iconInfo.hbmMask);
-        DeleteObject(iconInfo.hbmColor);
-        return QImage();
-    }
-
-    HBITMAP oldBmp = static_cast<HBITMAP>(SelectObject(memDC, hDIB));
-    DrawIconEx(memDC, 0, 0, hIcon, width, height, 0, nullptr, DI_NORMAL);
-    SelectObject(memDC, oldBmp);
-
-    QImage image(width, height, QImage::Format_ARGB32);
-    memcpy(image.bits(), bits, width * height * 4);
-
-    DeleteObject(hDIB);
-    DeleteDC(memDC);
-    DeleteObject(iconInfo.hbmMask);
-    DeleteObject(iconInfo.hbmColor);
-
-    return image;
-}
-#endif
-
 QString extractIconAsync(const QString &filePath, const QString &cacheDir)
 {
-    QDir().mkpath(cacheDir);
-    const QString cachePath = QDir(cacheDir).filePath(QString::number(qHash(filePath), 16) + QStringLiteral(".png"));
-    if (QFile::exists(cachePath)) return cachePath;
-
-#ifdef Q_OS_WIN
-    const HRESULT initialized = CoInitializeEx(nullptr, COINIT_MULTITHREADED);
-    const auto uninitialize = qScopeGuard([initialized]() {
-        if (SUCCEEDED(initialized)) CoUninitialize();
-    });
-    QString iconSource = filePath;
-    if (!QFileInfo(filePath).isAbsolute() && !filePath.contains(QLatin1Char(':'))) {
-        const QString executable = QStandardPaths::findExecutable(filePath);
-        if (!executable.isEmpty()) iconSource = executable;
-    }
-    SHFILEINFOW sfi = {};
-    if (SHGetFileInfoW(reinterpret_cast<LPCWSTR>(iconSource.utf16()), 0, &sfi, sizeof(sfi), SHGFI_ICON | SHGFI_LARGEICON)) {
-        const HICON hIcon = sfi.hIcon;
-        if (hIcon) {
-            QImage image = hIconToImage(hIcon);
-            DestroyIcon(hIcon);
-            if (!image.isNull()) {
-                if (image.width() != 32 || image.height() != 32) {
-                    image = image.scaled(32, 32, Qt::KeepAspectRatio, Qt::SmoothTransformation);
-                }
-                if (image.save(cachePath, "PNG")) return cachePath;
-            }
-        }
-    }
-#else
-    Q_UNUSED(filePath)
-#endif
-
-    return QString();
+    // 图标提取逻辑已收敛到 IconExtractor（含应用执行别名支持）
+    return IconExtractor::extract(filePath, cacheDir);
 }
 }
 

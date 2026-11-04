@@ -74,6 +74,7 @@ add_library(typego_core STATIC
     src/utils/AppUsageStore.cpp
     src/utils/DirectoryListing.cpp
     src/utils/FileSearchCommand.cpp
+    src/utils/IconExtractor.cpp
     src/utils/PinStorage.cpp
     src/utils/ScreenPosition.cpp
     src/utils/Restart.cpp
@@ -94,6 +95,11 @@ target_link_libraries(typego_core PUBLIC
 )
 
 target_link_libraries(typego_core PUBLIC neo_json_model)
+
+# IconExtractor 在 Windows 分支里使用 Shell COM API
+if(WIN32)
+    target_link_libraries(typego_core PUBLIC shell32 shlwapi gdi32 user32)
+endif()
 
 qt_add_executable(TypeGo
     src/main.cpp
