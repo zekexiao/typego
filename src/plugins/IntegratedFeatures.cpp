@@ -9,6 +9,7 @@
 #include "../../plugins/clipboard/ClipboardPlugin.h"
 #include "../../plugins/screenshot/ScreenshotPlugin.h"
 #include "../../plugins/neo-json-viewer/NeoJsonViewerPlugin.h"
+#include "../../plugins/todo/TodoPlugin.h"
 #include <QSettings>
 #include <QSet>
 #include <QThread>
@@ -373,4 +374,12 @@ void registerIntegratedFeatures(PluginManager &manager, const PluginPaths &paths
     viewer.aliases = {QStringLiteral("json-viewer")}; viewer.launchMode = IPlugin::LaunchMode::FullView;
     viewer.directActivation = true; viewer.supportsDetach = true; json.commands.append(viewer);
     add(json, [] { return new NeoJsonViewerPlugin; });
+    PluginDescriptor todo;
+    todo.id = QStringLiteral("todo");
+    todo.description = QCoreApplication::translate("IntegratedFeatures", "Todo list");
+    PluginCommand todoCommand; todoCommand.id = QStringLiteral("list");
+    todoCommand.keyword = QStringLiteral("todo"); todoCommand.aliases = {QStringLiteral("task"), QStringLiteral("daiban")};
+    todoCommand.launchMode = IPlugin::LaunchMode::FullView;
+    todoCommand.directActivation = true; todoCommand.supportsDetach = true; todo.commands.append(todoCommand);
+    add(todo, [] { return new TodoPlugin; });
 }

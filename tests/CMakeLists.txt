@@ -29,7 +29,7 @@ typego_add_test(tst_plugin_manager tst_plugin_manager.cpp)
 typego_add_test(tst_plugin_runtime tst_plugin_runtime.cpp)
 typego_add_test(tst_integrated_features tst_integrated_features.cpp
     ${CMAKE_SOURCE_DIR}/src/plugins/IntegratedFeatures.cpp)
-target_link_libraries(tst_integrated_features PRIVATE clipboard_plugin screenshot_plugin neo_json_viewer Qt6::Concurrent)
+target_link_libraries(tst_integrated_features PRIVATE clipboard_plugin screenshot_plugin neo_json_viewer todo_plugin Qt6::Concurrent)
 if(WIN32)
     target_link_libraries(tst_integrated_features PRIVATE user32 gdi32 dwmapi)
 endif()
@@ -55,6 +55,11 @@ add_dependencies(tst_restart restart_parent)
 target_compile_definitions(tst_restart PRIVATE TYPEGO_RESTART_PARENT="$<TARGET_FILE:restart_parent>")
 
 typego_add_test(tst_json_tree_model tst_json_tree_model.cpp)
+
+# 待办存储只依赖 Qt Core，在临时目录验证读写与排序。
+typego_add_test(tst_todo_store tst_todo_store.cpp
+    ${CMAKE_SOURCE_DIR}/plugins/todo/TodoStore.cpp)
+target_include_directories(tst_todo_store PRIVATE "${CMAKE_SOURCE_DIR}/plugins/todo")
 
 # 翻译完整性：所有 .ts 的译文必须非空，否则界面会直接露出英文原文。
 typego_add_test(tst_translations tst_translations.cpp)
