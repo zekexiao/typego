@@ -23,9 +23,6 @@
 #include "../plugins/screenshot/PinWindow.h"
 #include "../plugins/neo-json-viewer/MainWindow.h"
 #include "../plugins/neo-json-viewer/AboutDialog.h"
-#include "../plugins/todo/TodoStore.h"
-#include "../plugins/todo/TodoWindow.h"
-#include "../plugins/todo/TodoEditorDialog.h"
 #include "../plugins/neo-json-viewer/AddItemDialog.h"
 
 #include <QApplication>
@@ -296,31 +293,6 @@ public:
             {
                 AboutDialog dialog;
                 if (!capture(dialog, QStringLiteral("json-about"))) return false;
-            }
-            if (wants(QStringLiteral("tools")))
-            {
-                // 待办示例数据写进临时数据目录，不碰用户配置。
-                QDir().mkpath(data + QStringLiteral("/todo"));
-                TodoStore fixture(data + QStringLiteral("/todo/todos.json"));
-                TodoItem high;
-                high.id = TodoStore::newId();
-                high.title = QStringLiteral("Review release notes");
-                high.priority = 2;
-                high.due = QDateTime(QDate::currentDate(), QTime(14, 0));
-                TodoItem normal;
-                normal.id = TodoStore::newId();
-                normal.title = QStringLiteral("Write changelog");
-                TodoItem done;
-                done.id = TodoStore::newId();
-                done.title = QStringLiteral("Archive old tasks");
-                done.done = true;
-                fixture.items() = {high, normal, done};
-                if (!fixture.save()) { m_error = QStringLiteral("Cannot write todo fixture"); return false; }
-                TodoWindow todo(data + QStringLiteral("/todo"));
-                if (!capture(todo, QStringLiteral("todo-list"), {860, 560})) return false;
-                TodoEditorDialog editor;
-                editor.setItem(high);
-                if (!capture(editor, QStringLiteral("todo-editor"), {520, 380})) return false;
             }
             if (wants(QStringLiteral("update")))
             {

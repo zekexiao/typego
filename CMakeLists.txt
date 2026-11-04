@@ -23,7 +23,6 @@ endif()
 find_package(Qt6 REQUIRED COMPONENTS Core Gui Widgets Svg Network Concurrent LinguistTools)
 
 add_subdirectory(plugins/neo-json-viewer)
-add_subdirectory(plugins/todo)
 add_subdirectory(plugins/clipboard)
 add_subdirectory(plugins/screenshot)
 
@@ -150,7 +149,7 @@ endif()
 
 target_link_libraries(TypeGo PRIVATE
     typego_core
-    clipboard_plugin screenshot_plugin neo_json_viewer todo_plugin
+    clipboard_plugin screenshot_plugin neo_json_viewer
     Qt6::Core
     Qt6::Gui
     Qt6::Widgets
@@ -189,8 +188,7 @@ add_dependencies(TypeGo update_translation_sources)
 qt_add_translation(INTEGRATED_QM_FILES
     plugins/clipboard/translations/Clipboard_zh_CN.ts
     plugins/screenshot/translations/Screenshot_zh_CN.ts
-    plugins/neo-json-viewer/translations/NeoJsonViewer_zh_CN.ts
-    plugins/todo/translations/Todo_zh_CN.ts)
+    plugins/neo-json-viewer/translations/NeoJsonViewer_zh_CN.ts)
 qt_add_resources(TypeGo integrated_translations PREFIX /integrated
     BASE ${CMAKE_CURRENT_BINARY_DIR} FILES ${INTEGRATED_QM_FILES})
 qt_add_resources(TypeGo json_viewer_assets PREFIX /jsonviewer

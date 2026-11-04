@@ -363,7 +363,7 @@
 <context>
     <name>IntegratedFeatureAdapter</name>
     <message>
-        <location filename="../src/plugins/IntegratedFeatures.cpp" line="186"/>
+        <location filename="../src/plugins/IntegratedFeatures.cpp" line="185"/>
         <source>Plugin error</source>
         <translation>插件错误</translation>
     </message>
@@ -371,24 +371,19 @@
 <context>
     <name>IntegratedFeatures</name>
     <message>
-        <location filename="../src/plugins/IntegratedFeatures.cpp" line="351"/>
+        <location filename="../src/plugins/IntegratedFeatures.cpp" line="350"/>
         <source>Clipboard history</source>
         <translation>剪贴板历史</translation>
     </message>
     <message>
-        <location filename="../src/plugins/IntegratedFeatures.cpp" line="357"/>
+        <location filename="../src/plugins/IntegratedFeatures.cpp" line="356"/>
         <source>Screenshot</source>
         <translation>截图</translation>
     </message>
     <message>
-        <location filename="../src/plugins/IntegratedFeatures.cpp" line="372"/>
+        <location filename="../src/plugins/IntegratedFeatures.cpp" line="371"/>
         <source>JSON View</source>
         <translation>JSON 查看器</translation>
-    </message>
-    <message>
-        <location filename="../src/plugins/IntegratedFeatures.cpp" line="379"/>
-        <source>Todo list</source>
-        <translation>待办清单</translation>
     </message>
 </context>
 <context>
