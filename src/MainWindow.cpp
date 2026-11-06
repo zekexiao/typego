@@ -656,7 +656,7 @@ MainWindow::MainWindow(AppLauncher *launcher, PluginManager *pluginManager, Sett
     m_titleBackSlot = new QWidget(titleBar);
     m_titleBackSlot->setObjectName(QStringLiteral("titleBackSlot"));
     m_titleBackSlot->setAutoFillBackground(false);
-    m_titleBackSlot->setFixedWidth(68);
+    m_titleBackSlot->setFixedWidth(100);
     auto *backSlotLayout = new QHBoxLayout(m_titleBackSlot);
     backSlotLayout->setContentsMargins(0, 0, 0, 0);
     backSlotLayout->setSpacing(0);
@@ -666,12 +666,6 @@ MainWindow::MainWindow(AppLauncher *launcher, PluginManager *pluginManager, Sett
     m_pluginBackButton->setAccessibleName(tr("Back"));
     m_pluginBackButton->hide();
     backSlotLayout->addWidget(m_pluginBackButton);
-    m_pluginDetachButton = new TitleBarIconButton(TitleBarIconButton::Glyph::Detach, themeManager, m_titleBackSlot);
-    m_pluginDetachButton->setObjectName(QStringLiteral("titleBackButton"));
-    m_pluginDetachButton->setToolTip(tr("Detach plugin view to a window"));
-    m_pluginDetachButton->setAccessibleName(tr("Detach window"));
-    m_pluginDetachButton->hide();
-    backSlotLayout->addWidget(m_pluginDetachButton);
     backSlotLayout->addStretch();
     auto *titleLabel = new QLabel(QStringLiteral("TypeGo"), titleBar);
     titleLabel->setObjectName(QStringLiteral("windowTitle"));
@@ -680,14 +674,21 @@ MainWindow::MainWindow(AppLauncher *launcher, PluginManager *pluginManager, Sett
     titleLayout->addStretch();
     titleLayout->addWidget(titleLabel);
     titleLayout->addStretch();
-    // 右侧用与左侧等宽的槽位放关闭按钮，标题才会落在窗口真正的水平中线上。
+    // 右侧用与左侧等宽的槽位放分离和关闭按钮，标题才会落在窗口真正的水平中线上。
     auto *closeSlot = new QWidget(titleBar);
     closeSlot->setObjectName(QStringLiteral("titleBackSlot"));
-    closeSlot->setFixedWidth(68);
+    closeSlot->setFixedWidth(100);
     auto *closeSlotLayout = new QHBoxLayout(closeSlot);
     closeSlotLayout->setContentsMargins(0, 0, 0, 0);
     closeSlotLayout->setSpacing(0);
     closeSlotLayout->addStretch();
+    // 分离按钮贴着窗口控制键的位置（最小化旁），进入功能页时才出现。
+    m_pluginDetachButton = new TitleBarIconButton(TitleBarIconButton::Glyph::Detach, themeManager, closeSlot);
+    m_pluginDetachButton->setObjectName(QStringLiteral("titleBackButton"));
+    m_pluginDetachButton->setToolTip(tr("Detach plugin view to a window"));
+    m_pluginDetachButton->setAccessibleName(tr("Detach window"));
+    m_pluginDetachButton->hide();
+    closeSlotLayout->addWidget(m_pluginDetachButton);
     auto *closeButton = new TitleBarIconButton(TitleBarIconButton::Glyph::Close, themeManager, closeSlot);
     closeButton->setObjectName(QStringLiteral("windowCloseButton"));
     closeButton->setToolTip(tr("Close"));
