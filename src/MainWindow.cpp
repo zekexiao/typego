@@ -317,6 +317,9 @@ void TitleBarIconButton::paintEvent(QPaintEvent *event)
         painter.drawLine(QPointF(center.x() - r, center.y() - r), QPointF(center.x() + r, center.y() + r));
         painter.drawLine(QPointF(center.x() - r, center.y() + r), QPointF(center.x() + r, center.y() - r));
         break;
+    case Glyph::Minimize:
+        painter.drawLine(QPointF(center.x() - r, center.y()), QPointF(center.x() + r, center.y()));
+        break;
     case Glyph::Back: {
         QPainterPath chevron;
         chevron.moveTo(center.x() + 2.0, center.y() - r);

@@ -9,7 +9,7 @@ class ThemeManager;
 // 主窗口和插件设置弹窗共用同一套按钮，视觉保持一致。
 class TitleBarIconButton final : public QPushButton {
 public:
-    enum class Glyph { Close, Back, Detach };
+    enum class Glyph { Close, Back, Detach, Minimize };
 
     TitleBarIconButton(Glyph glyph, ThemeManager *themeManager, QWidget *parent = nullptr);
 

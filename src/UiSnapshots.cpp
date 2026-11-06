@@ -26,6 +26,7 @@
 #include "../plugins/neo-json-viewer/AddItemDialog.h"
 #include "../plugins/todo/TodoWindow.h"
 #include "../plugins/todo/TodoCalendar.h"
+#include "plugins/PluginWindowHost.h"
 
 #include <QApplication>
 #include <QBuffer>
@@ -314,6 +315,29 @@ public:
                 QDir().mkpath(todoEmptyDir);
                 TodoWindow empty(todoEmptyDir, &palette);
                 if (!capture(empty, QStringLiteral("todo-empty"), {640, 520})) return false;
+            }
+            if (wants(QStringLiteral("tools")))
+            {
+                // 分离窗口：自绘标题栏（嵌回 + 最小化 + 关闭）浅深对照。
+                MainWindow window(&launcher, &plugins, &settings, &updater, &palette);
+                window.setProperty("skipWindowMaterial", true);
+                if (!window.openPluginView(QStringLiteral("todo"))) {
+                    m_error = QStringLiteral("Cannot open todo view");
+                    return false;
+                }
+                if (!window.m_windowHost->detachEmbedded()) {
+                    m_error = QStringLiteral("Cannot detach todo view");
+                    return false;
+                }
+                bool detachedCaptured = false;
+                for (QWidget *top : QApplication::topLevelWidgets()) {
+                    if (top->objectName() == QStringLiteral("pluginDetachedWindow")) {
+                        if (!capture(*top, QStringLiteral("todo-detached"), {960, 640})) return false;
+                        detachedCaptured = true;
+                        top->close();
+                    }
+                }
+                if (!detachedCaptured) { m_error = QStringLiteral("Detached todo window missing"); return false; }
             }
             if (wants(QStringLiteral("tools")))
             {

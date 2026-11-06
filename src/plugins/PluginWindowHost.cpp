@@ -1,11 +1,14 @@
 #include "PluginWindowHost.h"
 #include "PluginManager.h"
+#include "TitleBarButton.h"
 #include <QCloseEvent>
 #include <QHBoxLayout>
+#include <QLabel>
 #include <QPushButton>
 #include <QStackedWidget>
 #include <QVBoxLayout>
 #include <QWidget>
+#include <QWKWidgets/widgetwindowagent.h>
 
 PluginWindowHost::PluginWindowHost(PluginManager *manager, QStackedWidget *pages, QObject *parent)
     : QObject(parent), m_manager(manager), m_pages(pages)
@@ -65,18 +68,48 @@ bool PluginWindowHost::detachEmbedded()
     auto it = m_views.find(id);
     if (it == m_views.end() || !it->content || it->detached) return false;
 
+    // 无边框窗口 + 自绘标题栏：嵌回按钮才能和最小化、关闭排在一行。
     auto *window = new QWidget(nullptr, Qt::Window);
+    window->setObjectName(QStringLiteral("pluginDetachedWindow"));
     window->setWindowTitle(it->content->windowTitle().isEmpty()
         ? m_manager->descriptor(id)->description : it->content->windowTitle());
     connect(it->content, &QWidget::windowTitleChanged, window, &QWidget::setWindowTitle);
     window->resize(960, 640);
+    auto *agent = new QWK::WidgetWindowAgent(window);
+    agent->setup(window);
+
+    auto *titleBar = new QWidget(window);
+    titleBar->setObjectName(QStringLiteral("windowTitleBar"));
+    titleBar->setFixedHeight(36);
+    auto *titleLayout = new QHBoxLayout(titleBar);
+    titleLayout->setContentsMargins(12, 0, 4, 0);
+    titleLayout->setSpacing(4);
+    auto *titleLabel = new QLabel(window->windowTitle(), titleBar);
+    titleLabel->setObjectName(QStringLiteral("windowTitle"));
+    connect(window, &QWidget::windowTitleChanged, titleLabel, &QLabel::setText);
+    titleLayout->addWidget(titleLabel);
+    titleLayout->addStretch();
+    // 嵌回按钮贴着窗口控制键（最小化旁），随时把视图收回启动器。
+    auto *embed = new QPushButton(tr("Embed in TypeGo"), titleBar);
+    embed->setObjectName(QStringLiteral("titleEmbedButton"));
+    embed->setCursor(Qt::PointingHandCursor);
+    embed->setToolTip(tr("Embed in TypeGo"));
+    titleLayout->addWidget(embed);
+    auto *minimize = new TitleBarIconButton(TitleBarIconButton::Glyph::Minimize, nullptr, titleBar);
+    minimize->setObjectName(QStringLiteral("titleBackButton"));
+    minimize->setToolTip(tr("Minimize"));
+    minimize->setAccessibleName(tr("Minimize"));
+    titleLayout->addWidget(minimize);
+    auto *closeButton = new TitleBarIconButton(TitleBarIconButton::Glyph::Close, nullptr, titleBar);
+    closeButton->setObjectName(QStringLiteral("windowCloseButton"));
+    closeButton->setToolTip(tr("Close"));
+    closeButton->setAccessibleName(tr("Close"));
+    titleLayout->addWidget(closeButton);
+
     auto *layout = new QVBoxLayout(window);
-    auto *bar = new QHBoxLayout;
-    auto *attach = new QPushButton(tr("Embed in TypeGo"), window);
-    bar->addStretch();
-    bar->addWidget(attach);
-    layout->addLayout(bar);
-    layout->setContentsMargins(20, 16, 20, 20);
+    layout->setContentsMargins(0, 0, 0, 0);
+    layout->setSpacing(0);
+    layout->addWidget(titleBar);
     m_pages->removeWidget(it->content);
     it->content->setParent(window);
     layout->addWidget(it->content, 1);
@@ -86,7 +119,16 @@ bool PluginWindowHost::detachEmbedded()
     it->detached = true;
     it->command = command;
     window->installEventFilter(this);
-    connect(attach, &QPushButton::clicked, this, [this, id]() { attachDetached(id); });
+
+    agent->setTitleBar(titleBar);
+    agent->setSystemButton(QWK::WindowAgentBase::Minimize, minimize);
+    agent->setSystemButton(QWK::WindowAgentBase::Close, closeButton);
+    agent->setHitTestVisible(embed, true);
+    agent->setHitTestVisible(minimize, true);
+    agent->setHitTestVisible(closeButton, true);
+    connect(embed, &QPushButton::clicked, this, [this, id]() { attachDetached(id); });
+    connect(minimize, &QPushButton::clicked, window, &QWidget::showMinimized);
+    connect(closeButton, &QPushButton::clicked, window, &QWidget::close);
 
     m_embeddedCommand.clear();
     emit embeddedClosed();
