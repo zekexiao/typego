@@ -14,6 +14,7 @@
 #include <QLineEdit>
 #include <QListWidget>
 #include <QListWidgetItem>
+#include <QMenu>
 #include <QMessageBox>
 #include <QMouseEvent>
 #include <QPainter>
@@ -139,14 +140,14 @@ class TodoRowDelegate final : public QStyledItemDelegate {
 public:
     using Toggler = std::function<void(const QString &id)>;
     using Committer = std::function<void(const QString &id, const QString &text)>;
-    using Cycler = std::function<void(const QString &id)>;
+    using PriorityPicker = std::function<void(const QString &id)>;
     using Picker = std::function<void(const QString &id, const QRect &row)>;
     using Remover = std::function<void(const QString &id)>;
 
     TodoRowDelegate(QListWidget *list, ThemeManager *theme, Toggler toggle, Committer commit,
-                    Cycler cyclePriority, Picker pickDue, Remover remove, QObject *parent)
+                    PriorityPicker pickPriority, Picker pickDue, Remover remove, QObject *parent)
         : QStyledItemDelegate(parent), m_list(list), m_theme(theme),
-          m_toggle(std::move(toggle)), m_commit(std::move(commit)), m_cyclePriority(std::move(cyclePriority)),
+          m_toggle(std::move(toggle)), m_commit(std::move(commit)), m_pickPriority(std::move(pickPriority)),
           m_pickDue(std::move(pickDue)), m_remove(std::move(remove)) {}
 
     QSize sizeHint(const QStyleOptionViewItem &option, const QModelIndex &index) const override
@@ -205,7 +206,7 @@ public:
                     return true;
                 }
                 if (icons.priority.contains(mouse->pos())) {
-                    if (m_cyclePriority) m_cyclePriority(id);
+                    if (m_pickPriority) m_pickPriority(id);
                     return true;
                 }
             }
@@ -384,7 +385,7 @@ private:
     ThemeManager *m_theme;
     Toggler m_toggle;
     Committer m_commit;
-    Cycler m_cyclePriority;
+    PriorityPicker m_pickPriority;
     Picker m_pickDue;
     Remover m_remove;
 };
@@ -432,7 +433,7 @@ void TodoWindow::buildLayout()
     m_list->setItemDelegate(new TodoRowDelegate(m_list, m_theme,
         [this](const QString &id) { toggleDone(id); },
         [this](const QString &id, const QString &text) { commitEditById(id, text); },
-        [this](const QString &id) { cyclePriority(id); },
+        [this](const QString &id) { pickPriority(id); },
         [this](const QString &id, const QRect &row) { pickDue(id, row); },
         [this](const QString &id) { removeItem(id); }, m_list));
     m_list->installEventFilter(this);
@@ -644,14 +645,36 @@ void TodoWindow::removeItem(const QString &id)
     });
 }
 
-// 旗标图标点击：优先级在 紧急→高→中→低 之间循环。
-void TodoWindow::cyclePriority(const QString &id)
+// 旗标图标点击：在光标旁弹出四档优先级小菜单，当前档打勾。
+void TodoWindow::pickPriority(const QString &id)
+{
+    TodoItem *item = find(id);
+    if (!item) return;
+    const int current = item->priority;
+
+    QMenu menu(this);
+    auto *urgent = menu.addAction(tr("Urgent"));
+    auto *high = menu.addAction(tr("High"));
+    auto *medium = menu.addAction(tr("Medium"));
+    auto *low = menu.addAction(tr("Low"));
+    urgent->setCheckable(true); urgent->setChecked(current == 3);
+    high->setCheckable(true);   high->setChecked(current == 2);
+    medium->setCheckable(true); medium->setChecked(current == 1);
+    low->setCheckable(true);    low->setChecked(current == 0);
+    connect(urgent, &QAction::triggered, this, [this, id]() { setPriority(id, 3); });
+    connect(high, &QAction::triggered, this, [this, id]() { setPriority(id, 2); });
+    connect(medium, &QAction::triggered, this, [this, id]() { setPriority(id, 1); });
+    connect(low, &QAction::triggered, this, [this, id]() { setPriority(id, 0); });
+    menu.exec(QCursor::pos());
+}
+
+void TodoWindow::setPriority(const QString &id, int priority)
 {
     if (TodoItem *item = find(id)) {
-        item->priority = item->priority == 0 ? 3 : item->priority - 1;
+        item->priority = priority;
         item->updatedAt = QDateTime::currentMSecsSinceEpoch();
         persist();
-        // 从委托的鼠标事件里调用，重建延迟到下一轮事件循环。
+        // 菜单在委托的鼠标事件里 exec，重建延迟到下一轮事件循环。
         QTimer::singleShot(0, this, &TodoWindow::rebuild);
     }
 }

@@ -37,7 +37,8 @@ private:
     void addItem();
     void commitEditById(const QString &id, const QString &text);
     void toggleDone(const QString &id);
-    void cyclePriority(const QString &id);
+    void pickPriority(const QString &id);
+    void setPriority(const QString &id, int priority);
     void removeItem(const QString &id);
     void setDue(const QString &id, const QString &due);
     void pickDue(const QString &id, const QRect &rowRect);
