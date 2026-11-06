@@ -10,6 +10,7 @@
 #include <QFontMetrics>
 #include <QHBoxLayout>
 #include <QHelpEvent>
+#include <QIcon>
 #include <QLabel>
 #include <QLineEdit>
 #include <QListWidget>
@@ -19,6 +20,7 @@
 #include <QMouseEvent>
 #include <QPainter>
 #include <QPen>
+#include <QPixmap>
 #include <QPushButton>
 #include <QScreen>
 #include <QStyledItemDelegate>
@@ -132,6 +134,28 @@ void drawCrossIcon(QPainter *painter, const QRect &hotspot, const QColor &color)
     painter->setPen(pen);
     painter->drawLine(glyph.topLeft(), glyph.bottomRight());
     painter->drawLine(QPoint(glyph.right(), glyph.top()), QPoint(glyph.left(), glyph.bottom()));
+}
+
+// 优先级旗标的档位色：紧急红、高强调蓝、中次级灰、低更淡；行尾图标与弹窗菜单共用。
+QColor priorityFlagColor(ThemeManager *theme, int priority)
+{
+    if (priority > 2) return theme ? theme->error() : QColor(0xc42647);
+    if (priority == 2) return theme ? theme->accent() : QColor(0x0088ff);
+    if (priority == 0) return theme ? theme->placeholder() : QColor(0xa1a1aa);
+    return theme ? theme->textSecondary() : QColor(0x71717a);
+}
+
+// 用指定颜色画一面旗，供弹窗菜单项做图标。
+QIcon priorityFlagIcon(ThemeManager *theme, int priority)
+{
+    QPixmap pixmap(32, 32);
+    pixmap.setDevicePixelRatio(2);
+    pixmap.fill(Qt::transparent);
+    QPainter painter(&pixmap);
+    painter.setRenderHint(QPainter::Antialiasing);
+    drawFlagIcon(&painter, QRect(0, 0, 32, 32), priorityFlagColor(theme, priority));
+    painter.end();
+    return QIcon(pixmap);
 }
 } // namespace
 
@@ -310,10 +334,9 @@ public:
             return color(option, &ThemeManager::textSecondary, QPalette::PlaceholderText);
         };
         if (!done) {
-            const QColor flagColor = index.data(TodoWindow::PriorityRole).toInt() > 2
-                ? color(option, &ThemeManager::error, QPalette::BrightText)
-                : iconColor(icons.priority);
-            drawFlagIcon(painter, icons.priority, flagColor);
+            // 旗标固定用档位色，不再跟随悬停变色，弹窗菜单与列表保持一致。
+            drawFlagIcon(painter, icons.priority,
+                         priorityFlagColor(m_theme, index.data(TodoWindow::PriorityRole).toInt()));
             drawCalendarIcon(painter, icons.due, iconColor(icons.due));
         }
         drawCrossIcon(painter, icons.remove, iconColor(icons.remove));
@@ -653,10 +676,10 @@ void TodoWindow::pickPriority(const QString &id)
     const int current = item->priority;
 
     QMenu menu(this);
-    auto *urgent = menu.addAction(tr("Urgent"));
-    auto *high = menu.addAction(tr("High"));
-    auto *medium = menu.addAction(tr("Medium"));
-    auto *low = menu.addAction(tr("Low"));
+    auto *urgent = menu.addAction(priorityFlagIcon(m_theme, 3), tr("Urgent"));
+    auto *high = menu.addAction(priorityFlagIcon(m_theme, 2), tr("High"));
+    auto *medium = menu.addAction(priorityFlagIcon(m_theme, 1), tr("Medium"));
+    auto *low = menu.addAction(priorityFlagIcon(m_theme, 0), tr("Low"));
     urgent->setCheckable(true); urgent->setChecked(current == 3);
     high->setCheckable(true);   high->setChecked(current == 2);
     medium->setCheckable(true); medium->setChecked(current == 1);
