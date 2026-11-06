@@ -101,7 +101,7 @@ void TstTodoStore::invalidFieldsFallBack()
     QJsonArray items;
     // 非法优先级、缺失 id、空标题、垃圾截止时间各占一条。
     items.append(QJsonObject{{QStringLiteral("title"), QStringLiteral("Bad priority")},
-                             {QStringLiteral("priority"), 9}});
+                             {QStringLiteral("priority"), 4}});
     items.append(QJsonObject{{QStringLiteral("title"), QStringLiteral("No id")}});
     items.append(QJsonObject{{QStringLiteral("title"), QStringLiteral("   ")}});
     items.append(QJsonObject{{QStringLiteral("title"), QStringLiteral("Bad due")},

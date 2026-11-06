@@ -1,7 +1,7 @@
 #include "TodoWindow.h"
+#include "TodoCalendar.h"
 #include "ThemeManager.h"
 
-#include <QCalendarWidget>
 #include <QCoreApplication>
 #include <QDateTime>
 #include <QDialog>
@@ -14,6 +14,7 @@
 #include <QLineEdit>
 #include <QListWidget>
 #include <QListWidgetItem>
+#include <QMessageBox>
 #include <QMouseEvent>
 #include <QPainter>
 #include <QPen>
@@ -230,8 +231,9 @@ public:
                 text = QCoreApplication::translate("TodoWindow", "Due date");
             } else if (!done && icons.priority.contains(event->pos())) {
                 const int priority = index.data(TodoWindow::PriorityRole).toInt();
-                const QString label = priority > 1
-                    ? QCoreApplication::translate("TodoWindow", "High")
+                const QString label = priority > 2
+                    ? QCoreApplication::translate("TodoWindow", "Urgent")
+                    : priority > 1 ? QCoreApplication::translate("TodoWindow", "High")
                     : priority < 1 ? QCoreApplication::translate("TodoWindow", "Low")
                                    : QCoreApplication::translate("TodoWindow", "Medium");
                 text = QCoreApplication::translate("TodoWindow", "Priority") + QLatin1String(" · ") + label;
@@ -297,7 +299,7 @@ public:
             painter->drawRoundedRect(box, 6, 6);
         }
 
-        // 行尾操作图标：旗=优先级循环，日历=截止时间，×=删除；悬停单个图标提亮。
+        // 行尾操作图标：旗=优先级循环，日历=截止时间，×=删除；悬停单个图标提亮，紧急旗标用错误色。
         const QPoint cursor = m_list->viewport()->mapFromGlobal(QCursor::pos());
         const bool rowHover = isHovered(index);
         const IconLayout icons = iconLayout(row, done);
@@ -307,7 +309,10 @@ public:
             return color(option, &ThemeManager::textSecondary, QPalette::PlaceholderText);
         };
         if (!done) {
-            drawFlagIcon(painter, icons.priority, iconColor(icons.priority));
+            const QColor flagColor = index.data(TodoWindow::PriorityRole).toInt() > 2
+                ? color(option, &ThemeManager::error, QPalette::BrightText)
+                : iconColor(icons.priority);
+            drawFlagIcon(painter, icons.priority, flagColor);
             drawCalendarIcon(painter, icons.due, iconColor(icons.due));
         }
         drawCrossIcon(painter, icons.remove, iconColor(icons.remove));
@@ -546,7 +551,8 @@ void TodoWindow::rebuild()
         bool overdue = false;
         QStringList parts;
         if (!item.done) {
-            if (item.priority > 1) parts << tr("High");
+            if (item.priority > 2) parts << tr("Urgent");
+            if (item.priority == 2) parts << tr("High");
             if (item.priority < 1) parts << tr("Low");
             const QString due = dueText(item, &overdue);
             if (!due.isEmpty()) parts << due;
@@ -619,21 +625,30 @@ void TodoWindow::toggleDone(const QString &id)
 
 void TodoWindow::removeItem(const QString &id)
 {
-    if (TodoItem *item = find(id)) {
-        // 打墓碑而不是物理删除，给将来的同步与恢复留依据。
-        const qint64 now = QDateTime::currentMSecsSinceEpoch();
-        item->deletedAt = now;
-        item->updatedAt = now;
-        persist();
-        rebuild();
-    }
+    // 确认框在委托的鼠标事件里弹出，真正的改动延迟到下一轮事件循环。
+    TodoItem *item = find(id);
+    if (!item) return;
+    const QString title = item->title;
+    const auto choice = QMessageBox::question(this, tr("Delete todo"),
+        tr("Delete \"%1\"?").arg(title), QMessageBox::Yes | QMessageBox::No, QMessageBox::No);
+    if (choice != QMessageBox::Yes) return;
+    QTimer::singleShot(0, this, [this, id]() {
+        if (TodoItem *target = find(id)) {
+            // 打墓碑而不是物理删除，给将来的同步与恢复留依据。
+            const qint64 now = QDateTime::currentMSecsSinceEpoch();
+            target->deletedAt = now;
+            target->updatedAt = now;
+            persist();
+            rebuild();
+        }
+    });
 }
 
-// 旗标图标点击：优先级在 高→中→低 之间循环。
+// 旗标图标点击：优先级在 紧急→高→中→低 之间循环。
 void TodoWindow::cyclePriority(const QString &id)
 {
     if (TodoItem *item = find(id)) {
-        item->priority = item->priority == 0 ? 2 : item->priority - 1;
+        item->priority = item->priority == 0 ? 3 : item->priority - 1;
         item->updatedAt = QDateTime::currentMSecsSinceEpoch();
         persist();
         // 从委托的鼠标事件里调用，重建延迟到下一轮事件循环。
@@ -651,7 +666,8 @@ void TodoWindow::setDue(const QString &id, const QString &due)
     }
 }
 
-// 日期选择弹层：日历上点某天立即生效；时间拨到最小值即纯日期。
+// 日期选择弹层：主题自绘月历，点某天立即生效；时间拨到最小值即纯日期。
+// 弹层锚定在日历图标的右缘下方，与图标对齐而不是整行左下角。
 void TodoWindow::pickDue(const QString &id, const QRect &rowRect)
 {
     QDialog picker(this, Qt::Popup);
@@ -659,38 +675,48 @@ void TodoWindow::pickDue(const QString &id, const QRect &rowRect)
     auto *layout = new QVBoxLayout(&picker);
     layout->setContentsMargins(8, 8, 8, 8);
     layout->setSpacing(8);
-    auto *calendar = new QCalendarWidget(&picker);
-    calendar->setVerticalHeaderFormat(QCalendarWidget::NoVerticalHeader);
-    calendar->setNavigationBarVisible(true);
+    auto *calendar = new TodoCalendar(m_theme, &picker);
     layout->addWidget(calendar);
+
+    auto *timeRow = new QHBoxLayout;
+    timeRow->setSpacing(8);
+    auto *clearButton = new QPushButton(tr("Clear due"), &picker);
+    clearButton->setObjectName(QStringLiteral("todoClear"));
+    clearButton->setCursor(Qt::PointingHandCursor);
+    timeRow->addWidget(clearButton);
+    timeRow->addStretch(1);
     auto *timeEdit = new QTimeEdit(&picker);
     timeEdit->setDisplayFormat(QStringLiteral("HH:mm"));
     timeEdit->setAccelerated(true);
     timeEdit->setSpecialValueText(tr("No time"));
-    layout->addWidget(timeEdit);
+    timeRow->addWidget(timeEdit);
+    layout->addLayout(timeRow);
 
     if (TodoItem *item = find(id)) {
         if (const QDateTime due = TodoStore::dueDateTime(item->due); due.isValid()) {
-            calendar->setSelectedDate(due.date());
+            calendar->setDate(due.date());
             if (TodoStore::dueHasTime(item->due)) timeEdit->setTime(due.time());
         }
     }
 
-    connect(calendar, &QCalendarWidget::clicked, this, [&picker, timeEdit, id, this](const QDate &date) {
-        // 0 点即「不设时间」，按纯日期入库。
+    // 点某天立即生效并关闭；0 点即「不设时间」，按纯日期入库。
+    calendar->picked = [this, id, &picker, timeEdit](const QDate &date) {
         const QTime time = timeEdit->time() == QTime(0, 0) ? QTime() : timeEdit->time();
         setDue(id, TodoStore::makeDue(date, time));
-        picker.accept();
+        picker.close();
+    };
+    connect(clearButton, &QPushButton::clicked, this, [this, id, &picker]() {
+        setDue(id, QString());
+        picker.close();
     });
 
     picker.adjustSize();
-    // 锚定在任务行下方；下方放不下就翻到行上方，再夹回屏幕内。
-    QPoint pos = m_list->viewport()->mapToGlobal(rowRect.bottomLeft());
-    pos.setY(pos.y() + 4);
-    if (const QRect avail = screen()->availableGeometry(); pos.y() + picker.height() > avail.bottom())
-        pos.setY(qMax(avail.top(), pos.y() - rowRect.height() - picker.height() - 8));
-    pos.setX(qMin(qMax(pos.x(), screen()->availableGeometry().left() + 8),
-                  screen()->availableGeometry().right() - picker.width() - 8));
+    // 右缘贴齐日历图标，下方放不下就翻到行上方，再夹回屏幕内。
+    const QRect avail = screen()->availableGeometry();
+    const QPoint anchor = m_list->viewport()->mapToGlobal(iconLayout(rowRect, false).due.bottomRight());
+    QPoint pos(anchor.x() - picker.width() + IconHotspot / 2, anchor.y() + 4);
+    pos.setX(qBound(avail.left() + 8, pos.x(), avail.right() - picker.width() - 8));
+    pos.setY(qBound(avail.top() + 8, pos.y(), avail.bottom() - picker.height() - 8));
     picker.move(pos);
     picker.exec();
 }
@@ -698,15 +724,19 @@ void TodoWindow::pickDue(const QString &id, const QRect &rowRect)
 void TodoWindow::clearDone()
 {
     const qint64 now = QDateTime::currentMSecsSinceEpoch();
-    bool changed = false;
+    int count = 0;
+    for (const auto &item : m_store.items())
+        if (item.done && item.deletedAt <= 0) ++count;
+    if (count == 0) return;
+    const auto choice = QMessageBox::question(this, tr("Clear completed"),
+        tr("Delete %n completed todo(s)?", "", count), QMessageBox::Yes | QMessageBox::No, QMessageBox::No);
+    if (choice != QMessageBox::Yes) return;
     for (auto &item : m_store.items()) {
         if (item.done && item.deletedAt <= 0) {
             item.deletedAt = now;
             item.updatedAt = now;
-            changed = true;
         }
     }
-    if (!changed) return;
     persist();
     rebuild();
 }

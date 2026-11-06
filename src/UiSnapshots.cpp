@@ -25,6 +25,7 @@
 #include "../plugins/neo-json-viewer/AboutDialog.h"
 #include "../plugins/neo-json-viewer/AddItemDialog.h"
 #include "../plugins/todo/TodoWindow.h"
+#include "../plugins/todo/TodoCalendar.h"
 
 #include <QApplication>
 #include <QBuffer>
@@ -271,6 +272,7 @@ public:
                 TodoItem overdue;
                 overdue.id = TodoStore::newId();
                 overdue.title = QStringLiteral("Pay rent");
+                overdue.priority = 3;
                 overdue.due = QStringLiteral("2020-03-10T09:00");
                 overdue.createdAt = 1730000001000;
                 overdue.updatedAt = overdue.createdAt;
@@ -312,6 +314,13 @@ public:
                 QDir().mkpath(todoEmptyDir);
                 TodoWindow empty(todoEmptyDir, &palette);
                 if (!capture(empty, QStringLiteral("todo-empty"), {640, 520})) return false;
+            }
+            if (wants(QStringLiteral("tools")))
+            {
+                // 截止时间弹层的月历：固定展示月份，验证自绘配色在浅深主题下都可读。
+                TodoCalendar calendar(&palette);
+                calendar.setDate(QDate(2030, 6, 15));
+                if (!capture(calendar, QStringLiteral("todo-calendar"))) return false;
             }
             if (wants(QStringLiteral("json")))
             {

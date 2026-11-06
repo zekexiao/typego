@@ -407,6 +407,13 @@ QLabel#todoEmpty {
     font-size: 13px;
 }
 
+/* 截止时间弹层：月历由 TodoCalendar 自绘，这里只负责弹层底色描边。 */
+QDialog#todoDatePicker {
+    background-color: @GLASS_SURFACE@;
+    border: 1px solid @BORDER@;
+    border-radius: 12px;
+}
+
 QLabel#todoFooter {
     background-color: transparent;
     color: @TEXT_SECONDARY@;

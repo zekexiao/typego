@@ -12,7 +12,7 @@ struct TodoItem {
     QString title;           // 单行文字，trim 后非空，超长在加载与提交时截断
     bool done = false;
     qint64 completedAt = 0;  // epoch ms；0 表示未完成，已完成组按它倒序展示
-    int priority = 1;        // 0 低 / 1 中 / 2 高，加载时非法值回退中
+    int priority = 1;        // 0 低 / 1 中 / 2 高 / 3 紧急，加载时非法值回退中
     QString due;             // 可选截止，本地墙钟："YYYY-MM-DD" 或 "YYYY-MM-DDTHH:mm"；空=无截止。
                              // 不存 UTC：纯日期跨时区会整体偏移一天，墙钟对个人待办语义也更直观
     qint64 createdAt = 0;

@@ -18,7 +18,7 @@ public:
     enum Role {
         IdRole = Qt::UserRole,        // 任务 id
         DoneRole,                     // 完成状态
-        PriorityRole,                 // 优先级，供图标提示
+        PriorityRole,                 // 优先级（0 低 / 1 中 / 2 高 / 3 紧急），供图标提示
         MetaRole,                     // 行尾元信息（优先级、截止），已组装好
         OverdueRole,                  // 元信息是否整体转错误色
         HeaderRole,                   // 分组头行（已完成 · N）

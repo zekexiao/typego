@@ -100,7 +100,7 @@ bool TodoStore::load(QString *error)
         item.done = object.value(QLatin1String("done")).toBool();
         item.completedAt = object.value(QLatin1String("completedAt")).toInteger();
         item.priority = object.value(QLatin1String("priority")).toInt(1);
-        if (item.priority < 0 || item.priority > 2) item.priority = 1;
+        if (item.priority < 0 || item.priority > 3) item.priority = 1;
         // 截止时间重新归一化，无法解析或缺失的存空串。
         const QString dueRaw = object.value(QLatin1String("due")).toString();
         const QDateTime dueParsed = dueDateTime(dueRaw);
