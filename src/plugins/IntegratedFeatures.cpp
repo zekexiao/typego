@@ -2,6 +2,7 @@
 #include "BuiltinFeatureApi.h"
 #include <cmath>
 #include "PluginManager.h"
+#include "ThemeManager.h"
 #include <QDebug>
 #include <QCoreApplication>
 #include <QDir>
@@ -9,6 +10,7 @@
 #include "../../plugins/clipboard/ClipboardPlugin.h"
 #include "../../plugins/screenshot/ScreenshotPlugin.h"
 #include "../../plugins/neo-json-viewer/NeoJsonViewerPlugin.h"
+#include "../../plugins/todo/TodoPlugin.h"
 #include <QSettings>
 #include <QSet>
 #include <QThread>
@@ -338,7 +340,7 @@ private:
 };
 }
 
-void registerIntegratedFeatures(PluginManager &manager, const PluginPaths &paths)
+void registerIntegratedFeatures(PluginManager &manager, const PluginPaths &paths, ThemeManager *themeManager)
 {
     auto add = [&manager, &paths](PluginDescriptor descriptor, std::function<Api::Plugin *()> create) {
         return manager.registerPlugin(descriptor, [descriptor, paths, create](QObject *parent) {
@@ -373,4 +375,17 @@ void registerIntegratedFeatures(PluginManager &manager, const PluginPaths &paths
     viewer.aliases = {QStringLiteral("json-viewer")}; viewer.launchMode = IPlugin::LaunchMode::FullView;
     viewer.directActivation = true; viewer.supportsDetach = true; json.commands.append(viewer);
     add(json, [] { return new NeoJsonViewerPlugin; });
+    PluginDescriptor todo;
+    todo.id = QStringLiteral("todo");
+    todo.description = QCoreApplication::translate("IntegratedFeatures", "Todo list");
+    PluginCommand todoCommand; todoCommand.id = QStringLiteral("list");
+    todoCommand.keyword = QStringLiteral("todo");
+    todoCommand.aliases = {QStringLiteral("daiban"), QStringLiteral("待办")};
+    todoCommand.launchMode = IPlugin::LaunchMode::FullView;
+    todoCommand.directActivation = true; todoCommand.supportsDetach = true; todo.commands.append(todoCommand);
+    add(todo, [themeManager] {
+        auto *plugin = new TodoPlugin;
+        plugin->setThemeManager(themeManager);
+        return plugin;
+    });
 }

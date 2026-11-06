@@ -25,6 +25,7 @@ find_package(Qt6 REQUIRED COMPONENTS Core Gui Widgets Svg Network Concurrent Lin
 add_subdirectory(plugins/neo-json-viewer)
 add_subdirectory(plugins/clipboard)
 add_subdirectory(plugins/screenshot)
+add_subdirectory(plugins/todo)
 
 # 单元测试开关；关闭时不引入 Test 模块，保持发布构建的依赖不变。
 option(TYPEGO_BUILD_TESTS "Build TypeGo unit tests" ON)
@@ -81,8 +82,10 @@ add_library(typego_core STATIC
     src/utils/PinyinConverter.cpp
     src/utils/ReleaseParser.cpp
     src/utils/ShellOpen.cpp
+    src/utils/TodoStore.cpp
     src/utils/UpdateCheckGate.cpp
     src/utils/Version.cpp
+    src/ThemeManager.cpp
 )
 target_include_directories(typego_core PUBLIC "${CMAKE_SOURCE_DIR}/src")
 target_compile_options(typego_core PRIVATE
@@ -96,9 +99,9 @@ target_link_libraries(typego_core PUBLIC
 
 target_link_libraries(typego_core PUBLIC neo_json_model)
 
-# IconExtractor 在 Windows 分支里使用 Shell COM API
+# IconExtractor 在 Windows 分支里使用 Shell COM API；ThemeManager 用 DWM 做窗口材质
 if(WIN32)
-    target_link_libraries(typego_core PUBLIC shell32 shlwapi gdi32 user32)
+    target_link_libraries(typego_core PUBLIC shell32 shlwapi gdi32 user32 dwmapi)
 endif()
 
 qt_add_executable(TypeGo
@@ -110,7 +113,6 @@ qt_add_executable(TypeGo
     src/AppLauncher.cpp
     src/GlobalHotkey.cpp
     src/Logger.cpp
-    src/ThemeManager.cpp
     src/PluginSettingsDialog.cpp
     src/plugins/AppPlugin.cpp
     src/plugins/BuiltinPlugins.cpp
@@ -149,7 +151,7 @@ endif()
 
 target_link_libraries(TypeGo PRIVATE
     typego_core
-    clipboard_plugin screenshot_plugin neo_json_viewer
+    clipboard_plugin screenshot_plugin neo_json_viewer todo_plugin
     Qt6::Core
     Qt6::Gui
     Qt6::Widgets
@@ -188,7 +190,8 @@ add_dependencies(TypeGo update_translation_sources)
 qt_add_translation(INTEGRATED_QM_FILES
     plugins/clipboard/translations/Clipboard_zh_CN.ts
     plugins/screenshot/translations/Screenshot_zh_CN.ts
-    plugins/neo-json-viewer/translations/NeoJsonViewer_zh_CN.ts)
+    plugins/neo-json-viewer/translations/NeoJsonViewer_zh_CN.ts
+    plugins/todo/translations/Todo_zh_CN.ts)
 qt_add_resources(TypeGo integrated_translations PREFIX /integrated
     BASE ${CMAKE_CURRENT_BINARY_DIR} FILES ${INTEGRATED_QM_FILES})
 qt_add_resources(TypeGo json_viewer_assets PREFIX /jsonviewer

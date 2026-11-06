@@ -381,6 +381,58 @@ QListView#searchResults {
     selection-color: @TEXT@;
 }
 
+/* 待办列表：容器描边圆角，行内容由 TodoRowDelegate 自绘。 */
+QLineEdit#todoInput {
+    min-height: 24px;
+    padding: 7px 14px;
+    font-size: 16px;
+    border-radius: 12px;
+}
+
+QListWidget#todoList {
+    padding: 8px;
+    background-color: transparent;
+    border: 1px solid @BORDER@;
+    border-radius: 16px;
+}
+
+QListWidget#todoList::item {
+    background-color: transparent;
+    border: none;
+}
+
+QLabel#todoEmpty {
+    background-color: transparent;
+    color: @PLACEHOLDER@;
+    font-size: 13px;
+}
+
+QLabel#todoFooter {
+    background-color: transparent;
+    color: @TEXT_SECONDARY@;
+    font-size: 12px;
+}
+
+/* 唯一的动作按钮：纯文字样式，悬停才有底色，无已完成项时置灰。 */
+QPushButton#todoClear {
+    min-height: 0;
+    padding: 3px 8px;
+    background-color: transparent;
+    color: @TEXT_SECONDARY@;
+    border: none;
+    border-radius: 8px;
+    font-size: 12px;
+}
+
+QPushButton#todoClear:hover {
+    background-color: @HOVER@;
+    color: @TEXT@;
+}
+
+QPushButton#todoClear:disabled {
+    color: @PLACEHOLDER@;
+}
+
 QPushButton {
     min-height: 22px;
     padding: 4px 14px;

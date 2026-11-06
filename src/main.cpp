@@ -165,7 +165,7 @@ int main(int argc, char *argv[])
         localData + QStringLiteral("/plugin-data"),
         QStandardPaths::writableLocation(QStandardPaths::CacheLocation) + QStringLiteral("/plugins"),
         QDir::tempPath() + QStringLiteral("/TypeGo/plugins")};
-    registerIntegratedFeatures(pluginManager, pluginPaths);
+    registerIntegratedFeatures(pluginManager, pluginPaths, &themeManager);
     // 声明 background 的插件（如剪贴板）需要从启动开始工作；其余插件仍按首次使用加载。
     pluginManager.startBackgroundPlugins();
     QObject::connect(&settings, &Settings::pluginEnabledChanged, &pluginManager, [&pluginManager](const QString &id) {

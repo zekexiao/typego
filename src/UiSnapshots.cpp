@@ -24,6 +24,7 @@
 #include "../plugins/neo-json-viewer/MainWindow.h"
 #include "../plugins/neo-json-viewer/AboutDialog.h"
 #include "../plugins/neo-json-viewer/AddItemDialog.h"
+#include "../plugins/todo/TodoWindow.h"
 
 #include <QApplication>
 #include <QBuffer>
@@ -132,7 +133,8 @@ public:
             plugins.setSettings(&settings);
             registerBuiltinPlugins(plugins, settings, hotkeys, launcher, updater, palette);
             // 仅注册描述，不启动后台服务；剪贴板历史使用下面的静态结果夹具。
-            registerIntegratedFeatures(plugins, {data, data + QStringLiteral("/cache"), data + QStringLiteral("/temp")});
+            registerIntegratedFeatures(plugins, {data, data + QStringLiteral("/cache"), data + QStringLiteral("/temp")},
+                                       &palette);
             if (wants(QStringLiteral("main")))
             {
                 MainWindow window(&launcher, &plugins, &settings, &updater, &palette);
@@ -252,6 +254,64 @@ public:
                 if (!capture(dialog, QStringLiteral("shell-settings"), {620, 390})) return false;
                 std::unique_ptr<QWidget> view(shell.createView(nullptr));
                 if (!capture(*view, QStringLiteral("shell"), {960, 480})) return false;
+            }
+            if (wants(QStringLiteral("tools")))
+            {
+                // 待办列表：夹具用固定日期，避免展示文案随当前日期变化破坏 PNG 字节可复现性。
+                const QString todoDir = data + QStringLiteral("/todo");
+                QDir().mkpath(todoDir);
+                TodoStore fixture(todoDir + QStringLiteral("/todo.json"));
+                TodoItem high;
+                high.id = TodoStore::newId();
+                high.title = QStringLiteral("Review release notes");
+                high.priority = 2;
+                high.due = QStringLiteral("2030-06-01T18:00");
+                high.createdAt = 1730000000000;
+                high.updatedAt = high.createdAt;
+                TodoItem overdue;
+                overdue.id = TodoStore::newId();
+                overdue.title = QStringLiteral("Pay rent");
+                overdue.due = QStringLiteral("2020-03-10T09:00");
+                overdue.createdAt = 1730000001000;
+                overdue.updatedAt = overdue.createdAt;
+                TodoItem dated;
+                dated.id = TodoStore::newId();
+                dated.title = QStringLiteral("Write changelog");
+                dated.due = QStringLiteral("2030-06-02");
+                dated.createdAt = 1730000002000;
+                dated.updatedAt = dated.createdAt;
+                TodoItem low;
+                low.id = TodoStore::newId();
+                low.title = QStringLiteral("Sort the bookmarks");
+                low.priority = 0;
+                low.createdAt = 1730000003000;
+                low.updatedAt = low.createdAt;
+                TodoItem doneFirst;
+                doneFirst.id = TodoStore::newId();
+                doneFirst.title = QStringLiteral("Reply to emails");
+                doneFirst.done = true;
+                doneFirst.completedAt = 1730000100000;
+                doneFirst.createdAt = 1730000004000;
+                doneFirst.updatedAt = doneFirst.completedAt;
+                TodoItem doneSecond;
+                doneSecond.id = TodoStore::newId();
+                doneSecond.title = QStringLiteral("Archive old tasks");
+                doneSecond.done = true;
+                doneSecond.completedAt = 1730000200000;
+                doneSecond.createdAt = 1730000005000;
+                doneSecond.updatedAt = doneSecond.completedAt;
+                fixture.items() = {high, overdue, dated, low, doneFirst, doneSecond};
+                if (!fixture.save()) { m_error = QStringLiteral("Cannot write todo fixture"); return false; }
+                TodoWindow todo(todoDir, &palette);
+                if (!capture(todo, QStringLiteral("todo-list"), {640, 520})) return false;
+            }
+            if (wants(QStringLiteral("tools")))
+            {
+                // 空列表：验证空状态与页脚计数。
+                const QString todoEmptyDir = data + QStringLiteral("/todo-empty");
+                QDir().mkpath(todoEmptyDir);
+                TodoWindow empty(todoEmptyDir, &palette);
+                if (!capture(empty, QStringLiteral("todo-empty"), {640, 520})) return false;
             }
             if (wants(QStringLiteral("json")))
             {
@@ -445,7 +505,7 @@ int runUiSnapshots(int argc, char *argv[])
     std::vector<std::unique_ptr<QTranslator>> translators;
     for (const auto &path : {QStringLiteral(":/i18n/qtbase_zh_CN.qm"), QStringLiteral(":/i18n/TypeGo_zh_CN.qm"),
         QStringLiteral(":/integrated/Clipboard_zh_CN.qm"), QStringLiteral(":/integrated/Screenshot_zh_CN.qm"),
-        QStringLiteral(":/integrated/NeoJsonViewer_zh_CN.qm")}) {
+        QStringLiteral(":/integrated/NeoJsonViewer_zh_CN.qm"), QStringLiteral(":/integrated/Todo_zh_CN.qm")}) {
         auto translator = std::make_unique<QTranslator>();
         if (!translator->load(path)) return 3;
         app.installTranslator(translator.get());
