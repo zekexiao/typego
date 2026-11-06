@@ -18,6 +18,7 @@ public:
     enum Role {
         IdRole = Qt::UserRole,        // 任务 id
         DoneRole,                     // 完成状态
+        PriorityRole,                 // 优先级，供图标提示
         MetaRole,                     // 行尾元信息（优先级、截止），已组装好
         OverdueRole,                  // 元信息是否整体转错误色
         HeaderRole,                   // 分组头行（已完成 · N）
@@ -36,12 +37,11 @@ private:
     void addItem();
     void commitEditById(const QString &id, const QString &text);
     void toggleDone(const QString &id);
+    void cyclePriority(const QString &id);
     void removeItem(const QString &id);
-    void setPriority(const QString &id, int priority);
     void setDue(const QString &id, const QString &due);
     void pickDue(const QString &id, const QRect &rowRect);
     void clearDone();
-    void showContextMenu(const QPoint &pos);
     void updateFooter();
     void placeEmptyLabel();
 

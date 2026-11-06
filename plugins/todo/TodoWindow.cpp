@@ -2,17 +2,18 @@
 #include "ThemeManager.h"
 
 #include <QCalendarWidget>
+#include <QCoreApplication>
 #include <QDateTime>
 #include <QDialog>
 #include <QDir>
 #include <QEvent>
 #include <QFontMetrics>
 #include <QHBoxLayout>
+#include <QHelpEvent>
 #include <QLabel>
 #include <QLineEdit>
 #include <QListWidget>
 #include <QListWidgetItem>
-#include <QMenu>
 #include <QMouseEvent>
 #include <QPainter>
 #include <QPen>
@@ -23,6 +24,7 @@
 #include <QStringList>
 #include <QTimeEdit>
 #include <QTimer>
+#include <QToolTip>
 #include <QVBoxLayout>
 #include <functional>
 
@@ -31,6 +33,7 @@ constexpr int RowHeight = 44;        // 任务行高
 constexpr int HeaderHeight = 28;     // 已完成分组头行高
 constexpr int RowHPadding = 16;      // 行内水平留白
 constexpr int CheckBoxSize = 18;     // 勾选框边长
+constexpr int IconHotspot = 28;      // 行尾操作图标热区
 constexpr int TitleFontSize = 14;    // 标题字号
 constexpr int MetaFontSize = 13;     // 元信息与分组头字号
 constexpr int TitleMetaGap = 12;     // 勾选框与标题间距
@@ -62,17 +65,88 @@ QRect titleRect(const QRect &row)
     rect.setRight(background.right() - RowHPadding + 3);
     return rect;
 }
+
+// 行尾操作图标布局：热区 28px，纯自绘不添加行内控件；已完成行只剩删除。
+struct IconLayout {
+    QRect priority;
+    QRect due;
+    QRect remove;
+    QRect all;
+};
+
+IconLayout iconLayout(const QRect &row, bool done)
+{
+    const QRect background = rowBackground(row);
+    const int right = background.right() - RowHPadding + 3;
+    const int top = background.center().y() - IconHotspot / 2;
+    IconLayout layout;
+    layout.remove = QRect(right - IconHotspot, top, IconHotspot, IconHotspot);
+    if (done) {
+        layout.all = layout.remove;
+    } else {
+        layout.due = layout.remove.translated(-IconHotspot, 0);
+        layout.priority = layout.due.translated(-IconHotspot, 0);
+        layout.all = layout.priority.united(layout.remove);
+    }
+    return layout;
+}
+
+// 图标字形用 QPainter 画（1.4px 圆头线），与标题栏按钮同规格，避免字体字形在不同字体下发虚。
+void drawFlagIcon(QPainter *painter, const QRect &hotspot, const QColor &color)
+{
+    QRect glyph(QPoint(), QSize(16, 16));
+    glyph.moveCenter(hotspot.center());
+    QPen pen(color, 1.4);
+    pen.setCapStyle(Qt::RoundCap);
+    pen.setJoinStyle(Qt::RoundJoin);
+    painter->setPen(pen);
+    painter->setBrush(color);
+    const qreal poleX = glyph.left() + 3.5;
+    painter->drawLine(QPointF(poleX, glyph.top() + 2), QPointF(poleX, glyph.bottom() - 1));
+    painter->drawRoundedRect(QRectF(poleX, glyph.top() + 2, 9, 5.5), 1.5, 1.5);
+}
+
+void drawCalendarIcon(QPainter *painter, const QRect &hotspot, const QColor &color)
+{
+    QRect glyph(QPoint(), QSize(16, 16));
+    glyph.moveCenter(hotspot.center());
+    QPen pen(color, 1.4);
+    pen.setCapStyle(Qt::RoundCap);
+    painter->setPen(pen);
+    painter->setBrush(Qt::NoBrush);
+    painter->drawRoundedRect(QRectF(glyph.left() + 1.5, glyph.top() + 3.5, 13, 10.5), 2, 2);
+    painter->drawLine(QPointF(glyph.left() + 1.5, glyph.top() + 7.5),
+                      QPointF(glyph.right() - 1.5, glyph.top() + 7.5));
+    painter->drawLine(QPointF(glyph.left() + 5, glyph.top() + 1), QPointF(glyph.left() + 5, glyph.top() + 5));
+    painter->drawLine(QPointF(glyph.left() + 11, glyph.top() + 1), QPointF(glyph.left() + 11, glyph.top() + 5));
+}
+
+void drawCrossIcon(QPainter *painter, const QRect &hotspot, const QColor &color)
+{
+    QRect glyph(QPoint(), QSize(12, 12));
+    glyph.moveCenter(hotspot.center());
+    QPen pen(color, 1.4);
+    pen.setCapStyle(Qt::RoundCap);
+    painter->setPen(pen);
+    painter->drawLine(glyph.topLeft(), glyph.bottomRight());
+    painter->drawLine(QPoint(glyph.right(), glyph.top()), QPoint(glyph.left(), glyph.bottom()));
+}
 } // namespace
 
-// 列表委托：勾选框、标题、行尾元信息全部自绘，保持与结果列表同一套视觉语言。
+// 列表委托：勾选框、标题、行尾元信息与操作图标全部自绘，保持与结果列表同一套视觉语言。
 class TodoRowDelegate final : public QStyledItemDelegate {
 public:
     using Toggler = std::function<void(const QString &id)>;
     using Committer = std::function<void(const QString &id, const QString &text)>;
+    using Cycler = std::function<void(const QString &id)>;
+    using Picker = std::function<void(const QString &id, const QRect &row)>;
+    using Remover = std::function<void(const QString &id)>;
 
-    TodoRowDelegate(QListWidget *list, ThemeManager *theme, Toggler toggle, Committer commit, QObject *parent)
+    TodoRowDelegate(QListWidget *list, ThemeManager *theme, Toggler toggle, Committer commit,
+                    Cycler cyclePriority, Picker pickDue, Remover remove, QObject *parent)
         : QStyledItemDelegate(parent), m_list(list), m_theme(theme),
-          m_toggle(std::move(toggle)), m_commit(std::move(commit)) {}
+          m_toggle(std::move(toggle)), m_commit(std::move(commit)), m_cyclePriority(std::move(cyclePriority)),
+          m_pickDue(std::move(pickDue)), m_remove(std::move(remove)) {}
 
     QSize sizeHint(const QStyleOptionViewItem &option, const QModelIndex &index) const override
     {
@@ -102,24 +176,72 @@ public:
         if (line && m_commit) m_commit(index.data(TodoWindow::IdRole).toString(), line->text());
     }
 
-    void updateEditorGeometry(QWidget *editor, const QStyleOptionViewItem &option, const QModelIndex &) const override
+    void updateEditorGeometry(QWidget *editor, const QStyleOptionViewItem &option, const QModelIndex &index) const override
     {
-        const QRect rect = titleRect(option.rect);
+        const bool done = index.data(TodoWindow::DoneRole).toBool();
+        QRect rect = titleRect(option.rect);
+        rect.setRight(iconLayout(option.rect, done).all.left() - 8);
         editor->setGeometry(rect.left(), rect.center().y() - EditorHeight / 2,
                             rect.width(), EditorHeight);
     }
 
+    // 点击分发：勾选框切换完成，行尾图标分别循环优先级、选截止时间、删除。
     bool editorEvent(QEvent *event, QAbstractItemModel *model, const QStyleOptionViewItem &option,
                      const QModelIndex &index) override
     {
         if (event->type() == QEvent::MouseButtonRelease && !index.data(TodoWindow::HeaderRole).toBool()) {
             const auto *mouse = static_cast<QMouseEvent *>(event);
+            const QString id = index.data(TodoWindow::IdRole).toString();
+            const bool done = index.data(TodoWindow::DoneRole).toBool();
+            const IconLayout icons = iconLayout(option.rect, done);
+            if (icons.remove.contains(mouse->pos())) {
+                if (m_remove) m_remove(id);
+                return true;
+            }
+            if (!done) {
+                if (icons.due.contains(mouse->pos())) {
+                    if (m_pickDue) m_pickDue(id, option.rect);
+                    return true;
+                }
+                if (icons.priority.contains(mouse->pos())) {
+                    if (m_cyclePriority) m_cyclePriority(id);
+                    return true;
+                }
+            }
             if (checkBoxRect(option.rect).contains(mouse->pos())) {
-                if (m_toggle) m_toggle(index.data(TodoWindow::IdRole).toString());
+                if (m_toggle) m_toggle(id);
                 return true;
             }
         }
         return QStyledItemDelegate::editorEvent(event, model, option, index);
+    }
+
+    // 图标逐个给提示；其余区域交给默认处理。
+    bool helpEvent(QHelpEvent *event, QAbstractItemView *view, const QStyleOptionViewItem &option,
+                   const QModelIndex &index) override
+    {
+        if (event->type() == QEvent::ToolTip && !index.data(TodoWindow::HeaderRole).toBool()) {
+            const bool done = index.data(TodoWindow::DoneRole).toBool();
+            const IconLayout icons = iconLayout(option.rect, done);
+            QString text;
+            if (icons.remove.contains(event->pos())) {
+                text = QCoreApplication::translate("TodoWindow", "Delete");
+            } else if (!done && icons.due.contains(event->pos())) {
+                text = QCoreApplication::translate("TodoWindow", "Due date");
+            } else if (!done && icons.priority.contains(event->pos())) {
+                const int priority = index.data(TodoWindow::PriorityRole).toInt();
+                const QString label = priority > 1
+                    ? QCoreApplication::translate("TodoWindow", "High")
+                    : priority < 1 ? QCoreApplication::translate("TodoWindow", "Low")
+                                   : QCoreApplication::translate("TodoWindow", "Medium");
+                text = QCoreApplication::translate("TodoWindow", "Priority") + QLatin1String(" · ") + label;
+            }
+            if (!text.isEmpty()) {
+                QToolTip::showText(event->globalPos(), text, view);
+                return true;
+            }
+        }
+        return QStyledItemDelegate::helpEvent(event, view, option, index);
     }
 
     void paint(QPainter *painter, const QStyleOptionViewItem &option, const QModelIndex &index) const override
@@ -156,8 +278,8 @@ public:
         }
 
         // 勾选框：勾选态实心强调填充加白色圆头对勾，未完成态只描边。
-        const QRect box = checkBoxRect(row);
         const bool done = index.data(TodoWindow::DoneRole).toBool();
+        const QRect box = checkBoxRect(row);
         if (done) {
             painter->setPen(Qt::NoPen);
             painter->setBrush(color(option, &ThemeManager::accentFill, QPalette::Highlight));
@@ -175,9 +297,24 @@ public:
             painter->drawRoundedRect(box, 6, 6);
         }
 
-        // 编辑态只画底和勾选框，标题与元信息交给行内编辑器。
+        // 行尾操作图标：旗=优先级循环，日历=截止时间，×=删除；悬停单个图标提亮。
+        const QPoint cursor = m_list->viewport()->mapFromGlobal(QCursor::pos());
+        const bool rowHover = isHovered(index);
+        const IconLayout icons = iconLayout(row, done);
+        auto iconColor = [&](const QRect &hotspot) {
+            if (rowHover && hotspot.contains(cursor))
+                return color(option, &ThemeManager::text, QPalette::Text);
+            return color(option, &ThemeManager::textSecondary, QPalette::PlaceholderText);
+        };
+        if (!done) {
+            drawFlagIcon(painter, icons.priority, iconColor(icons.priority));
+            drawCalendarIcon(painter, icons.due, iconColor(icons.due));
+        }
+        drawCrossIcon(painter, icons.remove, iconColor(icons.remove));
+
+        // 编辑态只画底、勾选框和图标，标题与元信息交给行内编辑器。
         if (!(option.state & QStyle::State_Editing)) {
-            const QRect textRect = titleRect(row);
+            const QRect textRect = titleRect(row).adjusted(0, 0, -(icons.all.width() + 8), 0);
             const QString title = index.data(Qt::DisplayRole).toString();
             QFont titleFont = option.font;
             titleFont.setPixelSize(TitleFontSize);
@@ -242,6 +379,9 @@ private:
     ThemeManager *m_theme;
     Toggler m_toggle;
     Committer m_commit;
+    Cycler m_cyclePriority;
+    Picker m_pickDue;
+    Remover m_remove;
 };
 
 TodoWindow::TodoWindow(const QString &storageDirectory, ThemeManager *theme, QWidget *parent)
@@ -283,11 +423,13 @@ void TodoWindow::buildLayout()
     m_list->setEditTriggers(QAbstractItemView::DoubleClicked | QAbstractItemView::EditKeyPressed);
     m_list->setVerticalScrollMode(QAbstractItemView::ScrollPerPixel);
     m_list->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
-    m_list->setContextMenuPolicy(Qt::CustomContextMenu);
-    connect(m_list, &QListWidget::customContextMenuRequested, this, &TodoWindow::showContextMenu);
+    // 优先级、截止与删除都做成行尾图标，不再提供右键菜单。
     m_list->setItemDelegate(new TodoRowDelegate(m_list, m_theme,
         [this](const QString &id) { toggleDone(id); },
-        [this](const QString &id, const QString &text) { commitEditById(id, text); }, m_list));
+        [this](const QString &id, const QString &text) { commitEditById(id, text); },
+        [this](const QString &id) { cyclePriority(id); },
+        [this](const QString &id, const QRect &row) { pickDue(id, row); },
+        [this](const QString &id) { removeItem(id); }, m_list));
     m_list->installEventFilter(this);
     m_list->viewport()->installEventFilter(this);
     layout->addWidget(m_list, 1);
@@ -399,6 +541,7 @@ void TodoWindow::rebuild()
         entry->setFlags(Qt::ItemIsSelectable | Qt::ItemIsEnabled | Qt::ItemIsEditable);
         entry->setData(TodoWindow::IdRole, item.id);
         entry->setData(TodoWindow::DoneRole, item.done);
+        entry->setData(TodoWindow::PriorityRole, item.priority);
 
         bool overdue = false;
         QStringList parts;
@@ -486,13 +629,15 @@ void TodoWindow::removeItem(const QString &id)
     }
 }
 
-void TodoWindow::setPriority(const QString &id, int priority)
+// 旗标图标点击：优先级在 高→中→低 之间循环。
+void TodoWindow::cyclePriority(const QString &id)
 {
     if (TodoItem *item = find(id)) {
-        item->priority = priority;
+        item->priority = item->priority == 0 ? 2 : item->priority - 1;
         item->updatedAt = QDateTime::currentMSecsSinceEpoch();
         persist();
-        rebuild();
+        // 从委托的鼠标事件里调用，重建延迟到下一轮事件循环。
+        QTimer::singleShot(0, this, &TodoWindow::rebuild);
     }
 }
 
@@ -564,47 +709,6 @@ void TodoWindow::clearDone()
     if (!changed) return;
     persist();
     rebuild();
-}
-
-void TodoWindow::showContextMenu(const QPoint &pos)
-{
-    // 键盘 Menu 键触发时坐标不可用，回退到当前行中心。
-    QModelIndex index = m_list->indexAt(pos);
-    if (!index.isValid() || index.data(TodoWindow::HeaderRole).toBool())
-        index = m_list->currentIndex();
-    if (!index.isValid() || index.data(TodoWindow::HeaderRole).toBool()) return;
-    const QString id = index.data(TodoWindow::IdRole).toString();
-    TodoItem *item = find(id);
-    if (!item) return;
-
-    QMenu menu(this);
-    auto *priorityMenu = menu.addMenu(tr("Priority"));
-    // 行内只显示非默认优先级减少噪音，菜单里三档都可切。
-    auto *high = priorityMenu->addAction(tr("High"));
-    auto *medium = priorityMenu->addAction(tr("Medium"));
-    auto *low = priorityMenu->addAction(tr("Low"));
-    high->setCheckable(true); high->setChecked(item->priority == 2);
-    medium->setCheckable(true); medium->setChecked(item->priority == 1);
-    low->setCheckable(true); low->setChecked(item->priority == 0);
-    connect(high, &QAction::triggered, this, [this, id]() { setPriority(id, 2); });
-    connect(medium, &QAction::triggered, this, [this, id]() { setPriority(id, 1); });
-    connect(low, &QAction::triggered, this, [this, id]() { setPriority(id, 0); });
-
-    auto *dueMenu = menu.addMenu(tr("Due date"));
-    const QDate today = QDate::currentDate();
-    connect(dueMenu->addAction(tr("Today")), &QAction::triggered,
-            this, [this, id, today]() { setDue(id, TodoStore::makeDue(today)); });
-    connect(dueMenu->addAction(tr("Tomorrow")), &QAction::triggered,
-            this, [this, id, today]() { setDue(id, TodoStore::makeDue(today.addDays(1))); });
-    dueMenu->addAction(tr("Pick a date…"), this, [this, id, index]() { pickDue(id, m_list->visualRect(index)); });
-    dueMenu->addSeparator();
-    auto *clear = dueMenu->addAction(tr("Clear due"));
-    clear->setEnabled(!item->due.isEmpty());
-    connect(clear, &QAction::triggered, this, [this, id]() { setDue(id, QString()); });
-
-    menu.addSeparator();
-    connect(menu.addAction(tr("Delete")), &QAction::triggered, this, [this, id]() { removeItem(id); });
-    menu.exec(m_list->viewport()->mapToGlobal(pos));
 }
 
 void TodoWindow::updateFooter()
