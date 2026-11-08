@@ -49,6 +49,10 @@ typego_add_test(tst_pin_storage tst_pin_storage.cpp)
 typego_add_test(tst_screen_position tst_screen_position.cpp)
 # 待办存储是纯 Core 逻辑，排序、容错与墓碑规则都在这里锁定。
 typego_add_test(tst_todo_store tst_todo_store.cpp)
+# 月历布局是纯计算，直接复用插件里的实现，不重复编译一份。
+typego_add_test(tst_todo_calendar_layout tst_todo_calendar_layout.cpp)
+target_include_directories(tst_todo_calendar_layout PRIVATE ${CMAKE_SOURCE_DIR}/plugins/todo)
+target_link_libraries(tst_todo_calendar_layout PRIVATE todo_plugin)
 add_executable(restart_parent fixtures/RestartParent.cpp)
 target_link_libraries(restart_parent PRIVATE Qt6::Core)
 target_compile_options(restart_parent PRIVATE $<$<CXX_COMPILER_ID:MSVC>:/utf-8>)
