@@ -428,11 +428,37 @@ QLabel#todoEmpty {
     font-size: 13px;
 }
 
-/* 截止时间弹层：月历由 TodoCalendar 自绘，这里只负责弹层底色描边。 */
-QDialog#todoDatePicker {
-    background-color: @GLASS_SURFACE@;
+/* 待办弹层：系统弹层保持直角，避免无边框窗口的四角露出底色残影（见 DESIGN.md）。 */
+QFrame#todoDatePicker {
+    background-color: @SURFACE@;
     border: 1px solid @BORDER@;
-    border-radius: 12px;
+}
+
+QFrame#todoPriorityPopup {
+    background-color: @SURFACE@;
+    border: 1px solid @BORDER@;
+}
+
+/* 优先级候选：图标给档位色，文字保持正文色，选中才用淡蓝底和加粗。 */
+QPushButton#todoPriorityChoice {
+    min-height: 0;
+    padding: 6px 12px;
+    background-color: transparent;
+    color: @TEXT@;
+    border: 1px solid transparent;
+    border-radius: 8px;
+    font-size: 13px;
+}
+
+QPushButton#todoPriorityChoice:hover {
+    background-color: @HOVER@;
+}
+
+QPushButton#todoPriorityChoice:checked {
+    background-color: @SELECTION@;
+    color: @ACCENT_TEXT@;
+    border-color: @ACCENT@;
+    font-weight: 600;
 }
 
 QLabel#todoFooter {
