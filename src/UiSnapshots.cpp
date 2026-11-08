@@ -26,6 +26,7 @@
 #include "../plugins/neo-json-viewer/AddItemDialog.h"
 #include "../plugins/todo/TodoWindow.h"
 #include "../plugins/todo/TodoCalendar.h"
+#include "../plugins/todo/TodoPopups.h"
 #include "plugins/PluginWindowHost.h"
 
 #include <QApplication>
@@ -345,6 +346,18 @@ public:
                 TodoCalendar calendar(&palette);
                 calendar.setDate(QDate(2030, 6, 15));
                 if (!capture(calendar, QStringLiteral("todo-calendar"))) return false;
+            }
+            if (wants(QStringLiteral("tools")))
+            {
+                // 完整的截止弹层：月历 + 时间输入行，验证弹层底色、直角和控件高度。
+                TodoDuePopup due(&palette, QDate(2030, 6, 18), QTime(18, 0));
+                if (!capture(due, QStringLiteral("todo-due-popup"))) return false;
+            }
+            if (wants(QStringLiteral("tools")))
+            {
+                // 优先级弹层：四档旗标与选中态，验证置顶复现的旗标裁切问题已修好。
+                TodoPriorityPopup priority(&palette, 2);
+                if (!capture(priority, QStringLiteral("todo-priority-popup"))) return false;
             }
             if (wants(QStringLiteral("json")))
             {
