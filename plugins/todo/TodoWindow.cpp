@@ -1,32 +1,28 @@
 #include "TodoWindow.h"
 #include "TodoCalendar.h"
+#include "TodoPopups.h"
+#include "TodoPriorities.h"
 #include "ThemeManager.h"
 
 #include <QCoreApplication>
 #include <QDateTime>
-#include <QDialog>
 #include <QDir>
 #include <QEvent>
 #include <QFontMetrics>
 #include <QHBoxLayout>
 #include <QHelpEvent>
-#include <QIcon>
 #include <QLabel>
 #include <QLineEdit>
 #include <QListWidget>
 #include <QListWidgetItem>
-#include <QMenu>
 #include <QMessageBox>
 #include <QMouseEvent>
 #include <QPainter>
 #include <QPen>
-#include <QPixmap>
 #include <QPushButton>
-#include <QScreen>
 #include <QStyledItemDelegate>
 #include <QStyle>
 #include <QStringList>
-#include <QTimeEdit>
 #include <QTimer>
 #include <QToolTip>
 #include <QVBoxLayout>
@@ -95,21 +91,8 @@ IconLayout iconLayout(const QRect &row, bool done)
     return layout;
 }
 
-// 图标字形用 QPainter 画（1.4px 圆头线），与标题栏按钮同规格，避免字体字形在不同字体下发虚。
-void drawFlagIcon(QPainter *painter, const QRect &hotspot, const QColor &color)
-{
-    QRect glyph(QPoint(), QSize(16, 16));
-    glyph.moveCenter(hotspot.center());
-    QPen pen(color, 1.4);
-    pen.setCapStyle(Qt::RoundCap);
-    pen.setJoinStyle(Qt::RoundJoin);
-    painter->setPen(pen);
-    painter->setBrush(color);
-    const qreal poleX = glyph.left() + 3.5;
-    painter->drawLine(QPointF(poleX, glyph.top() + 2), QPointF(poleX, glyph.bottom() - 1));
-    painter->drawRoundedRect(QRectF(poleX, glyph.top() + 2, 9, 5.5), 1.5, 1.5);
-}
-
+// 日历与删除图标字形用 QPainter 画（1.4px 圆头线），与标题栏按钮同规格，避免字体字形在不同字体下发虚。
+// 旗标字形在 TodoPriority 里，列表与弹层共用同一份。
 void drawCalendarIcon(QPainter *painter, const QRect &hotspot, const QColor &color)
 {
     QRect glyph(QPoint(), QSize(16, 16));
@@ -135,28 +118,6 @@ void drawCrossIcon(QPainter *painter, const QRect &hotspot, const QColor &color)
     painter->drawLine(glyph.topLeft(), glyph.bottomRight());
     painter->drawLine(QPoint(glyph.right(), glyph.top()), QPoint(glyph.left(), glyph.bottom()));
 }
-
-// 优先级旗标的档位色：紧急红、高强调蓝、中次级灰、低更淡；行尾图标与弹窗菜单共用。
-QColor priorityFlagColor(ThemeManager *theme, int priority)
-{
-    if (priority > 2) return theme ? theme->error() : QColor(0xc42647);
-    if (priority == 2) return theme ? theme->accent() : QColor(0x0088ff);
-    if (priority == 0) return theme ? theme->placeholder() : QColor(0xa1a1aa);
-    return theme ? theme->textSecondary() : QColor(0x71717a);
-}
-
-// 用指定颜色画一面旗，供弹窗菜单项做图标。
-QIcon priorityFlagIcon(ThemeManager *theme, int priority)
-{
-    QPixmap pixmap(32, 32);
-    pixmap.setDevicePixelRatio(2);
-    pixmap.fill(Qt::transparent);
-    QPainter painter(&pixmap);
-    painter.setRenderHint(QPainter::Antialiasing);
-    drawFlagIcon(&painter, QRect(0, 0, 32, 32), priorityFlagColor(theme, priority));
-    painter.end();
-    return QIcon(pixmap);
-}
 } // namespace
 
 // 列表委托：勾选框、标题、行尾元信息与操作图标全部自绘，保持与结果列表同一套视觉语言。
@@ -164,7 +125,7 @@ class TodoRowDelegate final : public QStyledItemDelegate {
 public:
     using Toggler = std::function<void(const QString &id)>;
     using Committer = std::function<void(const QString &id, const QString &text)>;
-    using PriorityPicker = std::function<void(const QString &id)>;
+    using PriorityPicker = std::function<void(const QString &id, const QRect &row)>;
     using Picker = std::function<void(const QString &id, const QRect &row)>;
     using Remover = std::function<void(const QString &id)>;
 
@@ -211,7 +172,7 @@ public:
                             rect.width(), EditorHeight);
     }
 
-    // 点击分发：勾选框切换完成，行尾图标分别循环优先级、选截止时间、删除。
+    // 点击分发：勾选框切换完成，行尾图标分别打开优先级弹层、选截止时间、删除。
     bool editorEvent(QEvent *event, QAbstractItemModel *model, const QStyleOptionViewItem &option,
                      const QModelIndex &index) override
     {
@@ -230,7 +191,7 @@ public:
                     return true;
                 }
                 if (icons.priority.contains(mouse->pos())) {
-                    if (m_pickPriority) m_pickPriority(id);
+                    if (m_pickPriority) m_pickPriority(id, option.rect);
                     return true;
                 }
             }
@@ -253,15 +214,14 @@ public:
             if (icons.remove.contains(event->pos())) {
                 text = QCoreApplication::translate("TodoWindow", "Delete");
             } else if (!done && icons.due.contains(event->pos())) {
-                text = QCoreApplication::translate("TodoWindow", "Due date");
+                // 行内只显示「今天」「6/2」这类缩写，完整日期放到提示里。
+                const QString full = index.data(TodoWindow::DueFullRole).toString();
+                text = full.isEmpty()
+                    ? QCoreApplication::translate("TodoWindow", "Due date")
+                    : QCoreApplication::translate("TodoWindow", "Due date") + QLatin1String(" · ") + full;
             } else if (!done && icons.priority.contains(event->pos())) {
-                const int priority = index.data(TodoWindow::PriorityRole).toInt();
-                const QString label = priority > 2
-                    ? QCoreApplication::translate("TodoWindow", "Urgent")
-                    : priority > 1 ? QCoreApplication::translate("TodoWindow", "High")
-                    : priority < 1 ? QCoreApplication::translate("TodoWindow", "Low")
-                                   : QCoreApplication::translate("TodoWindow", "Medium");
-                text = QCoreApplication::translate("TodoWindow", "Priority") + QLatin1String(" · ") + label;
+                text = QCoreApplication::translate("TodoWindow", "Priority") + QLatin1String(" · ")
+                    + TodoPriority::label(index.data(TodoWindow::PriorityRole).toInt());
             }
             if (!text.isEmpty()) {
                 QToolTip::showText(event->globalPos(), text, view);
@@ -324,7 +284,7 @@ public:
             painter->drawRoundedRect(box, 6, 6);
         }
 
-        // 行尾操作图标：旗=优先级循环，日历=截止时间，×=删除；悬停单个图标提亮，紧急旗标用错误色。
+        // 行尾操作图标：旗=优先级弹层，日历=截止时间，×=删除；悬停单个图标提亮，旗标固定用档位色。
         const QPoint cursor = m_list->viewport()->mapFromGlobal(QCursor::pos());
         const bool rowHover = isHovered(index);
         const IconLayout icons = iconLayout(row, done);
@@ -334,9 +294,9 @@ public:
             return color(option, &ThemeManager::textSecondary, QPalette::PlaceholderText);
         };
         if (!done) {
-            // 旗标固定用档位色，不再跟随悬停变色，弹窗菜单与列表保持一致。
-            drawFlagIcon(painter, icons.priority,
-                         priorityFlagColor(m_theme, index.data(TodoWindow::PriorityRole).toInt()));
+            // 旗标不跟随悬停变色：档位色本身就是信息，弹层里的同名项也用它。
+            TodoPriority::drawFlag(painter, icons.priority,
+                                   TodoPriority::color(m_theme, index.data(TodoWindow::PriorityRole).toInt()));
             drawCalendarIcon(painter, icons.due, iconColor(icons.due));
         }
         drawCrossIcon(painter, icons.remove, iconColor(icons.remove));
@@ -456,7 +416,7 @@ void TodoWindow::buildLayout()
     m_list->setItemDelegate(new TodoRowDelegate(m_list, m_theme,
         [this](const QString &id) { toggleDone(id); },
         [this](const QString &id, const QString &text) { commitEditById(id, text); },
-        [this](const QString &id) { pickPriority(id); },
+        [this](const QString &id, const QRect &row) { pickPriority(id, row); },
         [this](const QString &id, const QRect &row) { pickDue(id, row); },
         [this](const QString &id) { removeItem(id); }, m_list));
     m_list->installEventFilter(this);
@@ -575,15 +535,16 @@ void TodoWindow::rebuild()
         bool overdue = false;
         QStringList parts;
         if (!item.done) {
-            if (item.priority > 2) parts << tr("Urgent");
-            if (item.priority == 2) parts << tr("High");
-            if (item.priority < 1) parts << tr("Low");
+            // 档位文案统一由 TodoPriority 决定，元信息与提示不会再出现两套阶梯。
+            const QString level = TodoPriority::metaLabel(item.priority);
+            if (!level.isEmpty()) parts << level;
             const QString due = dueText(item, &overdue);
             if (!due.isEmpty()) parts << due;
             if (overdue) parts << tr("Overdue");
         }
         entry->setData(TodoWindow::MetaRole, parts.join(QStringLiteral(" · ")));
         entry->setData(TodoWindow::OverdueRole, overdue);
+        entry->setData(TodoWindow::DueFullRole, dueFullText(item));
         if (item.id == currentId) m_list->setCurrentRow(row);
         if (firstSelectable < 0) firstSelectable = row;
         ++row;
@@ -668,27 +629,17 @@ void TodoWindow::removeItem(const QString &id)
     });
 }
 
-// 旗标图标点击：在光标旁弹出四档优先级小菜单，当前档打勾。
-void TodoWindow::pickPriority(const QString &id)
+// 旗标点击：在行尾旗标旁弹出四档选择，选中即生效并收起。
+void TodoWindow::pickPriority(const QString &id, const QRect &rowRect)
 {
     TodoItem *item = find(id);
     if (!item) return;
-    const int current = item->priority;
-
-    QMenu menu(this);
-    auto *urgent = menu.addAction(priorityFlagIcon(m_theme, 3), tr("Urgent"));
-    auto *high = menu.addAction(priorityFlagIcon(m_theme, 2), tr("High"));
-    auto *medium = menu.addAction(priorityFlagIcon(m_theme, 1), tr("Medium"));
-    auto *low = menu.addAction(priorityFlagIcon(m_theme, 0), tr("Low"));
-    urgent->setCheckable(true); urgent->setChecked(current == 3);
-    high->setCheckable(true);   high->setChecked(current == 2);
-    medium->setCheckable(true); medium->setChecked(current == 1);
-    low->setCheckable(true);    low->setChecked(current == 0);
-    connect(urgent, &QAction::triggered, this, [this, id]() { setPriority(id, 3); });
-    connect(high, &QAction::triggered, this, [this, id]() { setPriority(id, 2); });
-    connect(medium, &QAction::triggered, this, [this, id]() { setPriority(id, 1); });
-    connect(low, &QAction::triggered, this, [this, id]() { setPriority(id, 0); });
-    menu.exec(QCursor::pos());
+    auto *popup = new TodoPriorityPopup(m_theme, item->priority, this);
+    connect(popup, &TodoPriorityPopup::picked, this, [this, id](int level) { setPriority(id, level); });
+    // 弹层贴齐旗标的上方；行太靠上时 placePopupNear 会自己翻到下方。
+    placePopupNear(popup, QRect(m_list->viewport()->mapToGlobal(iconLayout(rowRect, false).priority.topLeft()),
+                                QSize(IconHotspot, IconHotspot)));
+    popup->show();
 }
 
 void TodoWindow::setPriority(const QString &id, int priority)
@@ -697,7 +648,7 @@ void TodoWindow::setPriority(const QString &id, int priority)
         item->priority = priority;
         item->updatedAt = QDateTime::currentMSecsSinceEpoch();
         persist();
-        // 菜单在委托的鼠标事件里 exec，重建延迟到下一轮事件循环。
+        // 弹层在委托的鼠标事件栈里弹出，重建延迟到下一轮事件循环。
         QTimer::singleShot(0, this, &TodoWindow::rebuild);
     }
 }
@@ -708,63 +659,27 @@ void TodoWindow::setDue(const QString &id, const QString &due)
         item->due = due;
         item->updatedAt = QDateTime::currentMSecsSinceEpoch();
         persist();
-        rebuild();
+        // 与其它改动一致：调用方可能在委托的鼠标事件栈里，重建延迟一轮。
+        QTimer::singleShot(0, this, &TodoWindow::rebuild);
     }
 }
 
 // 日期选择弹层：主题自绘月历，点某天立即生效；时间拨到最小值即纯日期。
-// 弹层锚定在日历图标的右缘下方，与图标对齐而不是整行左下角。
+// 弹层贴齐日历图标上方，与图标对齐而不是整行左下角。
 void TodoWindow::pickDue(const QString &id, const QRect &rowRect)
 {
-    QDialog picker(this, Qt::Popup);
-    picker.setObjectName(QStringLiteral("todoDatePicker"));
-    auto *layout = new QVBoxLayout(&picker);
-    layout->setContentsMargins(8, 8, 8, 8);
-    layout->setSpacing(8);
-    auto *calendar = new TodoCalendar(m_theme, &picker);
-    layout->addWidget(calendar);
-
-    auto *timeRow = new QHBoxLayout;
-    timeRow->setSpacing(8);
-    auto *clearButton = new QPushButton(tr("Clear due"), &picker);
-    clearButton->setObjectName(QStringLiteral("todoClear"));
-    clearButton->setCursor(Qt::PointingHandCursor);
-    timeRow->addWidget(clearButton);
-    timeRow->addStretch(1);
-    auto *timeEdit = new QTimeEdit(&picker);
-    timeEdit->setDisplayFormat(QStringLiteral("HH:mm"));
-    timeEdit->setAccelerated(true);
-    timeEdit->setSpecialValueText(tr("No time"));
-    timeRow->addWidget(timeEdit);
-    layout->addLayout(timeRow);
-
-    if (TodoItem *item = find(id)) {
-        if (const QDateTime due = TodoStore::dueDateTime(item->due); due.isValid()) {
-            calendar->setDate(due.date());
-            if (TodoStore::dueHasTime(item->due)) timeEdit->setTime(due.time());
-        }
-    }
-
-    // 点某天立即生效并关闭；0 点即「不设时间」，按纯日期入库。
-    calendar->picked = [this, id, &picker, timeEdit](const QDate &date) {
-        const QTime time = timeEdit->time() == QTime(0, 0) ? QTime() : timeEdit->time();
+    TodoItem *item = find(id);
+    if (!item) return;
+    const QDateTime due = TodoStore::dueDateTime(item->due);
+    const bool hasTime = TodoStore::dueHasTime(item->due);
+    auto *popup = new TodoDuePopup(m_theme, due.date(), hasTime ? due.time() : QTime(), this);
+    popup->duePicked = [this, id](const QDate &date, const QTime &time) {
         setDue(id, TodoStore::makeDue(date, time));
-        picker.close();
     };
-    connect(clearButton, &QPushButton::clicked, this, [this, id, &picker]() {
-        setDue(id, QString());
-        picker.close();
-    });
-
-    picker.adjustSize();
-    // 右缘贴齐日历图标，下方放不下就翻到行上方，再夹回屏幕内。
-    const QRect avail = screen()->availableGeometry();
-    const QPoint anchor = m_list->viewport()->mapToGlobal(iconLayout(rowRect, false).due.bottomRight());
-    QPoint pos(anchor.x() - picker.width() + IconHotspot / 2, anchor.y() + 4);
-    pos.setX(qBound(avail.left() + 8, pos.x(), avail.right() - picker.width() - 8));
-    pos.setY(qBound(avail.top() + 8, pos.y(), avail.bottom() - picker.height() - 8));
-    picker.move(pos);
-    picker.exec();
+    popup->dueCleared = [this, id]() { setDue(id, QString()); };
+    placePopupNear(popup, QRect(m_list->viewport()->mapToGlobal(iconLayout(rowRect, false).due.topLeft()),
+                                QSize(IconHotspot, IconHotspot)));
+    popup->show();
 }
 
 void TodoWindow::clearDone()
@@ -804,14 +719,43 @@ void TodoWindow::placeEmptyLabel()
     m_empty->setGeometry(0, 0, m_list->width(), m_list->height());
 }
 
-// 截止时间展示：今天/明天用词，一周内用星期，更远用月/日；带时间则补 HH:mm。
+// 未完成条目的行矩形（视口坐标）：截图夹具用它定位行尾图标，不依赖固定行号。
+QList<QRect> TodoWindow::rowRects() const
+{
+    QList<QRect> rows;
+    for (int row = 0; row < m_list->count(); ++row) {
+        const QModelIndex index = m_list->model()->index(row, 0);
+        if (index.data(HeaderRole).toBool()) continue;
+        rows.append(m_list->visualRect(index));
+    }
+    return rows;
+}
+
+// 截止时间展示：今天/明天用词，一周内用星期，更远用本地化的月日；带时间则补 HH:mm。
 QString TodoWindow::dayLabel(const QDate &date, const QDate &today)
 {
     if (date == today) return TodoWindow::tr("Today");
     if (date == today.addDays(1)) return TodoWindow::tr("Tomorrow");
     const qint64 delta = today.daysTo(date);
-    if (delta > 1 && delta < 7) return QLocale::system().dayName(date.dayOfWeek(), QLocale::ShortFormat);
-    return QLocale::system().toString(date, QStringLiteral("M/d"));
+    // 跟月历用同一个 locale：硬编码 "M/d" 在日/月顺序不同的语言里会读错。
+    // 去掉年份字段后还要清掉残留的分隔符（如 "yyyy/M/d" 去掉年份会剩 "/M/d"）。
+    const QLocale locale = QLocale::system();
+    if (delta > 1 && delta < 7) return locale.dayName(date.dayOfWeek(), QLocale::ShortFormat);
+    QString pattern = locale.dateFormat(QLocale::ShortFormat);
+    pattern.remove(QStringLiteral("yyyy"));
+    while (!pattern.isEmpty() && !pattern.at(0).isLetterOrNumber()) pattern.remove(0, 1);
+    return locale.toString(date, pattern.trimmed());
+}
+
+// 完整截止（含年份）：行内放不下，只给图标提示用。
+QString TodoWindow::dueFullText(const TodoItem &item) const
+{
+    const QDateTime due = TodoStore::dueDateTime(item.due);
+    if (!due.isValid()) return {};
+    const QLocale locale = QLocale::system();
+    return TodoStore::dueHasTime(item.due)
+        ? locale.toString(due, QLocale::ShortFormat)
+        : locale.toString(due.date(), QLocale::ShortFormat);
 }
 
 QString TodoWindow::dueText(const TodoItem &item, bool *overdue) const
