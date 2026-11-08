@@ -6,6 +6,9 @@ package-validation
 dist
 cmake-build-*
 
+# 在仓库根目录执行 ctest --test-dir 时 Qt 生成的日志目录
+Testing
+
 # 本地缓存与依赖
 .cache
 node_modules
