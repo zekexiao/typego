@@ -7,6 +7,7 @@
 #include <QGuiApplication>
 #include <QHBoxLayout>
 #include <QKeyEvent>
+#include <QLabel>
 #include <QPushButton>
 #include <QScreen>
 #include <QTimeEdit>
@@ -135,6 +136,57 @@ TodoDuePopup::TodoDuePopup(ThemeManager *theme, const QDate &date, const QTime &
 
 void TodoDuePopup::keyPressEvent(QKeyEvent *event)
 {
+    if (event->key() == Qt::Key_Escape) {
+        close();
+        return;
+    }
+    QFrame::keyPressEvent(event);
+}
+
+TodoDeletePopup::TodoDeletePopup(const QString &title, QWidget *parent)
+    : QFrame(parent, Qt::Popup)
+{
+    setObjectName(QStringLiteral("todoDeletePopup"));
+    setFrameShape(QFrame::NoFrame);
+    setAttribute(Qt::WA_DeleteOnClose);
+    setFocusPolicy(Qt::StrongFocus);
+
+    auto *layout = new QVBoxLayout(this);
+    layout->setContentsMargins(12, 10, 12, 10);
+    layout->setSpacing(10);
+
+    auto *question = new QLabel(tr("Delete \"%1\"?").arg(title), this);
+    question->setObjectName(QStringLiteral("todoDeleteQuestion"));
+    // 长标题不能把弹层拉到整行宽，超过定宽换行；完整内容本来就在列表里。
+    question->setMaximumWidth(320);
+    question->setWordWrap(true);
+    layout->addWidget(question);
+
+    auto *buttons = new QHBoxLayout;
+    buttons->setSpacing(8);
+    buttons->addStretch(1);
+    auto *cancel = new QPushButton(tr("Cancel"), this);
+    cancel->setObjectName(QStringLiteral("todoClear"));
+    cancel->setCursor(Qt::PointingHandCursor);
+    cancel->setFocusPolicy(Qt::NoFocus);
+    buttons->addWidget(cancel);
+    auto *confirm = new QPushButton(tr("Delete"), this);
+    confirm->setObjectName(QStringLiteral("danger"));
+    confirm->setCursor(Qt::PointingHandCursor);
+    confirm->setFocusPolicy(Qt::NoFocus);
+    buttons->addWidget(confirm);
+    layout->addLayout(buttons);
+
+    connect(cancel, &QPushButton::clicked, this, &QWidget::close);
+    connect(confirm, &QPushButton::clicked, this, [this]() {
+        if (confirmed) confirmed();
+        close();
+    });
+}
+
+void TodoDeletePopup::keyPressEvent(QKeyEvent *event)
+{
+    // 删除打的是墓碑且不可撤销，只允许 Esc 退出；确认必须真的点一下。
     if (event->key() == Qt::Key_Escape) {
         close();
         return;

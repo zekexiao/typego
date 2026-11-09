@@ -127,7 +127,7 @@ public:
     using Committer = std::function<void(const QString &id, const QString &text)>;
     using PriorityPicker = std::function<void(const QString &id, const QRect &row)>;
     using Picker = std::function<void(const QString &id, const QRect &row)>;
-    using Remover = std::function<void(const QString &id)>;
+    using Remover = std::function<void(const QString &id, const QRect &row)>;
 
     TodoRowDelegate(QListWidget *list, ThemeManager *theme, Toggler toggle, Committer commit,
                     PriorityPicker pickPriority, Picker pickDue, Remover remove, QObject *parent)
@@ -182,7 +182,7 @@ public:
             const bool done = index.data(TodoWindow::DoneRole).toBool();
             const IconLayout icons = iconLayout(option.rect, done);
             if (icons.remove.contains(mouse->pos())) {
-                if (m_remove) m_remove(id);
+                if (m_remove) m_remove(id, option.rect);
                 return true;
             }
             if (!done) {
@@ -418,7 +418,7 @@ void TodoWindow::buildLayout()
         [this](const QString &id, const QString &text) { commitEditById(id, text); },
         [this](const QString &id, const QRect &row) { pickPriority(id, row); },
         [this](const QString &id, const QRect &row) { pickDue(id, row); },
-        [this](const QString &id) { removeItem(id); }, m_list));
+        [this](const QString &id, const QRect &row) { removeItem(id, row); }, m_list));
     m_list->installEventFilter(this);
     m_list->viewport()->installEventFilter(this);
     layout->addWidget(m_list, 1);
@@ -472,8 +472,10 @@ bool TodoWindow::eventFilter(QObject *watched, QEvent *event)
                 return true;
             }
             if (key->key() == Qt::Key_Delete) {
-                if (m_list->currentIndex().isValid())
-                    removeItem(m_list->currentIndex().data(TodoWindow::IdRole).toString());
+                // 键盘删除没有鼠标锚点，用当前行矩形代替，弹层仍然贴着那一行。
+                const QModelIndex current = m_list->currentIndex();
+                if (current.isValid())
+                    removeItem(current.data(TodoWindow::IdRole).toString(), m_list->visualRect(current));
                 return true;
             }
         }
@@ -608,25 +610,28 @@ void TodoWindow::toggleDone(const QString &id)
     }
 }
 
-void TodoWindow::removeItem(const QString &id)
+// 删除确认：在行尾 × 上方弹同一套弹层，不再弹停在屏幕中央的原生消息框。
+// 弹层在委托的鼠标事件里展开，真正的改动延到下一轮事件循环。
+void TodoWindow::removeItem(const QString &id, const QRect &rowRect)
 {
-    // 确认框在委托的鼠标事件里弹出，真正的改动延迟到下一轮事件循环。
     TodoItem *item = find(id);
     if (!item) return;
-    const QString title = item->title;
-    const auto choice = QMessageBox::question(this, tr("Delete todo"),
-        tr("Delete \"%1\"?").arg(title), QMessageBox::Yes | QMessageBox::No, QMessageBox::No);
-    if (choice != QMessageBox::Yes) return;
-    QTimer::singleShot(0, this, [this, id]() {
-        if (TodoItem *target = find(id)) {
-            // 打墓碑而不是物理删除，给将来的同步与恢复留依据。
-            const qint64 now = QDateTime::currentMSecsSinceEpoch();
-            target->deletedAt = now;
-            target->updatedAt = now;
-            persist();
-            rebuild();
-        }
-    });
+    auto *popup = new TodoDeletePopup(item->title, this);
+    popup->confirmed = [this, id]() {
+        QTimer::singleShot(0, this, [this, id]() {
+            if (TodoItem *target = find(id)) {
+                // 打墓碑而不是物理删除，给将来的同步与恢复留依据。
+                const qint64 now = QDateTime::currentMSecsSinceEpoch();
+                target->deletedAt = now;
+                target->updatedAt = now;
+                persist();
+                rebuild();
+            }
+        });
+    };
+    placePopupNear(popup, QRect(m_list->viewport()->mapToGlobal(iconLayout(rowRect, false).remove.topLeft()),
+                                QSize(IconHotspot, IconHotspot)));
+    popup->show();
 }
 
 // 旗标点击：在行尾旗标旁弹出四档选择，选中即生效并收起。

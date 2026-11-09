@@ -359,6 +359,12 @@ public:
                 TodoPriorityPopup priority(&palette, 2);
                 if (!capture(priority, QStringLiteral("todo-priority-popup"))) return false;
             }
+            if (wants(QStringLiteral("tools")))
+            {
+                // 删除确认弹层：与其它弹层同一套外观与摆位，验证长标题换行和危险按钮。
+                TodoDeletePopup remove(QStringLiteral("Review release notes before the Friday cut"), nullptr);
+                if (!capture(remove, QStringLiteral("todo-delete-popup"))) return false;
+            }
             if (wants(QStringLiteral("json")))
             {
                 JsonViewerWindow json(nullptr, data + QStringLiteral("/json.ini"));

@@ -439,6 +439,17 @@ QFrame#todoPriorityPopup {
     border: 1px solid @BORDER@;
 }
 
+QFrame#todoDeletePopup {
+    background-color: @SURFACE@;
+    border: 1px solid @BORDER@;
+}
+
+QLabel#todoDeleteQuestion {
+    background-color: transparent;
+    color: @TEXT@;
+    font-size: 13px;
+}
+
 /* 优先级候选：图标给档位色，文字保持正文色，选中才用淡蓝底和加粗。 */
 QPushButton#todoPriorityChoice {
     min-height: 0;

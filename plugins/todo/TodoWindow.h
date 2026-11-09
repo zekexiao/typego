@@ -46,9 +46,9 @@ private:
     void commitEditById(const QString &id, const QString &text);
     void toggleDone(const QString &id);
     void pickPriority(const QString &id, const QRect &rowRect);
-    void removeItem(const QString &id);
-    void setDue(const QString &id, const QString &due);
     void pickDue(const QString &id, const QRect &rowRect);
+    void setDue(const QString &id, const QString &due);
+    void removeItem(const QString &id, const QRect &rowRect);
     void clearDone();
     void updateFooter();
     void placeEmptyLabel();

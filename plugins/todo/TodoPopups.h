@@ -53,3 +53,16 @@ private:
     TodoCalendar *m_calendar = nullptr;
     QTimeEdit *m_time = nullptr;
 };
+
+// 删除确认弹层：与优先级、截止时间用同一套弹层与摆位，不再弹原生消息框。
+// 原生消息框会脱离行尾图标跳到屏幕中央，连续删多条时鼠标要来回跑。
+class TodoDeletePopup final : public QFrame {
+    Q_OBJECT
+public:
+    explicit TodoDeletePopup(const QString &title, QWidget *parent = nullptr);
+
+    std::function<void()> confirmed;
+
+protected:
+    void keyPressEvent(QKeyEvent *event) override;
+};
